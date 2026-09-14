@@ -47,13 +47,7 @@ import ccsBuildingsGeocoded from '@/data/ccsBuildingsGeocoded.json';
 
 type HazardId = 'heat' | 'flooding' | 'coastal' | 'drought';
 
-type PanelTab =
-  | 'portfolio'
-  | 'layers'
-  | 'place'
-  | 'analysis'
-  | 'insights'
-  | 'help';
+type PanelTab = 'portfolio' | 'layers' | 'place' | 'analysis' | 'help';
 
 type LayerGroup = 'hazard' | 'vulnerability' | 'overlay';
 
@@ -183,21 +177,6 @@ interface Blueprint {
   rank: string;
   watch: string[];
   steps?: number[];
-}
-
-interface Action {
-  id: string;
-  title: string;
-  hazard: HazardId;
-  costLow: number;
-  costHigh: number;
-  scope: string;
-  suburbIds: string[];
-  lever: string;
-  detail: string;
-  evidence: string;
-  tradeoff: string;
-  horizon: string;
 }
 
 /* ------------------------------------------------------------------ *
@@ -1533,209 +1512,6 @@ const PLANNING: Record<string, PlanningRow> = {
   },
 };
 
-/* ------------------------------------------------------------------ *
- * Costed actions
- *
- * These are options that have been costed somewhere, not a ranked
- * programme. Cost, evidence and trade-off are all shown so the reader can
- * form their own view rather than accept an ordering imposed here.
- * ------------------------------------------------------------------ */
-
-const ACTIONS: Action[] = [
-  {
-    id: 'canopy-woodville',
-    title: 'Street tree infill, Woodville West and Central',
-    hazard: 'heat',
-    costLow: 1.8,
-    costHigh: 3.2,
-    scope: 'Woodville - Cheltenham',
-    suburbIds: ['woodville-cheltenham'],
-    lever: 'Council land, direct delivery',
-    detail:
-      'Roughly 1,400 street trees across the two SA1s with the lowest canopy and the lowest SEIFA deciles in the LGA. Species selection is constrained by verge width and service corridors on about a third of the target streets.',
-    evidence:
-      'Canopy at 8 and 9 percent against an LGA figure of 14 percent. Surface temperature differential of 3 to 5C against the canopied SA1s in the same suburb.',
-    tradeoff:
-      'Establishment watering for three summers falls inside the drought scenario. Benefit does not appear for 8 to 12 years.',
-    horizon: 'Benefit from 2035',
-  },
-  {
-    id: 'refuge-network',
-    title: 'Extreme heat refuge network, five sites',
-    hazard: 'heat',
-    costLow: 0.9,
-    costHigh: 1.6,
-    scope: 'LGA wide',
-    suburbIds: [
-      'woodville-cheltenham',
-      'royal-park-hendon',
-      'hindmarsh-brompton',
-      'seaton-grange',
-      'west-lakes',
-    ],
-    lever: 'Council buildings, operating cost',
-    detail:
-      'Backup power, extended opening hours and transport assistance at five existing council buildings. The buildings already exist, so most of the cost is operating rather than capital.',
-    evidence:
-      'Three of the five sites sit in SA1s with a SEIFA decile of 4 or lower, where car ownership is lowest and staying home is least viable.',
-    tradeoff:
-      'Refuges only help people who can reach them. Transport assistance is the part most often cut, and it is the part that determines whether the network works.',
-    horizon: 'Operational within 1 season',
-  },
-  {
-    id: 'brompton-main',
-    title: 'Brompton stormwater main upgrade',
-    hazard: 'flooding',
-    costLow: 12.4,
-    costHigh: 18.9,
-    scope: 'Hindmarsh - Brompton',
-    suburbIds: ['hindmarsh-brompton'],
-    lever: 'Council asset, capital renewal',
-    detail:
-      'Replaces roughly 2.1km of undersized main beneath the highest zoned density in the LGA. Staged over three financial years to keep the corridor open.',
-    evidence:
-      '17 reactive interventions in five years, the highest count in the portfolio. The threshold usually applied for renewal over maintenance is 10.',
-    tradeoff:
-      'Upgrading capacity here moves the constraint downstream rather than removing it. The receiving system has not been assessed for the additional volume.',
-    horizon: 'Construction 2027 to 2030',
-  },
-  {
-    id: 'hendon-drain',
-    title: 'Hendon industrial drain renewal and treatment',
-    hazard: 'flooding',
-    costLow: 6.8,
-    costHigh: 9.4,
-    scope: 'Royal Park - Hendon - Albert Park',
-    suburbIds: ['royal-park-hendon'],
-    lever: 'Council asset, capital renewal',
-    detail:
-      'Renewal of the industrial drain with a gross pollutant trap and a bioretention basin at the outlet. Combines a flood function and a water quality function in one asset.',
-    evidence:
-      '15 reactive interventions in five years. Water quality exceedances recorded at the outlet in four of the last five wet seasons.',
-    tradeoff:
-      'Two objectives in one asset means two sets of thresholds. The flood design event and the treatment design event are not the same storm.',
-    horizon: 'Construction 2028 to 2030',
-  },
-  {
-    id: 'torrens-crossing',
-    title: 'Findon Road Torrens crossing raising',
-    hazard: 'flooding',
-    costLow: 8.2,
-    costHigh: 14.5,
-    scope: 'Flinders Park',
-    suburbIds: ['flinders-park'],
-    lever: 'Council road, capital, state co-funding sought',
-    detail:
-      'Raises the crossing above the 1:100yr Torrens level and keeps the north to south link open through a flood event.',
-    evidence:
-      '11 reactive interventions in five years. The crossing carries a bus route and the school peak, so a closure removes both.',
-    tradeoff:
-      'Raising the crossing displaces flow onto the adjacent floodplain. The properties affected by that displacement have not been consulted.',
-    horizon: 'Construction 2029 to 2031',
-  },
-  {
-    id: 'henley-seawall',
-    title: 'Henley Beach seawall renewal',
-    hazard: 'coastal',
-    costLow: 18.0,
-    costHigh: 31.5,
-    scope: 'Henley Beach',
-    suburbIds: ['henley-beach'],
-    lever: 'Shared council and state asset',
-    detail:
-      'Renewal of the primary erosion defence protecting the retail strip. The cost range is wide because the design life assumption is not settled.',
-    evidence:
-      '11 reactive interventions in five years. The structure is the only defence for a state significant destination.',
-    tradeoff:
-      'Hard structure holds this stretch and accelerates recession on the beaches either side of it. The cost does not include those consequences.',
-    horizon: 'Construction 2030 to 2033',
-  },
-  {
-    id: 'lake-gate',
-    title: 'West Lakes outlet gate automation',
-    hazard: 'coastal',
-    costLow: 3.6,
-    costHigh: 5.2,
-    scope: 'West Lakes',
-    suburbIds: ['west-lakes'],
-    lever: 'Council asset, capital',
-    detail:
-      'Automated level control with telemetry and a compound event operating rule covering surge coinciding with catchment rainfall.',
-    evidence:
-      '12 reactive interventions in five years. Manual operation currently depends on staff reaching the site during the event.',
-    tradeoff:
-      'Automation removes the staffing dependency and adds a power and communications dependency in its place.',
-    horizon: 'Delivery 2027',
-  },
-  {
-    id: 'wsud-retrofit',
-    title: 'Water sensitive streetscape retrofit, four corridors',
-    hazard: 'drought',
-    costLow: 4.2,
-    costHigh: 7.8,
-    scope: 'Woodville - Cheltenham, Seaton - Grange, Flinders Park',
-    suburbIds: ['woodville-cheltenham', 'seaton-grange', 'flinders-park'],
-    lever: 'Council road reserve, capital',
-    detail:
-      'Passive irrigation, permeable verges and tree pits along four corridors, so runoff supports canopy instead of loading the drainage network.',
-    evidence:
-      'The three suburbs combine below-average canopy with above-average drainage call volume, which points at the same underlying cause.',
-    tradeoff:
-      'Retrofits sit in the road reserve and reduce on-street parking. That is the objection that has stopped similar works before.',
-    horizon: 'Staged 2027 to 2032',
-  },
-  {
-    id: 'shade-stops',
-    title: 'Shade structures at 60 unshaded stops',
-    hazard: 'heat',
-    costLow: 1.1,
-    costHigh: 2.0,
-    scope: 'LGA wide',
-    suburbIds: ['hindmarsh-brompton', 'royal-park-hendon', 'woodville-cheltenham', 'seaton-grange'],
-    lever: 'Council and state shared infrastructure',
-    detail:
-      'Shelters or shade sails at the 60 stops with the highest boarding counts and no existing shade.',
-    evidence:
-      'Concentrated in SA1s where car ownership is lowest, so waiting at the stop is not optional for the people using it.',
-    tradeoff:
-      'Stop ownership is split with the state transport agency, which makes delivery slower than the cost suggests.',
-    horizon: 'Delivery 2026 to 2028',
-  },
-  {
-    id: 'growth-overlay',
-    title: 'Hazard overlay in the growth assessment pathway',
-    hazard: 'flooding',
-    costLow: 0.2,
-    costHigh: 0.5,
-    scope: 'LGA wide',
-    suburbIds: ['royal-park-hendon', 'hindmarsh-brompton', 'flinders-park'],
-    lever: 'Policy, no capital',
-    detail:
-      'Adds the modelled hazard extent as a mandatory consideration in the growth assessment pathway, so exposure is visible at approval rather than after.',
-    evidence:
-      'Dwellings in the approved pipeline currently sit inside the 1:100yr extent in two SA2s.',
-    tradeoff:
-      'Cheapest option on the list and the slowest to take effect, because it only touches approvals made from here on.',
-    horizon: 'Policy cycle 2026',
-  },
-  {
-    id: 'canopy-private',
-    title: 'Private land canopy incentive, low canopy SA1s',
-    hazard: 'heat',
-    costLow: 1.4,
-    costHigh: 2.6,
-    scope: 'Hindmarsh - Brompton, Royal Park - Hendon - Albert Park',
-    suburbIds: ['hindmarsh-brompton', 'royal-park-hendon'],
-    lever: 'Incentive, private land',
-    detail:
-      'Subsidised planting and a retention incentive on private allotments in the four SA1s below 10 percent canopy.',
-    evidence:
-      'Private land holds the majority of the canopy deficit, so a council land only programme cannot close it.',
-    tradeoff:
-      'Uptake on voluntary schemes has historically been below 20 percent, and it is lowest in renting households.',
-    horizon: 'Benefit from 2036',
-  },
-];
 
 /* ------------------------------------------------------------------ *
  * Numeric helpers
@@ -2015,14 +1791,6 @@ const IconAnalysis = ({ size = 17, className }: IconProps) => (
     <path d="M10 20V4" />
     <path d="M16 20v-7" />
     <path d="M22 20H2" />
-  </svg>
-);
-
-const IconInsights = ({ size = 17, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <path d="M9 18h6" />
-    <path d="M10 21h4" />
-    <path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5.9 1.2.9 1.9V16h5.4v-.3c0-.7.3-1.4.9-1.9A6 6 0 0 0 12 3Z" />
   </svg>
 );
 
@@ -4295,152 +4063,9 @@ function AnalysisTab({
   );
 }
 
-/* ------------------------------------------------------------------ *
- * Tab 4. Insights
- * ------------------------------------------------------------------ */
-
-interface InsightsTabProps {
-  selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-}
-
-function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
-  const [filter, setFilter] = useState<HazardId | 'all'>('all');
-  const [openId, setOpenId] = useState<string | null>(null);
-
-  const list = ACTIONS.filter((a) => filter === 'all' || a.hazard === filter);
-  const totalLow = list.reduce((n, a) => n + a.costLow, 0);
-  const totalHigh = list.reduce((n, a) => n + a.costHigh, 0);
-
-  return (
-    <div className="px-2.5 py-2.5">
-      <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
-        Actions that have been costed somewhere in the organisation. The list
-        is not ranked and nothing here is a recommendation. Cost, evidence and
-        trade-off are shown together so the ordering is yours to make.
-      </p>
-
-      <div className="mb-2 flex flex-wrap gap-1">
-        <button
-          onClick={() => setFilter('all')}
-          className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
-          style={
-            filter === 'all'
-              ? { borderColor: ACCENT, background: ACCENT, color: '#fff' }
-              : { borderColor: '#E2E7E7', color: '#4A5A59' }
-          }
-        >
-          All
-        </button>
-        {(['heat', 'flooding', 'coastal', 'drought'] as HazardId[]).map((h) => {
-          const on = filter === h;
-          const c = HAZARD_COLOR[h];
-          const Icon = HAZARD_ICON[h];
-          return (
-            <button
-              key={h}
-              onClick={() => setFilter(h)}
-              className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
-              style={
-                on
-                  ? { borderColor: c, background: c, color: '#fff' }
-                  : { borderColor: '#E2E7E7', color: '#4A5A59' }
-              }
-            >
-              <Icon size={12} />
-              {HAZARD_LABEL[h]}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mb-2 flex items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5">
-        <span className="text-[11.5px] uppercase tracking-[0.06em] text-ink-3">
-          {list.length} costed, indicative range
-        </span>
-        <span className="num text-[14.5px] font-semibold text-ink">
-          {fmtMoney(totalLow)} to {fmtMoney(totalHigh)}
-        </span>
-      </div>
-
-      <div className="space-y-1">
-        {list.map((a) => {
-          const isOpen = openId === a.id;
-          const c = HAZARD_COLOR[a.hazard];
-          const Icon = HAZARD_ICON[a.hazard];
-          return (
-            <div
-              key={a.id}
-              className="overflow-hidden rounded-[5px] border border-line bg-white"
-            >
-              <button
-                onClick={() => setOpenId(isOpen ? null : a.id)}
-                className="flex w-full items-start gap-1.5 px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
-              >
-                <span
-                  className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px]"
-                  style={{ background: withAlpha(c, 0.12), color: c }}
-                >
-                  <Icon size={13} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold leading-tight text-ink">
-                    {a.title}
-                  </span>
-                  <span className="mt-[2px] block truncate text-[11.5px] text-ink-3">
-                    {a.scope}
-                  </span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <span className="num block text-[13.5px] font-semibold leading-none text-ink">
-                    {fmtMoney(a.costLow)}
-                  </span>
-                  <span className="num mt-[2px] block text-[11.5px] text-ink-3">
-                    to {fmtMoney(a.costHigh)}
-                  </span>
-                </span>
-              </button>
-              {isOpen && (
-                <div className="fade-up border-t border-line px-2 py-1.5">
-                  <DetailRow label="What it is" value={a.detail} />
-                  <DetailRow label="Evidence behind it" value={a.evidence} />
-                  <DetailRow label="Trade-off" value={a.tradeoff} />
-                  <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span className="rounded-[3px] bg-surface-2 px-1 py-[1px] text-[11px] text-ink-2">
-                      {a.lever}
-                    </span>
-                    <span className="num rounded-[3px] bg-surface-2 px-1 py-[1px] text-[11px] text-ink-2">
-                      {a.horizon}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap gap-1">
-                    {a.suburbIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() => setSelectedId(id)}
-                        className={`rounded-[3px] border px-1 py-[1px] text-[11px] transition-colors ${
-                          selectedId === id
-                            ? 'border-accent text-accent'
-                            : 'border-line text-ink-3 hover:border-accent hover:text-accent'
-                        }`}
-                      >
-                        {SUBURB_BY_ID[id].name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <DemoDataNote className="mt-2.5" />
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ *
- * Tab 5. Help
+ * Tab. Help
  * ------------------------------------------------------------------ */
 
 function HelpTab() {
@@ -4483,9 +4108,15 @@ function HelpTab() {
         'What each tab does',
         <ul className="space-y-1.5">
           <li>
+            <span className="font-semibold text-ink">Portfolio.</span> The
+            real buildings register, categorised by building use and type,
+            with the same toggles the map's building markers respond to.
+          </li>
+          <li>
             <span className="font-semibold text-ink">Layers.</span> The full
-            catalogue, grouped into hazard, vulnerability and overlays. Global
-            opacity at the top, per-layer opacity on hover.
+            hazard, vulnerability and overlay catalogue, plus the same
+            building toggles as Portfolio under Assets. Global opacity at
+            the top, per-layer opacity on hover.
           </li>
           <li>
             <span className="font-semibold text-ink">Place.</span> One SA2 at a
@@ -4496,11 +4127,6 @@ function HelpTab() {
             <span className="font-semibold text-ink">Analysis.</span> Two
             measures side by side across the seven SA2s with data. Opening this tab
             also puts the map into compare mode.
-          </li>
-          <li>
-            <span className="font-semibold text-ink">Insights.</span> Costed
-            actions with the evidence and the trade-off attached. Not ranked,
-            not recommended.
           </li>
         </ul>,
       )}
@@ -5618,11 +5244,6 @@ const TAB_META: Record<
     subtitle: 'Two measures across the seven SA2s with data',
     icon: IconAnalysis,
   },
-  insights: {
-    title: 'Insights',
-    subtitle: 'Costed actions, evidence and trade-offs',
-    icon: IconInsights,
-  },
   help: {
     title: 'Help',
     subtitle: 'How to read this tool, and what it will not tell you',
@@ -5637,14 +5258,7 @@ function IconRail({
   tab: PanelTab;
   setTab: (t: PanelTab) => void;
 }) {
-  const order: PanelTab[] = [
-    'portfolio',
-    'layers',
-    'place',
-    'analysis',
-    'insights',
-    'help',
-  ];
+  const order: PanelTab[] = ['portfolio', 'layers', 'place', 'analysis', 'help'];
   return (
     <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
@@ -5657,7 +5271,7 @@ function IconRail({
         const meta = TAB_META[t];
         const Icon = meta.icon;
         const on = tab === t;
-        const separator = t === 'insights' || t === 'help';
+        const separator = t === 'help';
         return (
           <React.Fragment key={t}>
             {separator && <div className="my-1.5 h-px w-5 bg-line" />}
@@ -7050,12 +6664,6 @@ export default function App() {
               setSelectedId={setSelectedId}
               hoveredSuburb={hoveredSuburb}
               setHoveredSuburb={setHoveredSuburb}
-            />
-          )}
-          {panelTab === 'insights' && (
-            <InsightsTab
-              selectedId={selectedId}
-              setSelectedId={setSelectedId}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
