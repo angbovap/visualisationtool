@@ -29,6 +29,12 @@ import type { Map as LeafletMap, Layer as LeafletLayer } from 'leaflet';
 // column mapping and why the raw file needed collapsing before use.
 import ccsBuildingsRaw from '@/data/ccsBuildings.json';
 
+// Real ABS ASGS 2021 digital boundaries for the Charles Sturt SA3 (which
+// this council area maps to exactly, one LGA to one SA3). Fetched from
+// geo.abs.gov.au, not hand-drawn. See "Real SA1 / SA2 boundaries" below.
+import sa2BoundaryData from '@/data/sa2Boundaries.json';
+import sa1BoundaryData from '@/data/sa1Boundaries.json';
+
 /* ------------------------------------------------------------------ *
  * Types
  * ------------------------------------------------------------------ */
@@ -100,9 +106,12 @@ interface Suburb {
   id: string;
   name: string;
   sa2: string;
+  /** Real ABS boundary, looked up by sa2 code, not authored by hand. */
   path: LatLngTuple[];
+  /** Bounding-box centre and half-extent of the real polygon, used by the
+   *  schematic overlays (heat grid, PT stops, industrial blocks) that need
+   *  an approximate box rather than the polygon itself. */
   centroid: LatLngTuple;
-  /** Half-extent in degrees, used to derive the rectangle and the SA1 quadrants. */
   span: [number, number];
   pop2021: number;
   pop2041: ScenarioPair;
@@ -128,20 +137,8 @@ type RegionFamily =
   | 'violet'
   | 'indigo';
 
-interface SA1Area {
-  id: string;
-  parent: string;
-  code: string;
-  name: string;
-  path: LatLngTuple[];
-  centroid: LatLngTuple;
-  pop2021: number;
-  pop2041: number;
-  heatScore: number;
-  seifa: number;
-  treeCanopy: number;
-  family: RegionFamily;
-}
+// SA1Area is declared further down, next to the real boundary data it is
+// built from (see "SA1 sub-areas").
 
 interface PlanningRow {
   dwellings2021: number;
@@ -670,10 +667,10 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'heatScore',
     steps: [2021, 2031, 2036, 2041],
     watch: [
-      'Woodville-Cheltenham pairs the highest heat score with the third lowest SEIFA decile. Exposure and low response capacity coincide.',
+      'Woodville - Cheltenham pairs the highest heat score with the third lowest SEIFA decile. Exposure and low response capacity coincide.',
       'Canopy sits mostly on private land, so council levers reach a minority of the deficit.',
       'Unshaded stops matter most where car ownership is lowest.',
-      'Hindmarsh-Brompton has the lowest canopy in the LGA and the fastest dwelling growth.',
+      'Hindmarsh - Brompton has the lowest canopy in the LGA and the fastest dwelling growth.',
     ],
   },
   {
@@ -686,7 +683,7 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'growth',
     steps: [2021, 2031, 2041],
     watch: [
-      'Royal Park-Hendon carries the largest proportional growth on one of the lowest SEIFA deciles in the LGA.',
+      'Royal Park - Hendon - Albert Park carries the largest proportional growth on one of the lowest SEIFA deciles in the LGA.',
       'Capacity gap is zoned ceiling minus projected dwellings. A negative gap means zoning has to change or the projection will not land.',
       'Density and hazard exposure are being added in the same places, not different ones.',
       'Scenario choice moves the 2041 figure by up to 6 percent. It does not change the ranking.',
@@ -716,7 +713,7 @@ const BLUEPRINTS: Blueprint[] = [
     layers: ['zoning', 'industrial', 'heritage', 'flood-100'],
     rank: 'zonedGrossDensity',
     watch: [
-      'Hindmarsh-Brompton is zoned to 55 dwellings per hectare, the highest ceiling in the LGA, on the lowest canopy.',
+      'Hindmarsh - Brompton is zoned to 55 dwellings per hectare, the highest ceiling in the LGA, on the lowest canopy.',
       'Industrial land is the largest single contributor of runoff into the drainage network.',
       'Heritage listing narrows retrofit options on exactly the older stock that performs worst in heat.',
       'Zoned capacity is a ceiling, not a forecast. Take-up has run well below it.',
@@ -732,7 +729,7 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'employmentScore',
     steps: [2021, 2031, 2041],
     watch: [
-      'Hindmarsh-Brompton reaches the most jobs in 30 minutes. West Beach reaches the fewest.',
+      'Hindmarsh - Brompton reaches the most jobs in 30 minutes, well ahead of the rest of the LGA.',
       'Low frequency plus low car ownership is a dependency, and it shows up in evacuation planning.',
       'The coastal path is recreational, and it is also the only continuous north to south cycling link.',
       'Level crossings on the rail corridor are pinch points during flood response.',
@@ -745,29 +742,70 @@ const BLUEPRINT_BY_ID: Record<string, Blueprint> = Object.fromEntries(
 );
 
 /* ------------------------------------------------------------------ *
- * Geometry helpers
+ * Real SA1 / SA2 boundaries
+ *
+ * The City of Charles Sturt maps exactly onto one ABS SA3, "Charles
+ * Sturt" (code 40401), which in turn contains exactly eight SA2s and 257
+ * SA1s under ASGS 2021. Fetched directly from the ABS's own ArcGIS
+ * service (geo.abs.gov.au, ASGS2021/SA2 and ASGS2021/SA1 layers) rather
+ * than traced or estimated, so the shapes here are the same ones the ABS
+ * publishes, not an approximation of them.
+ *
+ * That lookup also corrected two things this tool had wrong. "West
+ * Beach" was carried as a Charles Sturt SA2 with five attached assets;
+ * the real West Beach SA2 (404031109) sits in West Torrens, a different
+ * council, and has been removed along with everything that depended on
+ * it. "Beverley" (404011090) is a real Charles Sturt SA2 that had no
+ * entry at all. Its boundary is drawn like every other SA2, but it
+ * carries no population, hazard or asset data, because none has been
+ * sourced for it, and it is excluded from every chart, ranking and
+ * profile that the other seven appear in until that changes.
  * ------------------------------------------------------------------ */
 
-/** Axis-aligned rectangle around a centroid, in Leaflet ring order. */
-function rect(
-  lat: number,
-  lng: number,
-  dLat: number,
-  dLng: number,
-): LatLngTuple[] {
-  return [
-    [lat - dLat, lng - dLng],
-    [lat - dLat, lng + dLng],
-    [lat + dLat, lng + dLng],
-    [lat + dLat, lng - dLng],
-  ];
+interface RealBoundary {
+  code: string;
+  name?: string;
+  sa2Code?: string;
+  areaSqKm: number;
+  ring: LatLngTuple[];
+}
+
+const SA2_BOUNDARIES = sa2BoundaryData as RealBoundary[];
+const SA1_BOUNDARIES = sa1BoundaryData as RealBoundary[];
+
+const SA2_BOUNDARY_BY_CODE: Record<string, RealBoundary> = Object.fromEntries(
+  SA2_BOUNDARIES.map((b) => [b.code, b]),
+);
+
+const BEVERLEY_SA2_CODE = '404011090';
+const BEVERLEY_ID = 'beverley';
+
+/** Bounding-box centre and half-extent of a ring, in place of a hand-picked
+ *  centroid. Schematic overlays (the heat grid, PT stop scatter, industrial
+ *  and zoning blocks) use this as an approximate box, they never draw the
+ *  ring itself. */
+function ringBBox(ring: LatLngTuple[]): { centroid: LatLngTuple; span: [number, number] } {
+  let latLo = Infinity, latHi = -Infinity, lngLo = Infinity, lngHi = -Infinity;
+  for (const [lat, lng] of ring) {
+    if (lat < latLo) latLo = lat;
+    if (lat > latHi) latHi = lat;
+    if (lng < lngLo) lngLo = lng;
+    if (lng > lngHi) lngHi = lng;
+  }
+  return {
+    centroid: [(latLo + latHi) / 2, (lngLo + lngHi) / 2],
+    span: [(latHi - latLo) / 2, (lngHi - lngLo) / 2],
+  };
 }
 
 /* ------------------------------------------------------------------ *
  * Suburb data
  *
- * Eight SA2s. Scores run 1 to 5 and are relative within the LGA, not
- * absolute. SEIFA is a national decile where 1 is most disadvantaged.
+ * The seven SA2s below carry indicative demonstration attributes, shaped
+ * to the real geography now used for their boundary, but not sourced
+ * from council or ABS records. Scores run 1 to 5 and are relative within
+ * the LGA, not absolute. SEIFA is a national decile where 1 is most
+ * disadvantaged.
  *
  * Assets carry more than a location. `purpose` and `users` are recorded
  * because the consequence of losing an asset depends on what it does and
@@ -775,15 +813,13 @@ function rect(
  * that turns a maintenance conversation into a renewal one.
  * ------------------------------------------------------------------ */
 
-type SuburbSeed = Omit<Suburb, 'path'>;
+type SuburbSeed = Omit<Suburb, 'path' | 'centroid' | 'span'>;
 
 const SUBURB_SEED: SuburbSeed[] = [
   {
     id: 'woodville-cheltenham',
-    name: 'Woodville-Cheltenham',
-    sa2: '406031127',
-    centroid: [-34.848, 138.561],
-    span: [0.0155, 0.0205],
+    name: 'Woodville - Cheltenham',
+    sa2: '404011097',
     pop2021: 18420,
     pop2041: { ssp245: 23140, ssp585: 24460 },
     densityPerKm2: 2180,
@@ -861,9 +897,7 @@ const SUBURB_SEED: SuburbSeed[] = [
   {
     id: 'west-lakes',
     name: 'West Lakes',
-    sa2: '406031126',
-    centroid: [-34.852, 138.501],
-    span: [0.0145, 0.019],
+    sa2: '404011096',
     pop2021: 12960,
     pop2041: { ssp245: 15080, ssp585: 15640 },
     densityPerKm2: 1620,
@@ -940,10 +974,8 @@ const SUBURB_SEED: SuburbSeed[] = [
   },
   {
     id: 'seaton-grange',
-    name: 'Seaton-Grange',
-    sa2: '406031124',
-    centroid: [-34.891, 138.513],
-    span: [0.015, 0.0185],
+    name: 'Seaton - Grange',
+    sa2: '404011095',
     pop2021: 14310,
     pop2041: { ssp245: 17260, ssp585: 17980 },
     densityPerKm2: 1870,
@@ -1020,9 +1052,7 @@ const SUBURB_SEED: SuburbSeed[] = [
   {
     id: 'henley-beach',
     name: 'Henley Beach',
-    sa2: '406031122',
-    centroid: [-34.926, 138.508],
-    span: [0.0135, 0.017],
+    sa2: '404011092',
     pop2021: 11240,
     pop2041: { ssp245: 13010, ssp585: 13420 },
     densityPerKm2: 1740,
@@ -1098,91 +1128,9 @@ const SUBURB_SEED: SuburbSeed[] = [
     ],
   },
   {
-    id: 'west-beach',
-    name: 'West Beach',
-    sa2: '406031123',
-    centroid: [-34.951, 138.514],
-    span: [0.0145, 0.0185],
-    pop2021: 6580,
-    pop2041: { ssp245: 7940, ssp585: 8210 },
-    densityPerKm2: 980,
-    seifa: 8,
-    heatScore: 2,
-    floodScore: 3,
-    coastalScore: 4,
-    droughtScore: 2,
-    treeCanopy: 21,
-    greenSpace: 28,
-    employmentScore: 2,
-    assets: [
-      {
-        name: 'West Beach dune system',
-        hazards: ['coastal', 'drought'],
-        value: '$12.9M',
-        position: { lat: -34.95, lng: 138.505 },
-        category: 'coastal',
-        users: 'Beach users, caravan park guests, surf lifesaving',
-        purpose:
-          'Natural erosion buffer and the cheapest coastal defence council holds. Replacing it with hard structure costs several times more.',
-        repairs5yr: 6,
-        significance: 'district',
-      },
-      {
-        name: 'Tapleys Hill Road',
-        hazards: ['flooding', 'heat'],
-        value: '$15.4M',
-        position: { lat: -34.953, lng: 138.52 },
-        category: 'road',
-        users: 'Airport traffic, commuters, freight',
-        purpose:
-          'North to south arterial past the airport. State significance, so a closure has consequences well outside the LGA.',
-        repairs5yr: 9,
-        significance: 'state',
-      },
-      {
-        name: 'West Beach Reserve',
-        hazards: ['heat', 'drought'],
-        value: '$5.6M',
-        position: { lat: -34.948, lng: 138.512 },
-        category: 'open-space',
-        users: 'Sports clubs, caravan park guests, weekend recreation',
-        purpose:
-          'District recreation reserve and event ground. Recreational purpose, seasonal peak use.',
-        repairs5yr: 3,
-        significance: 'district',
-      },
-      {
-        name: 'Barcoo coastal outlet',
-        hazards: ['flooding', 'coastal'],
-        value: '$8.7M',
-        position: { lat: -34.945, lng: 138.507 },
-        category: 'stormwater',
-        users: 'The western catchment',
-        purpose:
-          'Coastal outfall. Backs up when a high tide coincides with rainfall, which is the compound event that matters here.',
-        repairs5yr: 10,
-        significance: 'district',
-      },
-      {
-        name: 'West Beach Surf Life Saving Club',
-        hazards: ['coastal', 'heat'],
-        value: '$3.2M',
-        position: { lat: -34.952, lng: 138.507 },
-        category: 'building',
-        users: 'Surf lifesaving volunteers, summer patrols',
-        purpose:
-          'Lifesaving base and the patrol point for the southern beaches. Sits inside the erosion allowance.',
-        repairs5yr: 4,
-        significance: 'local',
-      },
-    ],
-  },
-  {
     id: 'royal-park-hendon',
-    name: 'Royal Park-Hendon',
-    sa2: '406031125',
-    centroid: [-34.886, 138.552],
-    span: [0.014, 0.0175],
+    name: 'Royal Park - Hendon - Albert Park',
+    sa2: '404011094',
     pop2021: 9870,
     pop2041: { ssp245: 15340, ssp585: 16120 },
     densityPerKm2: 1490,
@@ -1259,10 +1207,8 @@ const SUBURB_SEED: SuburbSeed[] = [
   },
   {
     id: 'hindmarsh-brompton',
-    name: 'Hindmarsh-Brompton',
-    sa2: '406031121',
-    centroid: [-34.92, 138.58],
-    span: [0.013, 0.0165],
+    name: 'Hindmarsh - Brompton',
+    sa2: '404011093',
     pop2021: 10480,
     pop2041: { ssp245: 15180, ssp585: 15980 },
     densityPerKm2: 2640,
@@ -1352,9 +1298,7 @@ const SUBURB_SEED: SuburbSeed[] = [
   {
     id: 'flinders-park',
     name: 'Flinders Park',
-    sa2: '406031128',
-    centroid: [-34.935, 138.553],
-    span: [0.0125, 0.016],
+    sa2: '404011091',
     pop2021: 8930,
     pop2041: { ssp245: 10740, ssp585: 11120 },
     densityPerKm2: 1930,
@@ -1431,124 +1375,83 @@ const SUBURB_SEED: SuburbSeed[] = [
   },
 ];
 
-const SUBURBS: Suburb[] = SUBURB_SEED.map((s) => ({
-  ...s,
-  path: rect(s.centroid[0], s.centroid[1], s.span[0], s.span[1]),
-}));
+const SUBURBS: Suburb[] = SUBURB_SEED.map((s) => {
+  const boundary = SA2_BOUNDARY_BY_CODE[s.sa2];
+  if (!boundary) {
+    throw new Error(`No ABS boundary found for SA2 code ${s.sa2} (${s.name})`);
+  }
+  const { centroid, span } = ringBBox(boundary.ring);
+  return { ...s, path: boundary.ring, centroid, span };
+});
 
 const SUBURB_BY_ID: Record<string, Suburb> = Object.fromEntries(
   SUBURBS.map((s) => [s.id, s]),
 );
 
+const SA2_CODE_TO_SUBURB_ID: Record<string, string> = Object.fromEntries(
+  SUBURBS.map((s) => [s.sa2, s.id]),
+);
+SA2_CODE_TO_SUBURB_ID[BEVERLEY_SA2_CODE] = BEVERLEY_ID;
+
 /* ------------------------------------------------------------------ *
  * SA1 sub-areas
  *
- * Four per SA2, laid out as quadrants of the parent rectangle. SA1 is the
- * scale at which disadvantage and canopy actually vary. An SA2 average can
- * hide a pocket that is two deciles below the suburb figure, which is why
- * the boundary toggle exists at all.
+ * All 257 real ASGS 2021 SA1s inside the eight SA2s above, one polygon
+ * per SA1, no invented shape or count standing in for them. An earlier
+ * version of this tool modelled exactly four synthetic quadrants per
+ * SA2, 32 in total, with population and hazard figures made up to fit
+ * that grid. Real SA1s number 257 and range from 14 to 46 per SA2, so
+ * that model could not be patched, it had to go.
+ *
+ * No demographic value here is real either, because none has been
+ * sourced at SA1 resolution for any of the eight SA2s, Beverley
+ * included. SA1 polygons are coloured only by which parent SA2 they sit
+ * inside, `family`, which is a fact about the real geometry, not a
+ * measurement. Selecting one still opens its parent SA2's profile, real
+ * data or the explicit absence of it.
  * ------------------------------------------------------------------ */
 
-interface SA1Seed {
-  parent: string;
-  /** Quadrant: 0 north west, 1 north east, 2 south west, 3 south east. */
-  q: 0 | 1 | 2 | 3;
-  name: string;
-  /** Share of the parent SA2 population. The four shares sum to 1. */
-  share: number;
-  /** Multiplier on the parent growth ratio. Growth is not evenly spread. */
-  growth: number;
-  heatScore: number;
-  seifa: number;
-  treeCanopy: number;
+interface SA1Area {
+  /** Real SA1 code, e.g. "40401109501". */
+  id: string;
+  /** App suburb id of the parent SA2, or BEVERLEY_ID. */
+  parentId: string;
+  path: LatLngTuple[];
+  centroid: LatLngTuple;
+  family: RegionFamily;
 }
 
+/** One tint per real SA2, purely to tell adjoining SA1s apart on the map. */
 const SA1_FAMILY: Record<string, RegionFamily> = {
   'woodville-cheltenham': 'amber',
   'west-lakes': 'blue',
   'seaton-grange': 'cyan',
   'henley-beach': 'teal',
-  'west-beach': 'emerald',
+  [BEVERLEY_ID]: 'emerald',
   'royal-park-hendon': 'rose',
   'hindmarsh-brompton': 'violet',
   'flinders-park': 'indigo',
 };
 
-const SA1_SEED: SA1Seed[] = [
-  { parent: 'woodville-cheltenham', q: 0, name: 'Cheltenham North', share: 0.22, growth: 1.35, heatScore: 4, seifa: 4, treeCanopy: 15 },
-  { parent: 'woodville-cheltenham', q: 1, name: 'Cheltenham Park', share: 0.24, growth: 0.9, heatScore: 4, seifa: 5, treeCanopy: 18 },
-  { parent: 'woodville-cheltenham', q: 2, name: 'Woodville West', share: 0.29, growth: 1.1, heatScore: 5, seifa: 2, treeCanopy: 8 },
-  { parent: 'woodville-cheltenham', q: 3, name: 'Woodville Central', share: 0.25, growth: 0.75, heatScore: 5, seifa: 2, treeCanopy: 9 },
-
-  { parent: 'west-lakes', q: 0, name: 'Lake North', share: 0.26, growth: 1.05, heatScore: 2, seifa: 8, treeCanopy: 22 },
-  { parent: 'west-lakes', q: 1, name: 'Lake Shore East', share: 0.22, growth: 0.85, heatScore: 3, seifa: 9, treeCanopy: 24 },
-  { parent: 'west-lakes', q: 2, name: 'Delfin Island', share: 0.19, growth: 1.2, heatScore: 3, seifa: 8, treeCanopy: 17 },
-  { parent: 'west-lakes', q: 3, name: 'West Lakes South', share: 0.33, growth: 1.0, heatScore: 4, seifa: 5, treeCanopy: 14 },
-
-  { parent: 'seaton-grange', q: 0, name: 'Grange North', share: 0.23, growth: 0.9, heatScore: 3, seifa: 6, treeCanopy: 19 },
-  { parent: 'seaton-grange', q: 1, name: 'Seaton North', share: 0.27, growth: 1.25, heatScore: 4, seifa: 3, treeCanopy: 13 },
-  { parent: 'seaton-grange', q: 2, name: 'Grange South', share: 0.21, growth: 0.8, heatScore: 3, seifa: 7, treeCanopy: 21 },
-  { parent: 'seaton-grange', q: 3, name: 'Seaton East', share: 0.29, growth: 1.1, heatScore: 5, seifa: 2, treeCanopy: 9 },
-
-  { parent: 'henley-beach', q: 0, name: 'Henley North', share: 0.24, growth: 0.95, heatScore: 2, seifa: 9, treeCanopy: 20 },
-  { parent: 'henley-beach', q: 1, name: 'Henley East', share: 0.28, growth: 1.15, heatScore: 4, seifa: 6, treeCanopy: 13 },
-  { parent: 'henley-beach', q: 2, name: 'Henley Square', share: 0.21, growth: 1.05, heatScore: 3, seifa: 8, treeCanopy: 15 },
-  { parent: 'henley-beach', q: 3, name: 'Henley South', share: 0.27, growth: 0.9, heatScore: 3, seifa: 8, treeCanopy: 19 },
-
-  { parent: 'west-beach', q: 0, name: 'West Beach North', share: 0.27, growth: 1.1, heatScore: 2, seifa: 8, treeCanopy: 23 },
-  { parent: 'west-beach', q: 1, name: 'Airport Edge', share: 0.19, growth: 1.3, heatScore: 3, seifa: 6, treeCanopy: 12 },
-  { parent: 'west-beach', q: 2, name: 'West Beach Dunes', share: 0.24, growth: 0.85, heatScore: 1, seifa: 9, treeCanopy: 27 },
-  { parent: 'west-beach', q: 3, name: 'West Beach South', share: 0.3, growth: 0.95, heatScore: 2, seifa: 8, treeCanopy: 21 },
-
-  { parent: 'royal-park-hendon', q: 0, name: 'Hendon North', share: 0.21, growth: 1.4, heatScore: 4, seifa: 2, treeCanopy: 8 },
-  { parent: 'royal-park-hendon', q: 1, name: 'Royal Park North', share: 0.26, growth: 1.15, heatScore: 4, seifa: 3, treeCanopy: 12 },
-  { parent: 'royal-park-hendon', q: 2, name: 'Hendon Industrial Edge', share: 0.18, growth: 1.6, heatScore: 5, seifa: 1, treeCanopy: 5 },
-  { parent: 'royal-park-hendon', q: 3, name: 'Royal Park South', share: 0.35, growth: 0.85, heatScore: 3, seifa: 4, treeCanopy: 14 },
-
-  { parent: 'hindmarsh-brompton', q: 0, name: 'Bowden', share: 0.29, growth: 1.75, heatScore: 5, seifa: 6, treeCanopy: 6 },
-  { parent: 'hindmarsh-brompton', q: 1, name: 'Brompton North', share: 0.22, growth: 1.2, heatScore: 5, seifa: 4, treeCanopy: 8 },
-  { parent: 'hindmarsh-brompton', q: 2, name: 'Hindmarsh West', share: 0.24, growth: 0.8, heatScore: 4, seifa: 5, treeCanopy: 11 },
-  { parent: 'hindmarsh-brompton', q: 3, name: 'Hindmarsh Village', share: 0.25, growth: 0.7, heatScore: 5, seifa: 4, treeCanopy: 10 },
-
-  { parent: 'flinders-park', q: 0, name: 'Torrens Edge', share: 0.23, growth: 1.1, heatScore: 3, seifa: 7, treeCanopy: 19 },
-  { parent: 'flinders-park', q: 1, name: 'Flinders Park North', share: 0.26, growth: 1.0, heatScore: 4, seifa: 6, treeCanopy: 14 },
-  { parent: 'flinders-park', q: 2, name: 'Findon Road West', share: 0.24, growth: 1.15, heatScore: 5, seifa: 4, treeCanopy: 10 },
-  { parent: 'flinders-park', q: 3, name: 'Flinders Park South', share: 0.27, growth: 0.8, heatScore: 4, seifa: 6, treeCanopy: 13 },
-];
-
-/** Quadrant centre offsets, as a fraction of the parent half-extent. */
-const QUADRANT_OFFSET: Record<number, [number, number]> = {
-  0: [0.5, -0.5],
-  1: [0.5, 0.5],
-  2: [-0.5, -0.5],
-  3: [-0.5, 0.5],
-};
-
-const SA1S: SA1Area[] = SA1_SEED.map((seed, i) => {
-  const parent = SUBURB_BY_ID[seed.parent];
-  const [fLat, fLng] = QUADRANT_OFFSET[seed.q];
-  const dLat = parent.span[0] / 2;
-  const dLng = parent.span[1] / 2;
-  const lat = parent.centroid[0] + fLat * parent.span[0];
-  const lng = parent.centroid[1] + fLng * parent.span[1];
-  const pop2021 = Math.round(parent.pop2021 * seed.share);
-  const parentRatio = parent.pop2041.ssp245 / parent.pop2021;
-  const pop2041 = Math.round(pop2021 * (1 + (parentRatio - 1) * seed.growth));
+const SA1S: SA1Area[] = SA1_BOUNDARIES.map((b) => {
+  const parentId = SA2_CODE_TO_SUBURB_ID[b.sa2Code ?? ''];
+  if (!parentId) {
+    throw new Error(`SA1 ${b.code} has no matching SA2 for code ${b.sa2Code}`);
+  }
+  const { centroid } = ringBBox(b.ring);
   return {
-    id: `${seed.parent}-sa1-${seed.q + 1}`,
-    parent: seed.parent,
-    code: `${parent.sa2}0${seed.q + 1}`,
-    name: seed.name,
-    path: rect(lat, lng, dLat * 0.94, dLng * 0.94),
-    centroid: [lat, lng] as LatLngTuple,
-    pop2021,
-    pop2041,
-    heatScore: seed.heatScore,
-    seifa: seed.seifa,
-    treeCanopy: seed.treeCanopy,
-    family: SA1_FAMILY[seed.parent],
+    id: b.code,
+    parentId,
+    path: b.ring,
+    centroid,
+    family: SA1_FAMILY[parentId],
   };
 });
+
+const SA1_BY_PARENT: Record<string, SA1Area[]> = {};
+for (const a of SA1S) {
+  (SA1_BY_PARENT[a.parentId] ??= []).push(a);
+}
 
 /* ------------------------------------------------------------------ *
  * Dwelling and planning data
@@ -1595,15 +1498,6 @@ const PLANNING: Record<string, PlanningRow> = {
     zonedGrossDensity: 30,
     zoningLabel: 'Established Neighbourhood / Business Neighbourhood',
   },
-  'west-beach': {
-    dwellings2021: 2870,
-    dwellings2031: { ssp245: 3150, ssp585: 3190 },
-    dwellings2041: { ssp245: 3460, ssp585: 3580 },
-    totalHa: 672,
-    residentialHa: 170,
-    zonedGrossDensity: 22,
-    zoningLabel: 'Suburban Neighbourhood / Recreation',
-  },
   'royal-park-hendon': {
     dwellings2021: 4210,
     dwellings2031: { ssp245: 5140, ssp585: 5290 },
@@ -1648,7 +1542,7 @@ const ACTIONS: Action[] = [
     hazard: 'heat',
     costLow: 1.8,
     costHigh: 3.2,
-    scope: 'Woodville-Cheltenham',
+    scope: 'Woodville - Cheltenham',
     suburbIds: ['woodville-cheltenham'],
     lever: 'Council land, direct delivery',
     detail:
@@ -1688,7 +1582,7 @@ const ACTIONS: Action[] = [
     hazard: 'flooding',
     costLow: 12.4,
     costHigh: 18.9,
-    scope: 'Hindmarsh-Brompton',
+    scope: 'Hindmarsh - Brompton',
     suburbIds: ['hindmarsh-brompton'],
     lever: 'Council asset, capital renewal',
     detail:
@@ -1705,7 +1599,7 @@ const ACTIONS: Action[] = [
     hazard: 'flooding',
     costLow: 6.8,
     costHigh: 9.4,
-    scope: 'Royal Park-Hendon',
+    scope: 'Royal Park - Hendon - Albert Park',
     suburbIds: ['royal-park-hendon'],
     lever: 'Council asset, capital renewal',
     detail:
@@ -1751,23 +1645,6 @@ const ACTIONS: Action[] = [
     horizon: 'Construction 2030 to 2033',
   },
   {
-    id: 'dune-renourish',
-    title: 'West Beach dune renourishment programme',
-    hazard: 'coastal',
-    costLow: 2.4,
-    costHigh: 4.1,
-    scope: 'West Beach',
-    suburbIds: ['west-beach'],
-    lever: 'Natural asset, recurrent programme',
-    detail:
-      'Recurrent sand placement and revegetation maintaining the dune buffer. Recurrent rather than capital, so it competes with operating budgets each year.',
-    evidence:
-      'The dune is the cheapest coastal defence in the portfolio. Replacing the same protection with hard structure costs several times more.',
-    tradeoff:
-      'Recurrent funding is the first thing cut in a tight year, and the buffer degrades faster than it rebuilds.',
-    horizon: 'Recurrent from 2026',
-  },
-  {
     id: 'lake-gate',
     title: 'West Lakes outlet gate automation',
     hazard: 'coastal',
@@ -1790,7 +1667,7 @@ const ACTIONS: Action[] = [
     hazard: 'drought',
     costLow: 4.2,
     costHigh: 7.8,
-    scope: 'Woodville-Cheltenham, Seaton-Grange, Flinders Park',
+    scope: 'Woodville - Cheltenham, Seaton - Grange, Flinders Park',
     suburbIds: ['woodville-cheltenham', 'seaton-grange', 'flinders-park'],
     lever: 'Council road reserve, capital',
     detail:
@@ -1841,7 +1718,7 @@ const ACTIONS: Action[] = [
     hazard: 'heat',
     costLow: 1.4,
     costHigh: 2.6,
-    scope: 'Hindmarsh-Brompton, Royal Park-Hendon',
+    scope: 'Hindmarsh - Brompton, Royal Park - Hendon - Albert Park',
     suburbIds: ['hindmarsh-brompton', 'royal-park-hendon'],
     lever: 'Incentive, private land',
     detail:
@@ -1913,11 +1790,6 @@ const fmtMoney = (m: number) =>
 function popAt(s: Suburb, year: number, sc: Scenario): number {
   const t = clamp((year - 2021) / 20, 0, 1);
   return Math.round(lerp(s.pop2021, s.pop2041[sc], t));
-}
-
-function sa1PopAt(a: SA1Area, year: number): number {
-  const t = clamp((year - 2021) / 20, 0, 1);
-  return Math.round(lerp(a.pop2021, a.pop2041, t));
 }
 
 /** Dwellings, anchored on the 2021, 2031 and 2041 rows rather than a straight line. */
@@ -2026,7 +1898,7 @@ function formatLayerValue(layerId: string, raw: number): string {
   }
 }
 
-/** Min and max across the eight SA2s, so the ramp always uses its full range. */
+/** Min and max across the SA2s carrying data, so the ramp always uses its full range. */
 function layerExtent(
   layerId: string,
   year: number,
@@ -2049,73 +1921,6 @@ function normLayerValue(
   const [lo, hi] = layerExtent(layerId, year, sc);
   if (hi - lo < 1e-9) return 0.5;
   return clamp((raw - lo) / (hi - lo), 0, 1);
-}
-
-/** SA1 level values, for the layers that genuinely vary below the SA2. */
-function getSA1LayerValue(
-  layerId: string,
-  a: SA1Area,
-  year: number,
-  sc: Scenario,
-): { raw: number; norm: number } | null {
-  const parent = SUBURB_BY_ID[a.parent];
-  switch (layerId) {
-    case 'pop-2021': {
-      const vals = SA1S.map((x) => x.pop2021);
-      const lo = Math.min(...vals);
-      const hi = Math.max(...vals);
-      return { raw: a.pop2021, norm: clamp((a.pop2021 - lo) / (hi - lo), 0, 1) };
-    }
-    case 'pop-2041': {
-      const raw = sa1PopAt(a, year);
-      const vals = SA1S.map((x) => sa1PopAt(x, year));
-      const lo = Math.min(...vals);
-      const hi = Math.max(...vals);
-      return { raw, norm: clamp((raw - lo) / (hi - lo || 1), 0, 1) };
-    }
-    case 'pop-change': {
-      const raw = (sa1PopAt(a, year) / a.pop2021 - 1) * 100;
-      const vals = SA1S.map((x) => (sa1PopAt(x, year) / x.pop2021 - 1) * 100);
-      const lo = Math.min(...vals);
-      const hi = Math.max(...vals);
-      return { raw, norm: clamp((raw - lo) / (hi - lo || 1), 0, 1) };
-    }
-    case 'seifa':
-      return { raw: a.seifa, norm: (10 - a.seifa) / 9 };
-    case 'tree-canopy': {
-      const vals = SA1S.map((x) => x.treeCanopy);
-      const lo = Math.min(...vals);
-      const hi = Math.max(...vals);
-      return {
-        raw: a.treeCanopy,
-        norm: clamp((a.treeCanopy - lo) / (hi - lo || 1), 0, 1),
-      };
-    }
-    case 'heat-vuln': {
-      const score = (x: SA1Area) => {
-        const base =
-          x.heatScore * 13 + (22 - x.treeCanopy) * 0.9 + (10 - x.seifa) * 1.6;
-        return clamp(
-          base * (1 + ((year - 2021) / 20) * (sc === 'ssp585' ? 0.22 : 0.13)),
-          0,
-          100,
-        );
-      };
-      const raw = score(a);
-      const vals = SA1S.map(score);
-      const lo = Math.min(...vals);
-      const hi = Math.max(...vals);
-      return { raw, norm: clamp((raw - lo) / (hi - lo || 1), 0, 1) };
-    }
-    default: {
-      // Layers that are only modelled at SA2 fall back to the parent value,
-      // and the legend says so rather than implying a resolution it lacks.
-      const raw = rawLayerValue(layerId, parent, year, sc);
-      return raw
-        ? { raw, norm: normLayerValue(layerId, parent, year, sc) }
-        : null;
-    }
-  }
 }
 
 function choroplethColor(layerId: string, value: number): string {
@@ -2824,26 +2629,24 @@ function MapView(props: MapViewProps) {
     const secondary = polySurfaces[1];
 
     if (sa1Mode) {
+      // No layer is modelled at SA1 resolution, so SA1 fill never varies by
+      // the active layer, only by which real SA2 the polygon sits inside.
+      // Saying nothing here would look like an oversight; the legend below
+      // states this plainly instead.
       for (const a of SA1S) {
-        const v = primary ? getSA1LayerValue(primary.id, a, year, sc) : null;
-        const fill = v
-          ? choroplethColor(primary.id, v.norm)
-          : FAMILY_COLOR[a.family];
-        const isSel = selectedId === a.parent;
+        const isSel = selectedId === a.parentId;
         push(
           L.polygon(a.path, {
             color: isSel ? ACCENT : darkBase ? '#EAF2F1' : '#40514F',
             weight: isSel ? 1.6 : 0.5,
             opacity: 0.85,
-            fillColor: fill,
-            fillOpacity: v
-              ? opacityFor(primary.id) * 0.82
-              : overlayOpacity * 0.42,
+            fillColor: FAMILY_COLOR[a.family],
+            fillOpacity: overlayOpacity * 0.42,
             interactive: true,
           })
-            .on('mouseover', () => setHoveredSuburb(a.parent))
+            .on('mouseover', () => setHoveredSuburb(a.parentId))
             .on('mouseout', () => setHoveredSuburb(null))
-            .on('click', () => onSelectSuburb(a.parent)),
+            .on('click', () => onSelectSuburb(a.parentId)),
         );
       }
     } else {
@@ -2866,6 +2669,29 @@ function MapView(props: MapViewProps) {
             .on('mouseover', () => setHoveredSuburb(s.id))
             .on('mouseout', () => setHoveredSuburb(null))
             .on('click', () => onSelectSuburb(s.id)),
+        );
+      }
+
+      // Beverley is a real Charles Sturt SA2 with no attribute data, drawn
+      // from the same ABS boundary as the other seven so the SA2 count and
+      // shape stay correct. It never carries a choropleth fill, there is
+      // nothing sourced to colour it with.
+      const beverley = SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE];
+      if (beverley) {
+        const isSel = selectedId === BEVERLEY_ID;
+        push(
+          L.polygon(beverley.ring, {
+            color: isSel ? ACCENT : darkBase ? '#EAF2F1' : '#40514F',
+            weight: isSel ? 1.8 : boundsMode === 'none' ? 0 : 0.7,
+            opacity: boundsMode === 'none' && !isSel ? 0 : 0.8,
+            fillColor: '#9FB0AE',
+            fillOpacity: overlayOpacity * 0.14,
+            dashArray: isSel ? undefined : '4 3',
+            interactive: true,
+          })
+            .on('mouseover', () => setHoveredSuburb(BEVERLEY_ID))
+            .on('mouseout', () => setHoveredSuburb(null))
+            .on('click', () => onSelectSuburb(BEVERLEY_ID)),
         );
       }
     }
@@ -3170,9 +2996,15 @@ function MapView(props: MapViewProps) {
 
     /* Boundary outlines sit above every fill so they stay legible. */
     if (boundsMode === 'sa2') {
-      for (const s of SUBURBS) {
+      const outlineRings = [
+        ...SUBURBS.map((s) => s.path),
+        ...(SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE]
+          ? [SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE].ring]
+          : []),
+      ];
+      for (const ring of outlineRings) {
         push(
-          L.polygon(s.path, {
+          L.polygon(ring, {
             fill: false,
             color: darkBase ? '#F2F7F6' : '#2B3C3A',
             weight: 0.9,
@@ -3348,8 +3180,10 @@ function MapView(props: MapViewProps) {
         </div>
       </div>
 
-      {/* Selected suburb pill. */}
-      {selected && (
+      {/* Selected suburb pill. Beverley has no Suburb record (no attribute
+          data has been sourced for it), so it gets its own pill straight
+          off the real boundary rather than showing nothing. */}
+      {(selected || selectedId === BEVERLEY_ID) && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
             className="fade-up flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-[0_2px_10px_rgba(20,32,31,0.12)]"
@@ -3363,9 +3197,16 @@ function MapView(props: MapViewProps) {
               style={{ background: blueprintOpen ? blueprintAccent : ACCENT }}
             />
             <span className="text-[10px] font-semibold text-ink">
-              {selected.name}
+              {selected ? selected.name : 'Beverley'}
             </span>
-            <span className="num text-[9px] text-ink-3">{selected.sa2}</span>
+            <span className="num text-[9px] text-ink-3">
+              {selected ? selected.sa2 : BEVERLEY_SA2_CODE}
+            </span>
+            {!selected && (
+              <span className="rounded-[3px] bg-surface-2 px-1 text-[8px] text-ink-3">
+                no data sourced
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -3440,8 +3281,26 @@ function MapView(props: MapViewProps) {
         </div>
       )}
 
-      {/* Ramp legend for whatever surface is painted. */}
-      {legendLayers.length > 0 && !hovered && (
+      {/* SA1 mode never carries a choropleth, no layer is modelled at that
+          resolution, so it gets its own legend rather than a ramp that
+          would misstate what the fill actually shows. */}
+      {sa1Mode && !hovered && (
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[190px]">
+          <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
+            <div className="text-[9px] font-semibold text-ink">
+              Real SA1 boundaries
+            </div>
+            <div className="mt-1 text-[8px] leading-[1.5] text-ink-3">
+              257 ABS ASGS 2021 areas, tinted by which SA2 they sit inside.
+              No layer is modelled at SA1 resolution, so fill colour carries
+              no other value here.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Ramp legend for whatever surface is painted, SA2 view only. */}
+      {legendLayers.length > 0 && !hovered && !sa1Mode && (
         <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[180px]">
           <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
             {legendLayers.map((id, i) => {
@@ -3472,11 +3331,6 @@ function MapView(props: MapViewProps) {
                 </div>
               );
             })}
-            {sa1Mode && (
-              <div className="mt-2 border-t border-line pt-1.5 text-[8px] leading-tight text-ink-3">
-                SA1 view. Layers modelled only at SA2 repeat the parent value.
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -3838,6 +3692,44 @@ function PlaceTab({
   }
 
   const s = SUBURB_BY_ID[selectedId];
+
+  // Beverley is a real Charles Sturt SA2, drawn on the map from the same
+  // ABS boundary as the other seven, but nothing here has sourced any
+  // population, hazard or asset data for it. Saying so plainly beats
+  // either hiding the boundary or filling the gap with a guess.
+  if (!s) {
+    const boundary = SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE];
+    return (
+      <div className="px-2.5 py-2.5">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-semibold leading-tight text-ink">
+              Beverley
+            </div>
+            <div className="num mt-[2px] text-[9px] text-ink-3">
+              SA2 {BEVERLEY_SA2_CODE} · {boundary?.areaSqKm.toFixed(2)} km2
+            </div>
+          </div>
+          <button
+            onClick={() => setSelectedId(null)}
+            className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[8.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+          >
+            Clear
+          </button>
+        </div>
+        <div className="rounded-[6px] border border-dashed border-line bg-surface-2 px-2.5 py-3 text-[9.5px] leading-[1.6] text-ink-2">
+          Beverley is a real Charles Sturt SA2, its boundary here is the
+          exact ABS ASGS 2021 shape. No population, hazard score or asset
+          data has been sourced for it, so it carries none of the
+          indicative figures shown for the other seven SA2s rather than a
+          guessed one. It is left out of Analysis, Insights and the
+          Portfolio ranking for the same reason.
+        </div>
+        <DemoDataNote className="mt-2.5" />
+      </div>
+    );
+  }
+
   const plan = PLANNING[s.id];
   const pop = popAt(s, year, sc);
   const proj = s.pop2041[sc];
@@ -4080,7 +3972,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 /* ------------------------------------------------------------------ *
  * Tab 3. Analysis
  *
- * Two measures, eight suburbs, no ranking imposed. The table carries both
+ * Two measures, across the seven SA2s carrying data, no ranking imposed. The table carries both
  * raw values so the reader can see what the bars are made of.
  * ------------------------------------------------------------------ */
 
@@ -4552,7 +4444,7 @@ function HelpTab() {
           </li>
           <li>
             <span className="font-semibold text-ink">Analysis.</span> Two
-            measures side by side across all eight suburbs. Opening this tab
+            measures side by side across the seven SA2s with data. Opening this tab
             also puts the map into compare mode.
           </li>
           <li>
@@ -4567,20 +4459,19 @@ function HelpTab() {
         'SA2 vs SA1 boundaries',
         <>
           <p>
-            SA2 is the suburb scale, eight areas across the LGA. SA1 splits
-            each into four, which is the scale at which disadvantage and canopy
-            actually vary.
+            SA2 is the suburb scale, eight real ABS areas across the LGA.
+            SA1 is finer and uneven, 257 real areas across those same eight,
+            from 14 up to 46 per SA2 depending on how built-up it is. Both
+            boundary sets are the exact ABS ASGS 2021 shapes, not a
+            simplified stand-in for them.
           </p>
           <p className="mt-1.5">
-            An SA2 average can hide a pocket two deciles below the suburb
-            figure. Hendon Industrial Edge sits at SEIFA 1 inside an SA2 that
-            averages 3, and at 5 percent canopy inside an SA2 averaging 11.
-            That gap is the reason the toggle exists.
-          </p>
-          <p className="mt-1.5">
-            Not every layer is modelled at SA1. Where it is not, the SA1 view
-            repeats the parent SA2 value and the legend says so. Do not read
-            that as sub-area variation.
+            SA1 is the scale at which disadvantage and canopy actually vary,
+            an SA2 average can sit well above or below what any one pocket
+            inside it looks like. No hazard or demographic layer in this
+            tool is modelled at SA1 resolution yet, so the SA1 view shows
+            boundaries only, tinted by which SA2 each one belongs to.
+            Nothing about that tint is a measurement.
           </p>
         </>,
       )}
@@ -4776,7 +4667,9 @@ function glanceFor(
     case 'heat-vuln': {
       const avgCanopy =
         SUBURBS.reduce((n, s) => n + s.treeCanopy, 0) / SUBURBS.length;
-      const lowSA1 = SA1S.filter((a) => a.treeCanopy < 10).length;
+      const lowestCanopy = [...SUBURBS].sort(
+        (a, b) => a.treeCanopy - b.treeCanopy,
+      )[0];
       const worst = [...SUBURBS].sort(
         (a, b) =>
           rawLayerValue('heat-vuln', b, year, sc) -
@@ -4786,12 +4679,12 @@ function glanceFor(
         {
           label: 'LGA canopy',
           value: fmtPct(avgCanopy, 1),
-          sub: 'mean across the eight SA2s',
+          sub: `mean across the ${SUBURBS.length} SA2s with data`,
         },
         {
-          label: 'SA1s under 10%',
-          value: `${lowSA1}`,
-          sub: `of ${SA1S.length} sub-areas`,
+          label: 'Lowest canopy',
+          value: fmtPct(lowestCanopy.treeCanopy, 0),
+          sub: lowestCanopy.name,
         },
         {
           label: `Peak index ${year}`,
@@ -5672,7 +5565,7 @@ const TAB_META: Record<
   },
   analysis: {
     title: 'Analysis',
-    subtitle: 'Two measures across all eight suburbs',
+    subtitle: 'Two measures across the seven SA2s with data',
     icon: IconAnalysis,
   },
   insights: {
@@ -6487,7 +6380,7 @@ function PortfolioTab({
         })}
       </div>
 
-      {selectedId && (
+      {selectedId && SUBURB_BY_ID[selectedId] && (
         <button
           onClick={() => setPlaceOnly(!placeOnly)}
           className="mb-2 flex w-full items-center gap-1.5 rounded-[4px] border px-1.5 py-1 text-left text-[8.5px] transition-colors"
@@ -7062,7 +6955,7 @@ export default function App() {
             City of Charles Sturt
           </span>
           <span className="num text-[8px] text-ink-3">
-            {SUBURBS.length} SA2 · {SA1S.length} SA1 · z{zoom}
+            {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
           </span>
         </footer>
 
