@@ -1988,7 +1988,7 @@ const svgBase = (size: number) => ({
   strokeLinejoin: 'round' as const,
 });
 
-const IconLayers = ({ size = 15, className }: IconProps) => (
+const IconLayers = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z" />
     <path d="M3 12.5 12 17l9-4.5" />
@@ -1996,14 +1996,14 @@ const IconLayers = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconPlace = ({ size = 15, className }: IconProps) => (
+const IconPlace = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z" />
     <circle cx="12" cy="10" r="2.4" />
   </svg>
 );
 
-const IconAnalysis = ({ size = 15, className }: IconProps) => (
+const IconAnalysis = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M4 20V10" />
     <path d="M10 20V4" />
@@ -2012,7 +2012,7 @@ const IconAnalysis = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconInsights = ({ size = 15, className }: IconProps) => (
+const IconInsights = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M9 18h6" />
     <path d="M10 21h4" />
@@ -2020,7 +2020,7 @@ const IconInsights = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconHelp = ({ size = 15, className }: IconProps) => (
+const IconHelp = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <circle cx="12" cy="12" r="9" />
     <path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.4" />
@@ -2028,7 +2028,7 @@ const IconHelp = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconPortfolio = ({ size = 15, className }: IconProps) => (
+const IconPortfolio = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <rect x="3" y="10" width="7.5" height="10.5" rx="1" />
     <rect x="13.5" y="10" width="7.5" height="10.5" rx="1" />
@@ -2036,44 +2036,44 @@ const IconPortfolio = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconClose = ({ size = 13, className }: IconProps) => (
+const IconClose = ({ size = 15, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M6 6l12 12M18 6L6 18" />
   </svg>
 );
 
-const IconChevron = ({ size = 12, className }: IconProps) => (
+const IconChevron = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M9 6l6 6-6 6" />
   </svg>
 );
 
-const IconPlus = ({ size = 13, className }: IconProps) => (
+const IconPlus = ({ size = 15, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M12 5v14M5 12h14" />
   </svg>
 );
 
-const IconMinus = ({ size = 13, className }: IconProps) => (
+const IconMinus = ({ size = 15, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M5 12h14" />
   </svg>
 );
 
-const IconHeat = ({ size = 12, className }: IconProps) => (
+const IconHeat = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <circle cx="12" cy="12" r="4" />
     <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
   </svg>
 );
 
-const IconFlood = ({ size = 12, className }: IconProps) => (
+const IconFlood = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M12 3s5 5.6 5 9a5 5 0 0 1-10 0c0-3.4 5-9 5-9Z" />
   </svg>
 );
 
-const IconCoastal = ({ size = 12, className }: IconProps) => (
+const IconCoastal = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M2 8.5c2.5-2 4.5 2 7 0s4.5-2 7 0 4.5 2 6 0" />
     <path d="M2 14c2.5-2 4.5 2 7 0s4.5-2 7 0 4.5 2 6 0" />
@@ -2081,7 +2081,7 @@ const IconCoastal = ({ size = 12, className }: IconProps) => (
   </svg>
 );
 
-const IconDrought = ({ size = 12, className }: IconProps) => (
+const IconDrought = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M12 21V9" />
     <path d="M12 13 7.5 9.5" />
@@ -2138,14 +2138,14 @@ function Tip({
       {children}
       {open && (
         <span
-          className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[210px] rounded-[5px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-[9px] leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
+          className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-[12px] leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
         >
-          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-[8px] mb-1">
+          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-[11px] mb-1">
             {label}
           </span>
           <span className="block text-[#C2D2D1]">{body}</span>
           {source && (
-            <span className="mt-1 block border-t border-[#25403E] pt-1 text-[8px] text-[#7E9997]">
+            <span className="mt-1 block border-t border-[#25403E] pt-1 text-[11px] text-[#7E9997]">
               Source: {source}
             </span>
           )}
@@ -2177,13 +2177,13 @@ function Stat({
         : 'text-ink';
   const inner = (
     <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-      <div className="text-[8.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
+      <div className="text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
         {label}
       </div>
-      <div className={`num mt-0.5 text-[14px] font-semibold leading-none ${color}`}>
+      <div className={`num mt-0.5 text-[18px] font-semibold leading-none ${color}`}>
         {value}
       </div>
-      {sub && <div className="mt-1 text-[8.5px] leading-tight text-ink-3">{sub}</div>}
+      {sub && <div className="mt-1 text-[11.5px] leading-tight text-ink-3">{sub}</div>}
     </div>
   );
   if (!tip) return inner;
@@ -2224,10 +2224,10 @@ function HazardChip({ hazard, small }: { hazard: HazardId; small?: boolean }) {
   const c = HAZARD_COLOR[hazard];
   return (
     <span
-      className={`inline-flex items-center gap-[3px] rounded-[3px] px-1 ${small ? 'py-0' : 'py-[1px]'} text-[8.5px] font-medium`}
+      className={`inline-flex items-center gap-[3px] rounded-[3px] px-1 ${small ? 'py-0' : 'py-[1px]'} text-[11.5px] font-medium`}
       style={{ background: withAlpha(c, 0.1), color: c }}
     >
-      <Icon size={9} />
+      <Icon size={12} />
       {HAZARD_LABEL[hazard]}
     </span>
   );
@@ -2240,7 +2240,7 @@ function ScorePips({ score, color }: { score: number; color: string }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <span
           key={i}
-          className="h-[7px] w-[3px] rounded-[1px]"
+          className="h-[9px] w-[4px] rounded-[1px]"
           style={{ background: i <= score ? color : '#E4E9E9' }}
         />
       ))}
@@ -2269,13 +2269,13 @@ function Accordion({
         className="flex w-full items-center gap-1.5 px-2.5 py-2 text-left transition-colors hover:bg-surface-2"
       >
         <IconChevron
-          size={11}
+          size={14}
           className={`shrink-0 text-ink-3 transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
         />
-        <span className="flex-1 text-[10px] font-semibold tracking-[0.01em] text-ink">
+        <span className="flex-1 text-[13.5px] font-semibold tracking-[0.01em] text-ink">
           {title}
         </span>
-        {count && <span className="num text-[9px] text-ink-3">{count}</span>}
+        {count && <span className="num text-[12px] text-ink-3">{count}</span>}
       </button>
       {open && <div className="pb-1.5">{children}</div>}
     </div>
@@ -2286,14 +2286,14 @@ function Accordion({
 function Check({ on }: { on: boolean }) {
   return (
     <span
-      className="flex h-[13px] w-[13px] shrink-0 items-center justify-center rounded-[3px] border transition-colors"
+      className="flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[4px] border transition-colors"
       style={{
         borderColor: on ? ACCENT : '#C9D3D2',
         background: on ? ACCENT : '#fff',
       }}
     >
       {on && (
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12.5 10 17.5 19 7" />
         </svg>
       )}
@@ -2324,7 +2324,7 @@ function Segmented<T extends string | number>({
             key={String(o.value)}
             disabled={o.disabled}
             onClick={() => onChange(o.value)}
-            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-[9px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
+            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
             style={
               on
                 ? { background: accent, color: '#fff' }
@@ -2349,7 +2349,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-1.5 flex items-center justify-between">
-      <span className="text-[8.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+      <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
         {children}
       </span>
       {right}
@@ -2361,7 +2361,7 @@ function PanelHeading({
 function DemoDataNote({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#7A6634] ${className}`}
+      className={`rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#7A6634] ${className}`}
     >
       <span className="font-semibold">Indicative data.</span> Values are
       demonstration figures shaped to the real geography, not council records.
@@ -2605,20 +2605,20 @@ function MapView(props: MapViewProps) {
         ? [{ id: surface.id, alpha: 1 }]
         : [];
 
-    // Compare mode forces both measures onto polygons. A canvas grid cannot
-    // be read underneath a second surface, and the point of compare is that
-    // both stay legible at once.
+    // A canvas layer (heat vulnerability, tree canopy) still colours the
+    // SA2 polygon underneath it at the same value, the per-cell texture is
+    // extra grain drawn on top, not a replacement for a visible fill.
+    // Compare mode keeps both measures on plain polygons only, a canvas
+    // grid cannot stay legible underneath a second surface at 40 percent.
     const canvasSurfaces = surfaces.filter(
       (s) => LAYER_BY_ID[s.id]?.kind === 'canvas' && !sa1Mode && !compare,
     );
-    const polySurfaces = surfaces.filter(
-      (s) => !canvasSurfaces.some((c) => c.id === s.id),
-    );
+    const polySurfaces = surfaces;
 
     for (const cs of canvasSurfaces) {
       const layer = makeCanvasLayer(
         LAYER_BY_ID[cs.id],
-        opacityFor(cs.id) * cs.alpha * 0.9,
+        opacityFor(cs.id) * cs.alpha * 0.55,
       );
       if (layer) push(layer);
     }
@@ -3132,7 +3132,7 @@ function MapView(props: MapViewProps) {
 
   const selected = selectedId ? SUBURB_BY_ID[selectedId] : null;
   const hovered = hoveredSuburb ? SUBURB_BY_ID[hoveredSuburb] : null;
-  const controlShift = blueprintOpen ? 268 : 12;
+  const controlShift = blueprintOpen ? 332 : 12;
 
   const legendLayers = compare
     ? [compareA, compareB]
@@ -3146,7 +3146,7 @@ function MapView(props: MapViewProps) {
 
       <div className="absolute left-3 top-3 z-[999]">
         <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-[8px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Basemap
           </div>
           <Segmented
@@ -3164,7 +3164,7 @@ function MapView(props: MapViewProps) {
         style={{ right: controlShift }}
       >
         <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-[8px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Bounds
           </div>
           <Segmented
@@ -3196,14 +3196,14 @@ function MapView(props: MapViewProps) {
               className="h-1.5 w-1.5 rounded-full"
               style={{ background: blueprintOpen ? blueprintAccent : ACCENT }}
             />
-            <span className="text-[10px] font-semibold text-ink">
+            <span className="text-[13.5px] font-semibold text-ink">
               {selected ? selected.name : 'Beverley'}
             </span>
-            <span className="num text-[9px] text-ink-3">
+            <span className="num text-[12px] text-ink-3">
               {selected ? selected.sa2 : BEVERLEY_SA2_CODE}
             </span>
             {!selected && (
-              <span className="rounded-[3px] bg-surface-2 px-1 text-[8px] text-ink-3">
+              <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-3">
                 no data sourced
               </span>
             )}
@@ -3213,13 +3213,13 @@ function MapView(props: MapViewProps) {
 
       {/* Hover readout. The brief asked for as much on rollover as fits. */}
       {hovered && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[196px]">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[240px]">
           <div className="fade-up rounded-[6px] border border-line bg-white/96 p-2 shadow-[0_2px_12px_rgba(20,32,31,0.12)] backdrop-blur">
             <div className="flex items-baseline justify-between">
-              <span className="text-[10px] font-semibold text-ink">
+              <span className="text-[13.5px] font-semibold text-ink">
                 {hovered.name}
               </span>
-              <span className="num text-[8.5px] text-ink-3">{hovered.sa2}</span>
+              <span className="num text-[11.5px] text-ink-3">{hovered.sa2}</span>
             </div>
             <div className="mt-1.5 grid grid-cols-2 gap-x-2 gap-y-1">
               <HoverRow
@@ -3240,10 +3240,10 @@ function MapView(props: MapViewProps) {
                     key={id}
                     className="flex items-center justify-between gap-2 py-[1px]"
                   >
-                    <span className="truncate text-[8.5px] text-ink-2">
+                    <span className="truncate text-[11.5px] text-ink-2">
                       {LAYER_BY_ID[id].name}
                     </span>
-                    <span className="num text-[9px] font-semibold text-ink">
+                    <span className="num text-[12px] font-semibold text-ink">
                       {formatLayerValue(
                         id,
                         rawLayerValue(id, hovered, year, sc),
@@ -3266,7 +3266,7 @@ function MapView(props: MapViewProps) {
                           : hovered.droughtScore;
                   return (
                     <div key={h} className="flex-1">
-                      <div className="text-[7.5px] uppercase tracking-[0.05em] text-ink-3">
+                      <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">
                         {h === 'flooding' ? 'Flood' : h}
                       </div>
                       <div className="mt-[2px]">
@@ -3285,12 +3285,12 @@ function MapView(props: MapViewProps) {
           resolution, so it gets its own legend rather than a ramp that
           would misstate what the fill actually shows. */}
       {sa1Mode && !hovered && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[190px]">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[230px]">
           <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-            <div className="text-[9px] font-semibold text-ink">
+            <div className="text-[12px] font-semibold text-ink">
               Real SA1 boundaries
             </div>
-            <div className="mt-1 text-[8px] leading-[1.5] text-ink-3">
+            <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
               257 ABS ASGS 2021 areas, tinted by which SA2 they sit inside.
               No layer is modelled at SA1 resolution, so fill colour carries
               no other value here.
@@ -3301,7 +3301,7 @@ function MapView(props: MapViewProps) {
 
       {/* Ramp legend for whatever surface is painted, SA2 view only. */}
       {legendLayers.length > 0 && !hovered && !sa1Mode && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[180px]">
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[220px]">
           <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
             {legendLayers.map((id, i) => {
               const def = LAYER_BY_ID[id];
@@ -3309,11 +3309,11 @@ function MapView(props: MapViewProps) {
               return (
                 <div key={id} className={i > 0 ? 'mt-2' : ''}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-semibold text-ink">
+                    <span className="text-[12px] font-semibold text-ink">
                       {def.name}
                     </span>
                     {compare && (
-                      <span className="num text-[8px] text-ink-3">
+                      <span className="num text-[11px] text-ink-3">
                         {i === 0 ? 'A' : 'B 40%'}
                       </span>
                     )}
@@ -3324,7 +3324,7 @@ function MapView(props: MapViewProps) {
                       background: `linear-gradient(90deg, ${def.lo ?? '#eee'}, ${def.hi ?? '#999'})`,
                     }}
                   />
-                  <div className="num mt-[3px] flex justify-between text-[8px] text-ink-3">
+                  <div className="num mt-[3px] flex justify-between text-[11px] text-ink-3">
                     <span>{formatLayerValue(id, lo)}</span>
                     <span>{formatLayerValue(id, hi)}</span>
                   </div>
@@ -3354,7 +3354,7 @@ function MapView(props: MapViewProps) {
         >
           <IconMinus />
         </button>
-        <div className="num mt-[2px] rounded-[4px] border border-line bg-white/95 py-[1px] text-center text-[8.5px] text-ink-3">
+        <div className="num mt-[2px] rounded-[4px] border border-line bg-white/95 py-[1px] text-center text-[11.5px] text-ink-3">
           z{zoomLevel}
         </div>
       </div>
@@ -3365,8 +3365,8 @@ function MapView(props: MapViewProps) {
 function HoverRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline justify-between gap-1">
-      <span className="text-[8.5px] text-ink-3">{label}</span>
-      <span className="num text-[9.5px] font-semibold text-ink">{value}</span>
+      <span className="text-[11.5px] text-ink-3">{label}</span>
+      <span className="num text-[12.5px] font-semibold text-ink">{value}</span>
     </div>
   );
 }
@@ -3410,10 +3410,10 @@ function LayersTab({
       {/* Global opacity sits above everything it governs. */}
       <div className="border-b border-line px-2.5 py-2">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+          <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-ink-3">
             Global opacity
           </span>
-          <span className="num text-[9.5px] font-semibold text-accent">
+          <span className="num text-[12.5px] font-semibold text-accent">
             {Math.round(overlayOpacity * 100)}%
           </span>
         </div>
@@ -3456,7 +3456,7 @@ function LayersTab({
                     >
                       <Check on={checked} />
                       <span
-                        className="h-[9px] w-[9px] shrink-0 rounded-[2px]"
+                        className="h-[11px] w-[11px] shrink-0 rounded-[2px]"
                         style={{
                           background:
                             l.kind === 'vector'
@@ -3465,19 +3465,19 @@ function LayersTab({
                         }}
                       />
                       <span
-                        className={`flex-1 truncate text-[10px] ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
+                        className={`flex-1 truncate text-[13.5px] ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
                       >
                         {l.name}
                       </span>
                     </button>
                     <Tip label={l.name} body={l.note} source={l.source} side="left">
-                      <span className="flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full border border-line text-[7.5px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
+                      <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center rounded-full border border-line text-[11px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
                         i
                       </span>
                     </Tip>
                   </div>
                   {showSlider && (
-                    <div className="fade-up mt-[3px] flex items-center gap-1.5 pl-[19px]">
+                    <div className="fade-up mt-[3px] flex items-center gap-1.5 pl-[22px]">
                       <input
                         type="range"
                         min={10}
@@ -3488,7 +3488,7 @@ function LayersTab({
                         }
                         className="h-3 flex-1"
                       />
-                      <span className="num w-[24px] text-right text-[8.5px] text-ink-3">
+                      <span className="num w-[32px] text-right text-[11.5px] text-ink-3">
                         {Math.round(op * 100)}%
                       </span>
                     </div>
@@ -3521,12 +3521,12 @@ function LayersTab({
                   style={{ background: b.accent }}
                 />
                 <span
-                  className="block text-[9.5px] font-semibold leading-tight"
+                  className="block text-[12.5px] font-semibold leading-tight"
                   style={{ color: on ? b.accent : '#14201F' }}
                 >
                   {b.title}
                 </span>
-                <span className="num mt-[2px] block text-[8px] text-ink-3">
+                <span className="num mt-[2px] block text-[11px] text-ink-3">
                   {b.layers.length} layers
                 </span>
               </button>
@@ -3650,7 +3650,7 @@ function PlaceTab({
 
     return (
       <div className="px-2.5 py-2.5">
-        <p className="mb-2 text-[9.5px] leading-[1.55] text-ink-2">
+        <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
           No suburb selected. The cards below name the leading SA2 on each
           measure. Selecting one, here or on the map, opens its full profile.
           Leading is not the same as most urgent, the measures are not weighted
@@ -3668,18 +3668,18 @@ function PlaceTab({
                 style={{ background: c.color }}
               />
               <span className="min-w-0 flex-1">
-                <span className="block text-[8.5px] uppercase tracking-[0.05em] text-ink-3">
+                <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
                   {c.label}
                 </span>
-                <span className="block truncate text-[10px] font-semibold text-ink">
+                <span className="block truncate text-[13.5px] font-semibold text-ink">
                   {c.suburb.name}
                 </span>
               </span>
               <span className="shrink-0 text-right">
-                <span className="num block text-[12px] font-semibold leading-none text-ink">
+                <span className="num block text-[16px] font-semibold leading-none text-ink">
                   {c.fmt(c.value)}
                 </span>
-                <span className="mt-[2px] block text-[8px] text-ink-3">
+                <span className="mt-[2px] block text-[11px] text-ink-3">
                   {c.unit}
                 </span>
               </span>
@@ -3703,21 +3703,21 @@ function PlaceTab({
       <div className="px-2.5 py-2.5">
         <div className="mb-2 flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold leading-tight text-ink">
+            <div className="truncate text-[17px] font-semibold leading-tight text-ink">
               Beverley
             </div>
-            <div className="num mt-[2px] text-[9px] text-ink-3">
+            <div className="num mt-[2px] text-[12px] text-ink-3">
               SA2 {BEVERLEY_SA2_CODE} · {boundary?.areaSqKm.toFixed(2)} km2
             </div>
           </div>
           <button
             onClick={() => setSelectedId(null)}
-            className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[8.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+            className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[11.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
           >
             Clear
           </button>
         </div>
-        <div className="rounded-[6px] border border-dashed border-line bg-surface-2 px-2.5 py-3 text-[9.5px] leading-[1.6] text-ink-2">
+        <div className="rounded-[6px] border border-dashed border-line bg-surface-2 px-2.5 py-3 text-[12.5px] leading-[1.6] text-ink-2">
           Beverley is a real Charles Sturt SA2, its boundary here is the
           exact ABS ASGS 2021 shape. No population, hazard score or asset
           data has been sourced for it, so it carries none of the
@@ -3746,16 +3746,16 @@ function PlaceTab({
     <div className="px-2.5 py-2.5">
       <div className="mb-2 flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-[13px] font-semibold leading-tight text-ink">
+          <div className="truncate text-[17px] font-semibold leading-tight text-ink">
             {s.name}
           </div>
-          <div className="num mt-[2px] text-[9px] text-ink-3">
+          <div className="num mt-[2px] text-[12px] text-ink-3">
             SA2 {s.sa2} · {plan.totalHa} ha
           </div>
         </div>
         <button
           onClick={() => setSelectedId(null)}
-          className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[8.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+          className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[11.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
         >
           Clear
         </button>
@@ -3765,27 +3765,27 @@ function PlaceTab({
       <div className="mb-2 rounded-[6px] border border-line bg-white p-2">
         <div className="flex items-end justify-between">
           <div>
-            <div className="text-[8.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
+            <div className="text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
               Population {year}
             </div>
-            <div className="num mt-0.5 text-[22px] font-semibold leading-none text-ink">
+            <div className="num mt-0.5 text-[28px] font-semibold leading-none text-ink">
               {fmtInt(pop)}
             </div>
           </div>
           <div className="text-right">
-            <div className="text-[8.5px] text-ink-3">
+            <div className="text-[11.5px] text-ink-3">
               2041 {SCENARIO_LABEL[sc]}
             </div>
-            <div className="num text-[12px] font-semibold text-accent">
+            <div className="num text-[16px] font-semibold text-accent">
               {fmtInt(proj)}
             </div>
-            <div className="num text-[9px] text-ink-3">{fmtSigned(delta, 1)}</div>
+            <div className="num text-[12px] text-ink-3">{fmtSigned(delta, 1)}</div>
           </div>
         </div>
         <div className="mt-1.5">
           <MiniBar value={pop / proj} color={ACCENT} height={3} />
         </div>
-        <div className="num mt-1 flex justify-between text-[8px] text-ink-3">
+        <div className="num mt-1 flex justify-between text-[11px] text-ink-3">
           <span>2021 {fmtInt(s.pop2021)}</span>
           <span>2041 {fmtInt(proj)}</span>
         </div>
@@ -3798,7 +3798,7 @@ function PlaceTab({
             body="Relative within this LGA on a 1 to 5 scale, not an absolute or cross-council measure. They combine modelled hazard extent with the sensitivity of what is inside it."
             side="left"
           >
-            <span className="cursor-help text-[8px] text-ink-3 underline decoration-dotted">
+            <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
               how read
             </span>
           </Tip>
@@ -3813,11 +3813,11 @@ function PlaceTab({
             className="rounded-[5px] border border-line bg-white px-2 py-1.5"
           >
             <div className="flex items-center justify-between">
-              <span className="text-[8.5px] uppercase tracking-[0.05em] text-ink-3">
+              <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
                 {r.label}
               </span>
               <span
-                className="num text-[11px] font-semibold"
+                className="num text-[14.5px] font-semibold"
                 style={{ color: HAZARD_COLOR[r.id] }}
               >
                 {r.score}
@@ -3862,7 +3862,7 @@ function PlaceTab({
 
       <PanelHeading
         right={
-          <span className="num text-[8px] text-ink-3">
+          <span className="num text-[11px] text-ink-3">
             {s.assets.length} listed
           </span>
         }
@@ -3889,18 +3889,18 @@ function PlaceTab({
                 className="flex w-full items-start gap-1.5 px-2 py-1.5 text-left"
               >
                 <IconChevron
-                  size={10}
+                  size={13}
                   className={`mt-[3px] shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-semibold leading-tight text-ink">
+                  <span className="block text-[13.5px] font-semibold leading-tight text-ink">
                     {a.name}
                   </span>
                   <span className="mt-[3px] flex flex-wrap items-center gap-1">
-                    <span className="rounded-[3px] bg-surface-2 px-1 text-[8px] text-ink-2">
+                    <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
                       {CATEGORY_LABEL[a.category]}
                     </span>
-                    <span className="rounded-[3px] bg-surface-2 px-1 text-[8px] text-ink-2">
+                    <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
                       {SIGNIFICANCE_LABEL[a.significance]}
                     </span>
                     {a.hazards.map((h) => (
@@ -3909,7 +3909,7 @@ function PlaceTab({
                   </span>
                 </span>
                 {a.value && (
-                  <span className="num shrink-0 text-[9.5px] font-semibold text-ink-2">
+                  <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
                     {a.value}
                   </span>
                 )}
@@ -3919,24 +3919,24 @@ function PlaceTab({
                   <DetailRow label="Purpose" value={a.purpose} />
                   <DetailRow label="Who uses it" value={a.users} />
                   <div className="mt-1.5 flex items-center justify-between rounded-[4px] bg-surface-2 px-1.5 py-1">
-                    <span className="text-[8.5px] text-ink-2">
+                    <span className="text-[11.5px] text-ink-2">
                       Reactive repairs, 5 years
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span
-                        className="num text-[11px] font-semibold"
+                        className="num text-[14.5px] font-semibold"
                         style={{ color: flagged ? '#B45309' : '#14201F' }}
                       >
                         {a.repairs5yr}
                       </span>
                       {flagged && (
-                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[8px] font-medium text-[#92400E]">
+                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
                           over threshold
                         </span>
                       )}
                     </span>
                   </div>
-                  <div className="num mt-1 text-[8px] leading-tight text-ink-3">
+                  <div className="num mt-1 text-[11px] leading-tight text-ink-3">
                     Threshold applied here is 10 interventions in 5 years, the
                     point at which renewal is usually assessed against
                     continued maintenance. The threshold is a convention, not a
@@ -3949,7 +3949,7 @@ function PlaceTab({
         })}
       </div>
 
-      <div className="mt-2 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[8.5px] leading-[1.5] text-ink-2">
+      <div className="mt-2 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-[1.5] text-ink-2">
         Hovering an asset draws a 120m radius at its actual location. Heat
         exposed assets also show a coarse 300m grid preview across the SA2.
       </div>
@@ -3961,10 +3961,10 @@ function PlaceTab({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-1 first:mt-0">
-      <div className="text-[8px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
         {label}
       </div>
-      <div className="mt-[1px] text-[9px] leading-[1.5] text-ink-2">{value}</div>
+      <div className="mt-[1px] text-[12px] leading-[1.5] text-ink-2">{value}</div>
     </div>
   );
 }
@@ -4009,14 +4009,14 @@ function LayerSelect({
           className="h-2 w-2 rounded-[2px]"
           style={{ background: accent }}
         />
-        <span className="text-[8.5px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+        <span className="text-[11.5px] font-semibold uppercase tracking-[0.07em] text-ink-3">
           {label}
         </span>
       </span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[5px] border border-line bg-white px-1.5 py-[4px] text-[9.5px] text-ink outline-none transition-colors focus:border-accent"
+        className="w-full rounded-[5px] border border-line bg-white px-1.5 py-[4px] text-[12.5px] text-ink outline-none transition-colors focus:border-accent"
       >
         {(['hazard', 'vulnerability'] as LayerGroup[]).map((g) => (
           <optgroup key={g} label={GROUP_LABEL[g]}>
@@ -4082,7 +4082,7 @@ function AnalysisTab({
         />
       </div>
 
-      <p className="mt-2 text-[8.5px] leading-[1.5] text-ink-2">
+      <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-2">
         Bars are scaled within each measure separately, so heights compare
         across suburbs but not across the two measures. The map shows A at full
         opacity with B at 40 percent over it.
@@ -4148,7 +4148,7 @@ function AnalysisTab({
                   x={x + barW}
                   y={chartH + 10}
                   textAnchor="middle"
-                  fontSize={6.4}
+                  fontSize={12}
                   fontFamily="JetBrains Mono, monospace"
                   fill={active ? '#14201F' : '#7E8D8C'}
                 >
@@ -4158,7 +4158,7 @@ function AnalysisTab({
                   x={x + barW}
                   y={chartH + 19}
                   textAnchor="middle"
-                  fontSize={6.4}
+                  fontSize={12}
                   fontFamily="JetBrains Mono, monospace"
                   fill="#A8B5B4"
                 >
@@ -4172,13 +4172,13 @@ function AnalysisTab({
 
       <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
         <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
-          <span className="flex-1 text-[8px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
             Suburb
           </span>
-          <span className="num w-[52px] text-right text-[8px] font-semibold text-ink-3">
+          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">
             A
           </span>
-          <span className="num w-[52px] text-right text-[8px] font-semibold text-ink-3">
+          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">
             B
           </span>
         </div>
@@ -4193,7 +4193,7 @@ function AnalysisTab({
               className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
             >
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[9.5px] font-medium text-ink">
+                <span className="block truncate text-[12.5px] font-medium text-ink">
                   {r.s.name}
                 </span>
                 <span className="mt-[3px] flex gap-[3px]">
@@ -4205,10 +4205,10 @@ function AnalysisTab({
                   </span>
                 </span>
               </span>
-              <span className="num w-[52px] shrink-0 text-right text-[9.5px] font-semibold text-ink">
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
                 {formatLayerValue(compareA, r.rawA)}
               </span>
-              <span className="num w-[52px] shrink-0 text-right text-[9.5px] font-semibold text-ink">
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
                 {formatLayerValue(compareB, r.rawB)}
               </span>
             </button>
@@ -4218,24 +4218,24 @@ function AnalysisTab({
 
       <div className="mt-2 space-y-1.5">
         <div className="rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          <div className="text-[8px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
             {defA.name}
           </div>
-          <div className="mt-[2px] text-[8.5px] leading-[1.5] text-ink-2">
+          <div className="mt-[2px] text-[11.5px] leading-[1.5] text-ink-2">
             {defA.note}
           </div>
-          <div className="num mt-1 text-[8px] text-ink-3">
+          <div className="num mt-1 text-[11px] text-ink-3">
             Unit: {defA.unit} · {defA.source}
           </div>
         </div>
         <div className="rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          <div className="text-[8px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
             {defB.name}
           </div>
-          <div className="mt-[2px] text-[8.5px] leading-[1.5] text-ink-2">
+          <div className="mt-[2px] text-[11.5px] leading-[1.5] text-ink-2">
             {defB.note}
           </div>
-          <div className="num mt-1 text-[8px] text-ink-3">
+          <div className="num mt-1 text-[11px] text-ink-3">
             Unit: {defB.unit} · {defB.source}
           </div>
         </div>
@@ -4264,7 +4264,7 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
 
   return (
     <div className="px-2.5 py-2.5">
-      <p className="mb-2 text-[9.5px] leading-[1.55] text-ink-2">
+      <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
         Actions that have been costed somewhere in the organisation. The list
         is not ranked and nothing here is a recommendation. Cost, evidence and
         trade-off are shown together so the ordering is yours to make.
@@ -4273,7 +4273,7 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
       <div className="mb-2 flex flex-wrap gap-1">
         <button
           onClick={() => setFilter('all')}
-          className="rounded-[4px] border px-1.5 py-[2px] text-[8.5px] font-medium transition-colors"
+          className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
           style={
             filter === 'all'
               ? { borderColor: ACCENT, background: ACCENT, color: '#fff' }
@@ -4290,14 +4290,14 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
             <button
               key={h}
               onClick={() => setFilter(h)}
-              className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[2px] text-[8.5px] font-medium transition-colors"
+              className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
               style={
                 on
                   ? { borderColor: c, background: c, color: '#fff' }
                   : { borderColor: '#E2E7E7', color: '#4A5A59' }
               }
             >
-              <Icon size={9} />
+              <Icon size={12} />
               {HAZARD_LABEL[h]}
             </button>
           );
@@ -4305,10 +4305,10 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
       </div>
 
       <div className="mb-2 flex items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5">
-        <span className="text-[8.5px] uppercase tracking-[0.06em] text-ink-3">
+        <span className="text-[11.5px] uppercase tracking-[0.06em] text-ink-3">
           {list.length} costed, indicative range
         </span>
-        <span className="num text-[11px] font-semibold text-ink">
+        <span className="num text-[14.5px] font-semibold text-ink">
           {fmtMoney(totalLow)} to {fmtMoney(totalHigh)}
         </span>
       </div>
@@ -4331,21 +4331,21 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
                   className="mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-[3px]"
                   style={{ background: withAlpha(c, 0.12), color: c }}
                 >
-                  <Icon size={10} />
+                  <Icon size={13} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[10px] font-semibold leading-tight text-ink">
+                  <span className="block text-[13.5px] font-semibold leading-tight text-ink">
                     {a.title}
                   </span>
-                  <span className="mt-[2px] block truncate text-[8.5px] text-ink-3">
+                  <span className="mt-[2px] block truncate text-[11.5px] text-ink-3">
                     {a.scope}
                   </span>
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="num block text-[10px] font-semibold leading-none text-ink">
+                  <span className="num block text-[13.5px] font-semibold leading-none text-ink">
                     {fmtMoney(a.costLow)}
                   </span>
-                  <span className="num mt-[2px] block text-[8.5px] text-ink-3">
+                  <span className="num mt-[2px] block text-[11.5px] text-ink-3">
                     to {fmtMoney(a.costHigh)}
                   </span>
                 </span>
@@ -4356,10 +4356,10 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
                   <DetailRow label="Evidence behind it" value={a.evidence} />
                   <DetailRow label="Trade-off" value={a.tradeoff} />
                   <div className="mt-1.5 flex flex-wrap items-center gap-1">
-                    <span className="rounded-[3px] bg-surface-2 px-1 py-[1px] text-[8px] text-ink-2">
+                    <span className="rounded-[3px] bg-surface-2 px-1 py-[1px] text-[11px] text-ink-2">
                       {a.lever}
                     </span>
-                    <span className="num rounded-[3px] bg-surface-2 px-1 py-[1px] text-[8px] text-ink-2">
+                    <span className="num rounded-[3px] bg-surface-2 px-1 py-[1px] text-[11px] text-ink-2">
                       {a.horizon}
                     </span>
                   </div>
@@ -4368,7 +4368,7 @@ function InsightsTab({ selectedId, setSelectedId }: InsightsTabProps) {
                       <button
                         key={id}
                         onClick={() => setSelectedId(id)}
-                        className={`rounded-[3px] border px-1 py-[1px] text-[8px] transition-colors ${
+                        className={`rounded-[3px] border px-1 py-[1px] text-[11px] transition-colors ${
                           selectedId === id
                             ? 'border-accent text-accent'
                             : 'border-line text-ink-3 hover:border-accent hover:text-accent'
@@ -4402,7 +4402,7 @@ function HelpTab() {
       open={open === id}
       onToggle={() => setOpen(open === id ? null : id)}
     >
-      <div className="px-2.5 text-[9.5px] leading-[1.6] text-ink-2">{body}</div>
+      <div className="px-2.5 text-[12.5px] leading-[1.6] text-ink-2">{body}</div>
     </Accordion>
   );
 
@@ -4843,18 +4843,18 @@ function BlueprintPanel({
   const plan = selected ? PLANNING[selected.id] : null;
 
   return (
-    <aside className="absolute bottom-0 right-0 top-0 z-[998] flex w-64 flex-col border-l border-line bg-white/97 shadow-[-4px_0_18px_rgba(20,32,31,0.08)] backdrop-blur">
+    <aside className="absolute bottom-0 right-0 top-0 z-[998] flex w-80 flex-col border-l border-line bg-white/97 shadow-[-4px_0_18px_rgba(20,32,31,0.08)] backdrop-blur">
       <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
         <span
           className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
           style={{ background: bp.accent }}
         />
         <div className="min-w-0 flex-1">
-          <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">
             Blueprint
           </div>
           <div
-            className="truncate text-[11.5px] font-semibold leading-tight"
+            className="truncate text-[15px] font-semibold leading-tight"
             style={{ color: bp.accent }}
           >
             {bp.title}
@@ -4870,7 +4870,7 @@ function BlueprintPanel({
       </header>
 
       <div className="thin-scroll flex-1 overflow-y-auto">
-        <p className="border-b border-line px-2.5 py-2 text-[9px] leading-[1.55] text-ink-2">
+        <p className="border-b border-line px-2.5 py-2 text-[12px] leading-[1.55] text-ink-2">
           {bp.description}
         </p>
 
@@ -4915,15 +4915,15 @@ function BlueprintPanel({
                 className="flex items-start justify-between gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5"
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[8.5px] uppercase tracking-[0.05em] text-ink-3">
+                  <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
                     {g.label}
                   </span>
-                  <span className="mt-[2px] block text-[8px] leading-tight text-ink-3">
+                  <span className="mt-[2px] block text-[11px] leading-tight text-ink-3">
                     {g.sub}
                   </span>
                 </span>
                 <span
-                  className="num shrink-0 text-[13px] font-semibold leading-none"
+                  className="num shrink-0 text-[17px] font-semibold leading-none"
                   style={{ color: bp.accent }}
                 >
                   {g.value}
@@ -4939,7 +4939,7 @@ function BlueprintPanel({
               right={
                 <button
                   onClick={() => setSelectedId(null)}
-                  className="text-[8px] text-ink-3 underline decoration-dotted hover:text-ink"
+                  className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
                 >
                   clear
                 </button>
@@ -4947,10 +4947,10 @@ function BlueprintPanel({
             >
               Spotlight
             </PanelHeading>
-            <div className="text-[10.5px] font-semibold text-ink">
+            <div className="text-[14px] font-semibold text-ink">
               {selected.name}
             </div>
-            <div className="num text-[8.5px] text-ink-3">SA2 {selected.sa2}</div>
+            <div className="num text-[11.5px] text-ink-3">SA2 {selected.sa2}</div>
 
             {isPop && plan ? (
               <div className="mt-1.5">
@@ -4990,10 +4990,10 @@ function BlueprintPanel({
                 </div>
                 <div className="mt-1.5 rounded-[5px] border border-line bg-white px-2 py-1.5">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-[8.5px] uppercase tracking-[0.05em] text-ink-3">
+                    <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
                       Trajectory
                     </span>
-                    <span className="num text-[8px] text-ink-3">
+                    <span className="num text-[11px] text-ink-3">
                       {fmtInt(selected.densityPerKm2)} per km2
                     </span>
                   </div>
@@ -5007,7 +5007,7 @@ function BlueprintPanel({
                     color={bp.accent}
                   />
                 </div>
-                <div className="mt-1.5 text-[8.5px] leading-[1.5] text-ink-3">
+                <div className="mt-1.5 text-[11.5px] leading-[1.5] text-ink-3">
                   {plan.zoningLabel}. Zoned capacity is a ceiling, not a
                   forecast.
                 </div>
@@ -5029,11 +5029,11 @@ function BlueprintPanel({
                       className="rounded-[5px] border border-line bg-white px-2 py-1.5"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-[8.5px] uppercase tracking-[0.05em] text-ink-3">
+                        <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
                           {HAZARD_LABEL[r].split(' ')[0]}
                         </span>
                         <span
-                          className="num text-[11px] font-semibold"
+                          className="num text-[14.5px] font-semibold"
                           style={{ color: HAZARD_COLOR[r] }}
                         >
                           {score}
@@ -5057,11 +5057,11 @@ function BlueprintPanel({
                     className="rounded-[5px] border border-line bg-white px-2 py-1"
                   >
                     <div className="flex items-baseline justify-between gap-1.5">
-                      <span className="min-w-0 flex-1 truncate text-[9.5px] font-medium text-ink">
+                      <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">
                         {a.name}
                       </span>
                       {a.value && (
-                        <span className="num shrink-0 text-[8.5px] text-ink-3">
+                        <span className="num shrink-0 text-[11.5px] text-ink-3">
                           {a.value}
                         </span>
                       )}
@@ -5071,7 +5071,7 @@ function BlueprintPanel({
                         <HazardChip key={h} hazard={h} small />
                       ))}
                       {a.repairs5yr >= 10 && (
-                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[8px] font-medium text-[#92400E]">
+                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
                           {a.repairs5yr} repairs
                         </span>
                       )}
@@ -5089,7 +5089,7 @@ function BlueprintPanel({
             {bp.watch.map((w, i) => (
               <li key={i} className="flex gap-1.5">
                 <span
-                  className="num mt-[1px] flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-semibold"
+                  className="num mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
                   style={{
                     background: withAlpha(bp.accent, 0.12),
                     color: bp.accent,
@@ -5097,7 +5097,7 @@ function BlueprintPanel({
                 >
                   {i + 1}
                 </span>
-                <span className="text-[8.5px] leading-[1.5] text-ink-2">{w}</span>
+                <span className="text-[11.5px] leading-[1.5] text-ink-2">{w}</span>
               </li>
             ))}
           </ol>
@@ -5106,7 +5106,7 @@ function BlueprintPanel({
         <div className="px-2.5 py-2">
           <PanelHeading
             right={
-              <span className="text-[8px] text-ink-3">
+              <span className="text-[11px] text-ink-3">
                 {RANK_TITLE[rankKey]}
               </span>
             }
@@ -5125,15 +5125,15 @@ function BlueprintPanel({
                   className={`w-full rounded-[4px] px-1.5 py-1 text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 >
                   <div className="flex items-baseline gap-1.5">
-                    <span className="num w-[9px] shrink-0 text-[8px] text-ink-3">
+                    <span className="num w-[13px] shrink-0 text-[11px] text-ink-3">
                       {i + 1}
                     </span>
                     <span
-                      className={`min-w-0 flex-1 truncate text-[9px] ${on ? 'font-semibold text-ink' : 'text-ink-2'}`}
+                      className={`min-w-0 flex-1 truncate text-[12px] ${on ? 'font-semibold text-ink' : 'text-ink-2'}`}
                     >
                       {r.s.name}
                     </span>
-                    <span className="num shrink-0 text-[9px] font-semibold text-ink">
+                    <span className="num shrink-0 text-[12px] font-semibold text-ink">
                       {rankLabel(rankKey, r.v)}
                     </span>
                   </div>
@@ -5155,13 +5155,13 @@ function BlueprintPanel({
         {isPop && (
           <button
             onClick={onOpenQuadrant}
-            className="mb-1.5 w-full rounded-[5px] border px-2 py-1.5 text-[9.5px] font-semibold transition-colors"
+            className="mb-1.5 w-full rounded-[5px] border px-2 py-1.5 text-[12.5px] font-semibold transition-colors"
             style={{ borderColor: bp.accent, color: bp.accent }}
           >
             Density quadrant
           </button>
         )}
-        <div className="text-[8px] leading-[1.45] text-ink-3">
+        <div className="text-[11px] leading-[1.45] text-ink-3">
           {SCENARIO_LABEL[sc]}. {SCENARIO_NOTE[sc]} Scenario changes the
           magnitude, not the ranking.
         </div>
@@ -5231,7 +5231,7 @@ function Sparkline({
           <circle key={i} cx={p[0]} cy={p[1]} r={2.2} fill={color} />
         ))}
       </svg>
-      <div className="num mt-[2px] flex justify-between text-[8px] text-ink-3">
+      <div className="num mt-[2px] flex justify-between text-[11px] text-ink-3">
         {values.map((v, i) => (
           <span key={i}>
             {labels[i]} {fmtInt(v)}
@@ -5287,10 +5287,10 @@ function PlanningQuadrant({
       <div className="fade-up flex max-h-full w-full max-w-[760px] flex-col overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_18px_50px_rgba(12,25,24,0.3)]">
         <header className="flex items-start justify-between border-b border-line px-3 py-2">
           <div>
-            <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">
               Population &amp; Growth
             </div>
-            <div className="text-[13px] font-semibold text-ink">
+            <div className="text-[17px] font-semibold text-ink">
               Density quadrant
             </div>
           </div>
@@ -5299,11 +5299,11 @@ function PlanningQuadrant({
             className="rounded-[4px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Close quadrant"
           >
-            <IconClose size={14} />
+            <IconClose size={16} />
           </button>
         </header>
         <div className="thin-scroll flex-1 overflow-y-auto p-3">
-          <p className="mb-2 text-[9.5px] leading-[1.55] text-ink-2">
+          <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
             Zoned gross density on the horizontal axis against projected
             dwelling growth to 2041 on the vertical. Dividing lines sit at the
             midpoint of each range, so quadrant membership is relative to this
@@ -5339,7 +5339,7 @@ function PlanningQuadrant({
                 key={q.t}
                 x={q.x}
                 y={q.y}
-                fontSize={9}
+                fontSize={12}
                 fill="#A8B5B4"
                 fontFamily="DM Sans, sans-serif"
               >
@@ -5367,7 +5367,7 @@ function PlanningQuadrant({
                   <text
                     x={px(p.x) + 11}
                     y={py(p.y) + 3.5}
-                    fontSize={9}
+                    fontSize={12}
                     fontFamily="DM Sans, sans-serif"
                     fill={on ? '#14201F' : '#4A5A59'}
                     fontWeight={on ? 600 : 400}
@@ -5377,13 +5377,13 @@ function PlanningQuadrant({
                 </g>
               );
             })}
-            <text x={52} y={H - 14} fontSize={9} fill="#7E8D8C" fontFamily="JetBrains Mono, monospace">
+            <text x={52} y={H - 14} fontSize={12} fill="#7E8D8C" fontFamily="JetBrains Mono, monospace">
               {xLo.toFixed(0)} du/ha
             </text>
             <text
               x={W - 18}
               y={H - 14}
-              fontSize={9}
+              fontSize={12}
               textAnchor="end"
               fill="#7E8D8C"
               fontFamily="JetBrains Mono, monospace"
@@ -5393,7 +5393,7 @@ function PlanningQuadrant({
             <text
               x={10}
               y={28}
-              fontSize={9}
+              fontSize={12}
               fill="#7E8D8C"
               fontFamily="JetBrains Mono, monospace"
             >
@@ -5402,7 +5402,7 @@ function PlanningQuadrant({
             <text
               x={10}
               y={H - 42}
-              fontSize={9}
+              fontSize={12}
               fill="#7E8D8C"
               fontFamily="JetBrains Mono, monospace"
             >
@@ -5424,15 +5424,15 @@ function PlanningQuadrant({
                   }`}
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[9.5px] font-medium text-ink">
+                    <span className="block truncate text-[12.5px] font-medium text-ink">
                       {p.s.name}
                     </span>
-                    <span className="num block text-[8px] text-ink-3">
+                    <span className="num block text-[11px] text-ink-3">
                       {p.x} du/ha · {fmtSigned(p.y, 1)} dwellings
                     </span>
                   </span>
                   <span
-                    className="num shrink-0 text-[11px] font-semibold"
+                    className="num shrink-0 text-[14.5px] font-semibold"
                     style={{ color: p.gap < 0 ? '#B45309' : '#14201F' }}
                   >
                     {fmtInt(p.gap)}
@@ -5440,7 +5440,7 @@ function PlanningQuadrant({
                 </button>
               ))}
           </div>
-          <div className="mt-2 text-[8.5px] leading-[1.5] text-ink-3">
+          <div className="mt-2 text-[11.5px] leading-[1.5] text-ink-3">
             The right hand figure is the capacity gap at 2041, the zoned
             ceiling minus projected dwellings. Amber marks a negative gap.
           </div>
@@ -5474,7 +5474,7 @@ function TimelineBar({
     <div className="flex h-[62px] shrink-0 items-center justify-between border-t border-line bg-white px-3">
       <div className="flex items-center gap-2.5">
         <div>
-          <div className="text-[8px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Scenario
           </div>
           <div className="mt-1">
@@ -5488,17 +5488,17 @@ function TimelineBar({
             />
           </div>
         </div>
-        <div className="hidden max-w-[280px] border-l border-line pl-2.5 text-[8.5px] leading-[1.45] text-ink-3 lg:block">
+        <div className="hidden max-w-[280px] border-l border-line pl-2.5 text-[11.5px] leading-[1.45] text-ink-3 lg:block">
           {SCENARIO_NOTE[sc]} Pathways, not forecasts. Both are plausible.
         </div>
       </div>
 
       <div className="flex items-center gap-2.5">
         <div className="text-right">
-          <div className="text-[8px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Active dataset
           </div>
-          <div className="num mt-[2px] max-w-[200px] truncate text-[9.5px] text-ink-2">
+          <div className="num mt-[2px] max-w-[200px] truncate text-[12.5px] text-ink-2">
             {datasetLabel}
           </div>
         </div>
@@ -5513,7 +5513,7 @@ function TimelineBar({
                   className="group flex flex-col items-center"
                 >
                   <span
-                    className={`num rounded-[4px] border px-2 py-[3px] text-[10px] font-semibold transition-colors ${on ? '' : 'group-hover:border-accent group-hover:text-accent'}`}
+                    className={`num rounded-[4px] border px-2 py-[3px] text-[13.5px] font-semibold transition-colors ${on ? '' : 'group-hover:border-accent group-hover:text-accent'}`}
                     style={
                       on
                         ? { borderColor: ACCENT, background: ACCENT, color: '#fff' }
@@ -5531,7 +5531,7 @@ function TimelineBar({
             })}
           </div>
         ) : (
-          <div className="rounded-[5px] border border-dashed border-line px-2.5 py-[5px] text-[9px] text-[#A8B5B4]">
+          <div className="rounded-[5px] border border-dashed border-line px-2.5 py-[5px] text-[12px] text-[#A8B5B4]">
             No time-series data
           </div>
         )}
@@ -5596,9 +5596,9 @@ function IconRail({
     'help',
   ];
   return (
-    <nav className="flex w-12 shrink-0 flex-col items-center border-r border-line bg-white py-2">
+    <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
-        className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-[9px] font-bold text-white"
+        className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-[12px] font-bold text-white"
         style={{ background: ACCENT }}
       >
         CS
@@ -5622,7 +5622,7 @@ function IconRail({
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
-                <Icon size={16} />
+                <Icon size={18} />
               </button>
             </Tip>
           </React.Fragment>
@@ -5930,7 +5930,7 @@ const ALL_BUILDING_TYPES = new Set(
 function RealDataNote({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`rounded-[5px] border border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#0B4A50] ${className}`}
+      className={`rounded-[5px] border border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#0B4A50] ${className}`}
     >
       <span className="font-semibold">Sourced data.</span> From
       CCS_Buildings.xlsx, council's own asset register export. No
@@ -6008,7 +6008,7 @@ function RealBuildingsRegister() {
   return (
     <div className="mb-3 border-b border-line pb-3">
       <PanelHeading>Buildings register</PanelHeading>
-      <p className="mb-1.5 text-[9px] leading-[1.5] text-ink-2">
+      <p className="mb-1.5 text-[12px] leading-[1.5] text-ink-2">
         {REAL_BUILDINGS.length} physical buildings from council's asset
         register, grouped by building use and individually toggleable by
         building type. This replaces short description and details, which
@@ -6036,7 +6036,7 @@ function RealBuildingsRegister() {
 
       <PanelHeading
         right={
-          <span className="num text-[8px] text-ink-3">
+          <span className="num text-[11px] text-ink-3">
             {visibleBuildings.length} shown
           </span>
         }
@@ -6057,13 +6057,13 @@ function RealBuildingsRegister() {
                   className="flex flex-1 items-center gap-1.5 text-left"
                 >
                   <IconChevron
-                    size={10}
+                    size={13}
                     className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
                   />
-                  <span className="min-w-0 flex-1 truncate text-[9.5px] font-semibold text-ink">
+                  <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-ink">
                     {use.label === UNCLASSIFIED ? 'Not yet classified' : use.label}
                   </span>
-                  <span className="num shrink-0 text-[8.5px] text-ink-3">
+                  <span className="num shrink-0 text-[11.5px] text-ink-3">
                     {use.count}
                   </span>
                 </button>
@@ -6073,14 +6073,14 @@ function RealBuildingsRegister() {
                   aria-label={allOff ? 'Turn group on' : 'Turn group off'}
                 >
                   <span
-                    className="flex h-[13px] w-[13px] items-center justify-center rounded-[3px] border"
+                    className="flex h-[17px] w-[17px] items-center justify-center rounded-[4px] border"
                     style={{
                       borderColor: allOff ? '#C9D3D2' : ACCENT,
                       background: allOff ? '#fff' : someOff ? withAlpha(ACCENT, 0.35) : ACCENT,
                     }}
                   >
                     {!allOff && !someOff && (
-                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
                         <path d="M5 12.5 10 17.5 19 7" />
                       </svg>
                     )}
@@ -6095,15 +6095,15 @@ function RealBuildingsRegister() {
                       <button
                         key={t.key}
                         onClick={() => toggleType(t.key)}
-                        className="flex w-full items-center gap-1.5 px-2 py-[3px] pl-[26px] text-left transition-colors hover:bg-surface-2"
+                        className="flex w-full items-center gap-1.5 px-2 py-[3px] pl-[30px] text-left transition-colors hover:bg-surface-2"
                       >
                         <Check on={on} />
                         <span
-                          className={`min-w-0 flex-1 truncate text-[9px] ${on ? 'text-ink' : 'text-ink-3 line-through decoration-[#C9D3D2]'}`}
+                          className={`min-w-0 flex-1 truncate text-[12px] ${on ? 'text-ink' : 'text-ink-3 line-through decoration-[#C9D3D2]'}`}
                         >
                           {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
                         </span>
-                        <span className="num shrink-0 text-[8px] text-ink-3">
+                        <span className="num shrink-0 text-[11px] text-ink-3">
                           {t.count}
                         </span>
                       </button>
@@ -6118,27 +6118,27 @@ function RealBuildingsRegister() {
 
       <button
         onClick={() => setShowOther(!showOther)}
-        className="mt-1.5 flex w-full items-center gap-1 text-[8.5px] text-ink-3 hover:text-ink"
+        className="mt-1.5 flex w-full items-center gap-1 text-[11.5px] text-ink-3 hover:text-ink"
       >
         <IconChevron
-          size={9}
+          size={12}
           className={`transition-transform ${showOther ? 'rotate-90' : ''}`}
         />
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
         <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          <p className="mb-1 text-[8px] leading-[1.45] text-ink-3">
+          <p className="mb-1 text-[11px] leading-[1.45] text-ink-3">
             Also in the register under the same export, but not classified
             as buildings, so kept separate rather than folded into the
             building type list above.
           </p>
           {otherCounts.filter((o) => o.count > 0).map((o) => (
             <div key={o.c} className="flex items-center justify-between py-[2px]">
-              <span className="text-[8.5px] text-ink-2">
+              <span className="text-[11.5px] text-ink-2">
                 {ASSET_CLASS_LABEL[o.c]}
               </span>
-              <span className="num text-[9px] font-semibold text-ink">
+              <span className="num text-[12px] font-semibold text-ink">
                 {o.count}
               </span>
             </div>
@@ -6148,13 +6148,13 @@ function RealBuildingsRegister() {
 
       <div className="mt-2 flex items-center justify-between">
         <PanelHeading>Register, filtered</PanelHeading>
-        <span className="num text-[8px] text-ink-3">
+        <span className="num text-[11px] text-ink-3">
           ${(visibleInsured / 1e6).toFixed(1)}M shown
         </span>
       </div>
       <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
         {visibleBuildings.length === 0 && (
-          <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[8.5px] text-ink-3">
+          <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11.5px] text-ink-3">
             No building types selected.
           </div>
         )}
@@ -6173,16 +6173,16 @@ function RealBuildingsRegister() {
               >
                 <div className="flex items-start justify-between gap-1.5">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[9.5px] font-semibold text-ink">
+                    <span className="block truncate text-[12.5px] font-semibold text-ink">
                       {b.name}
                     </span>
-                    <span className="num mt-[2px] block truncate text-[8px] text-ink-3">
+                    <span className="num mt-[2px] block truncate text-[11px] text-ink-3">
                       {b.buildingType ?? 'Not yet classified'}
                       {b.suburb ? ` · ${b.suburb}` : ''}
                     </span>
                   </span>
                   {b.insuredValue > 0 && (
-                    <span className="num shrink-0 text-[9px] font-semibold text-ink-2">
+                    <span className="num shrink-0 text-[12px] font-semibold text-ink-2">
                       ${(b.insuredValue / 1000).toFixed(0)}k
                     </span>
                   )}
@@ -6190,7 +6190,7 @@ function RealBuildingsRegister() {
                 <div className="mt-1 flex flex-wrap gap-1">
                   {b.condition && (
                     <span
-                      className="rounded-[3px] px-1 text-[8px] font-medium"
+                      className="rounded-[3px] px-1 text-[11px] font-medium"
                       style={{ background: withAlpha(condColor, 0.12), color: condColor }}
                     >
                       {b.condition}
@@ -6198,7 +6198,7 @@ function RealBuildingsRegister() {
                   )}
                   {b.inherentRisk && (
                     <span
-                      className="rounded-[3px] px-1 text-[8px] font-medium"
+                      className="rounded-[3px] px-1 text-[11px] font-medium"
                       style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}
                     >
                       {b.inherentRisk}
@@ -6256,6 +6256,7 @@ function PortfolioTab({
   ownerFilter,
   setOwnerFilter,
 }: PortfolioTabProps) {
+  const [showDemo, setShowDemo] = useState(false);
   const [classFilter, setClassFilter] = useState<AssetCategory | 'all'>('all');
   const [placeOnly, setPlaceOnly] = useState(false);
   const [openAsset, setOpenAsset] = useState<string | null>(null);
@@ -6330,27 +6331,35 @@ function PortfolioTab({
     <div className="px-2.5 py-2.5">
       <RealBuildingsRegister />
 
-      <div className="mb-2 rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#7A6634]">
-        <span className="font-semibold">Everything below this line is demo data.</span>{' '}
-        The suburb, ownership tier and weighting model beneath were built to
-        show the mechanism before any real portfolio-wide asset data was
-        available. Now that the buildings register above is real, this
-        section should either be rebuilt on real data across every asset
-        class, or removed. Flagging rather than deleting until that call is
-        made.
-      </div>
+      <button
+        onClick={() => setShowDemo(!showDemo)}
+        className="mb-3 flex w-full items-center gap-1.5 rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-left text-[11.5px] leading-[1.4] text-[#7A6634] transition-colors hover:bg-[#FBF3DF]"
+      >
+        <IconChevron
+          size={12}
+          className={`shrink-0 transition-transform ${showDemo ? 'rotate-90' : ''}`}
+        />
+        <span className="flex-1">
+          <span className="font-semibold">Illustrative scenario (demo data).</span>{' '}
+          A weighting model shown on invented ownership and asset figures,
+          kept only to demonstrate the mechanism. Collapsed by default.
+        </span>
+      </button>
 
-      <p className="mb-2 text-[9.5px] leading-[1.55] text-ink-2">
-        The portfolio, cut by who owns it first and what threatens it second.
-        Ownership decides whether an exposure is a budget line, a shared
-        problem, or something council can only raise with somebody else.
-      </p>
+      {showDemo && (
+        <>
+          <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
+            The portfolio, cut by who owns it first and what threatens it
+            second. Ownership decides whether an exposure is a budget line,
+            a shared problem, or something council can only raise with
+            somebody else.
+          </p>
 
-      <PanelHeading>Whose asset</PanelHeading>
-      <div className="mb-1.5 flex flex-wrap gap-1">
+          <PanelHeading>Whose asset</PanelHeading>
+          <div className="mb-1.5 flex flex-wrap gap-1">
         <button
           onClick={() => setOwnerFilter('all')}
-          className="rounded-[4px] border px-1.5 py-[2px] text-[8.5px] font-medium transition-colors"
+          className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
           style={
             ownerFilter === 'all'
               ? { borderColor: ACCENT, background: ACCENT, color: '#fff' }
@@ -6366,7 +6375,7 @@ function PortfolioTab({
             <Tip key={t} label={OWNER_LABEL[t]} body={OWNER_NOTE[t]} side="top">
               <button
                 onClick={() => setOwnerFilter(t)}
-                className="rounded-[4px] border px-1.5 py-[2px] text-[8.5px] font-medium transition-colors"
+                className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
                 style={
                   on
                     ? { borderColor: c, background: c, color: '#fff' }
@@ -6383,7 +6392,7 @@ function PortfolioTab({
       {selectedId && SUBURB_BY_ID[selectedId] && (
         <button
           onClick={() => setPlaceOnly(!placeOnly)}
-          className="mb-2 flex w-full items-center gap-1.5 rounded-[4px] border px-1.5 py-1 text-left text-[8.5px] transition-colors"
+          className="mb-2 flex w-full items-center gap-1.5 rounded-[4px] border px-1.5 py-1 text-left text-[11.5px] transition-colors"
           style={{
             borderColor: placeOnly ? ACCENT : '#E2E7E7',
             color: placeOnly ? ACCENT : '#4A5A59',
@@ -6436,7 +6445,7 @@ function PortfolioTab({
           classFilter !== 'all' ? (
             <button
               onClick={() => setClassFilter('all')}
-              className="text-[8px] text-ink-3 underline decoration-dotted hover:text-ink"
+              className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
             >
               clear
             </button>
@@ -6456,17 +6465,17 @@ function PortfolioTab({
             >
               <span className="min-w-0 flex-1">
                 <span className="flex items-baseline justify-between gap-1.5">
-                  <span className="truncate text-[9.5px] font-medium text-ink">
+                  <span className="truncate text-[12.5px] font-medium text-ink">
                     {CATEGORY_LABEL[r.c]}
                   </span>
-                  <span className="num shrink-0 text-[9.5px] font-semibold text-ink">
+                  <span className="num shrink-0 text-[12.5px] font-semibold text-ink">
                     ${r.value.toFixed(1)}M
                   </span>
                 </span>
                 <span className="mt-[3px] block">
                   <MiniBar value={r.value / maxClassValue} height={3} />
                 </span>
-                <span className="num mt-[3px] block text-[8px] text-ink-3">
+                <span className="num mt-[3px] block text-[11px] text-ink-3">
                   {r.count} assets · {r.exposed} exposed · {r.over} over
                   threshold
                 </span>
@@ -6480,7 +6489,7 @@ function PortfolioTab({
         right={
           <button
             onClick={() => setWeights(DEFAULT_WEIGHTS)}
-            className="text-[8px] text-ink-3 underline decoration-dotted hover:text-ink"
+            className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
           >
             reset
           </button>
@@ -6511,11 +6520,11 @@ function PortfolioTab({
           <div key={w.k} className="mb-1.5 last:mb-0">
             <div className="flex items-center justify-between">
               <Tip label={w.label} body={w.note} side="top">
-                <span className="cursor-help text-[9px] text-ink-2 underline decoration-dotted decoration-[#CBD5D4]">
+                <span className="cursor-help text-[12px] text-ink-2 underline decoration-dotted decoration-[#CBD5D4]">
                   {w.label}
                 </span>
               </Tip>
-              <span className="num text-[9px] font-semibold text-accent">
+              <span className="num text-[12px] font-semibold text-accent">
                 {weights[w.k]}
               </span>
             </div>
@@ -6532,14 +6541,14 @@ function PortfolioTab({
           </div>
         ))}
       </div>
-      <div className="mb-2 rounded-[5px] border border-dashed border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#265C60]">
+      <div className="mb-2 rounded-[5px] border border-dashed border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#265C60]">
         This ordering is produced by the weights above, which you set. Council
         has not agreed a weighting, and the tool does not supply one. Defaults
         are equal so the list starts from no position at all.
       </div>
 
       <PanelHeading
-        right={<span className="num text-[8px] text-ink-3">{ranked.length}</span>}
+        right={<span className="num text-[11px] text-ink-3">{ranked.length}</span>}
       >
         Ranked under your weighting
       </PanelHeading>
@@ -6572,16 +6581,16 @@ function PortfolioTab({
                     style={{ background: OWNER_COLOR[r.owner] }}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[10px] font-semibold leading-tight text-ink">
+                    <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">
                       {r.asset.name}
                     </span>
-                    <span className="num mt-[2px] block truncate text-[8px] text-ink-3">
+                    <span className="num mt-[2px] block truncate text-[11px] text-ink-3">
                       {r.suburb.name} · {CATEGORY_LABEL[r.asset.category]} ·{' '}
                       {OWNER_SHORT[r.owner]}
                     </span>
                   </span>
                   {r.asset.value && (
-                    <span className="num shrink-0 text-[9.5px] font-semibold text-ink-2">
+                    <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
                       {r.asset.value}
                     </span>
                   )}
@@ -6590,7 +6599,7 @@ function PortfolioTab({
                   <span className="flex-1">
                     <MiniBar value={r.score} height={4} />
                   </span>
-                  <span className="num w-[22px] shrink-0 text-right text-[9px] font-semibold text-ink">
+                  <span className="num w-[28px] shrink-0 text-right text-[12px] font-semibold text-ink">
                     {(r.score * 100).toFixed(0)}
                   </span>
                 </div>
@@ -6599,7 +6608,7 @@ function PortfolioTab({
                     <HazardChip key={h} hazard={h} small />
                   ))}
                   {flagged && (
-                    <span className="num rounded-[3px] bg-[#FEF3C7] px-1 text-[8px] font-medium text-[#92400E]">
+                    <span className="num rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
                       {r.asset.repairs5yr} repairs
                     </span>
                   )}
@@ -6629,7 +6638,7 @@ function PortfolioTab({
                   <DetailRow label="Who uses it" value={r.asset.users} />
                   <button
                     onClick={() => setSelectedId(r.suburb.id)}
-                    className={`mt-1.5 rounded-[3px] border px-1 py-[1px] text-[8px] transition-colors ${
+                    className={`mt-1.5 rounded-[3px] border px-1 py-[1px] text-[11px] transition-colors ${
                       selectedId === r.suburb.id
                         ? 'border-accent text-accent'
                         : 'border-line text-ink-3 hover:border-accent hover:text-accent'
@@ -6642,8 +6651,10 @@ function PortfolioTab({
             </div>
           );
         })}
-      </div>
-      <DemoDataNote className="mt-2.5" />
+          </div>
+          <DemoDataNote className="mt-2.5" />
+        </>
+      )}
     </div>
   );
 }
@@ -6660,13 +6671,13 @@ function Component({
 }) {
   return (
     <div className="rounded-[4px] bg-surface-2 px-1.5 py-1">
-      <div className="text-[7.5px] uppercase tracking-[0.05em] text-ink-3">
+      <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">
         {label}
       </div>
-      <div className="num text-[11px] font-semibold leading-none text-ink">
+      <div className="num text-[14.5px] font-semibold leading-none text-ink">
         {(value * 100).toFixed(0)}
       </div>
-      <div className="num mt-[2px] text-[7.5px] text-ink-3">w {weight}</div>
+      <div className="num mt-[2px] text-[11px] text-ink-3">w {weight}</div>
     </div>
   );
 }
@@ -6703,10 +6714,10 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
     <div className="absolute inset-0 z-[60] flex flex-col bg-white">
       <div className="flex items-start justify-between border-b border-line px-2.5 py-2">
         <div>
-          <div className="text-[8px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-3">
             About this tool
           </div>
-          <div className="text-[12px] font-semibold text-ink">
+          <div className="text-[16px] font-semibold text-ink">
             What it answers
           </div>
         </div>
@@ -6719,7 +6730,7 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <div className="thin-scroll flex-1 overflow-y-auto px-2.5 py-2">
-        <p className="text-[9.5px] leading-[1.55] text-ink-2">
+        <p className="text-[12.5px] leading-[1.55] text-ink-2">
           A risk picture needs four things. This tool holds two of them well,
           one partly, and one barely. Knowing which is which keeps the map
           honest.
@@ -6730,15 +6741,15 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
               key={r.k}
               className="rounded-[5px] border border-line bg-white px-2 py-1.5"
             >
-              <div className="text-[9px] font-semibold text-ink">{r.k}</div>
-              <div className="mt-[2px] text-[8.5px] leading-[1.5] text-ink-2">
+              <div className="text-[12px] font-semibold text-ink">{r.k}</div>
+              <div className="mt-[2px] text-[11.5px] leading-[1.5] text-ink-2">
                 {r.v}
               </div>
             </div>
           ))}
         </div>
         <PanelHeading>Scale</PanelHeading>
-        <p className="text-[8.5px] leading-[1.55] text-ink-2">
+        <p className="text-[11.5px] leading-[1.55] text-ink-2">
           Geography is the easiest thing to get wrong here. An SA2 colour is an
           average across roughly 10,000 people. Switch the boundary control to
           SA1 before concluding anything about a pocket, and check whether the
@@ -6747,7 +6758,7 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
         </p>
         <div className="mt-2">
           <PanelHeading>Whose assets</PanelHeading>
-          <p className="text-[8.5px] leading-[1.55] text-ink-2">
+          <p className="text-[11.5px] leading-[1.55] text-ink-2">
             The asset list is the council portfolio plus the few third party
             sites council response plans depend on. Private property, which is
             where most of the canopy and most of the flood damage sits, is not
@@ -6757,7 +6768,7 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
         </div>
         <div className="mt-2">
           <PanelHeading>What it will not do</PanelHeading>
-          <ul className="space-y-1 text-[8.5px] leading-[1.5] text-ink-2">
+          <ul className="space-y-1 text-[11.5px] leading-[1.5] text-ink-2">
             <li>It does not rank suburbs into a single risk order.</li>
             <li>It does not weight one hazard against another.</li>
             <li>It does not recommend an action or a sequence.</li>
@@ -6873,19 +6884,19 @@ export default function App() {
       <IconRail tab={panelTab} setTab={setPanelTab} />
 
       {/* Left panel */}
-      <section className="relative flex w-72 shrink-0 flex-col border-r border-line bg-white">
+      <section className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="text-[13px] font-semibold leading-tight text-ink">
+            <div className="text-[17px] font-semibold leading-tight text-ink">
               {meta.title}
             </div>
-            <div className="mt-[2px] text-[8.5px] leading-tight text-ink-3">
+            <div className="mt-[2px] text-[11.5px] leading-tight text-ink-3">
               {meta.subtitle}
             </div>
           </div>
           <button
             onClick={() => setShowInfo(true)}
-            className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-[8.5px] font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
+            className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-[11.5px] font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
             aria-label="About this tool"
           >
             i
@@ -6951,10 +6962,10 @@ export default function App() {
         </div>
 
         <footer className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
-          <span className="text-[8px] uppercase tracking-[0.08em] text-ink-3">
+          <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">
             City of Charles Sturt
           </span>
-          <span className="num text-[8px] text-ink-3">
+          <span className="num text-[11px] text-ink-3">
             {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
           </span>
         </footer>
