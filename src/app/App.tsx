@@ -25,6 +25,10 @@ import React, {
 } from 'react';
 import type { Map as LeafletMap, Layer as LeafletLayer } from 'leaflet';
 
+// Real asset register export. See "Real buildings register" below for the
+// column mapping and why the raw file needed collapsing before use.
+import ccsBuildingsRaw from '@/data/ccsBuildings.json';
+
 /* ------------------------------------------------------------------ *
  * Types
  * ------------------------------------------------------------------ */
@@ -5903,6 +5907,437 @@ function investmentIndex(a: Asset, w: Weights): number {
   );
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Real buildings register
+ *
+ * Sourced from CCS_Buildings.xlsx, an export from council's own asset
+ * register (a Confirm/Assetic-style system). The export is one row per
+ * asset COMPONENT, not per building, an "asset" is a fitout, an
+ * electricity meter, a superstructure and so on. Rows are collapsed here
+ * onto their shared GIS ID, one row per physical asset, and every field
+ * below is copied straight from the register.
+ *
+ * Two problems in the raw export drove the shape of this section. Short
+ * Description (43 values) names the asset COMPONENT, "Building
+ * Superstructure" or "Electricity Meter", not what the place actually is.
+ * Details is a free-text string, near unique per row, too specific to
+ * group by. Building Type sits between the two, the same grain as the
+ * council's own building classification, so it is the field used for
+ * individual toggles here. Building Use is the broader grouping above it.
+ *
+ * There are no coordinates anywhere in this export. Nothing here is
+ * placed on the map. It is a register, not a layer, until a spatial
+ * export supplies a position for each GIS ID.
+ * ------------------------------------------------------------------ */
+
+type AssetClass = 'building' | 'meter' | 'pump' | 'accessory';
+
+interface RealAsset {
+  id: string;
+  name: string;
+  assetClass: AssetClass;
+  buildingType: string | null;
+  buildingUse: string | null;
+  suburb: string | null;
+  ward: string | null;
+  address: string | null;
+  owner: string | null;
+  maintainer: string | null;
+  condition: string | null;
+  criticality: string | null;
+  riskConsequence: string | null;
+  riskLikelihood: string | null;
+  inherentRisk: string | null;
+  insuredValue: number;
+  componentCount: number;
+}
+
+const REAL_ASSETS = ccsBuildingsRaw as RealAsset[];
+const REAL_BUILDINGS = REAL_ASSETS.filter((a) => a.assetClass === 'building');
+
+const ASSET_CLASS_LABEL: Record<AssetClass, string> = {
+  building: 'Buildings',
+  meter: 'Electricity meters',
+  pump: 'Pump stations',
+  accessory: 'Sports accessories',
+};
+
+const UNCLASSIFIED = '(not yet classified)';
+
+/** Condition, criticality and risk are the register's own ratings, not
+ *  ones this tool invented. Colour only encodes the ordering already in
+ *  the data. */
+const CONDITION_COLOR: Record<string, string> = {
+  'Very Good Condition': '#166534',
+  'Minor Defects Only': '#0891B2',
+  'Maintenance Required': '#D97706',
+  'Requires Renewal': '#DC2626',
+  'Asset Unserviceable': '#7C2D12',
+};
+const RISK_COLOR: Record<string, string> = {
+  'Low Risk': '#059669',
+  'Medium Risk': '#D97706',
+  'High Risk': '#EA580C',
+  'Extreme Risk': '#DC2626',
+};
+const NEUTRAL_TONE = '#9CA3AF';
+
+/** Building Use groups, each holding the real Building Types that occur
+ *  under it in the register, with a count and total insured value. */
+interface TypeNode {
+  key: string;
+  label: string;
+  count: number;
+  insuredValue: number;
+}
+interface UseNode {
+  key: string;
+  label: string;
+  count: number;
+  insuredValue: number;
+  types: TypeNode[];
+}
+
+function buildUseTree(rows: RealAsset[]): UseNode[] {
+  const uses = new Map<string, Map<string, TypeNode>>();
+  for (const r of rows) {
+    const useKey = r.buildingUse ?? UNCLASSIFIED;
+    const typeKey = r.buildingType ?? UNCLASSIFIED;
+    if (!uses.has(useKey)) uses.set(useKey, new Map());
+    const types = uses.get(useKey)!;
+    if (!types.has(typeKey)) {
+      types.set(typeKey, { key: typeKey, label: typeKey, count: 0, insuredValue: 0 });
+    }
+    const t = types.get(typeKey)!;
+    t.count += 1;
+    t.insuredValue += r.insuredValue;
+  }
+  const out: UseNode[] = [];
+  for (const [useKey, types] of uses) {
+    const typeList = [...types.values()].sort((a, b) => b.count - a.count);
+    out.push({
+      key: useKey,
+      label: useKey,
+      count: typeList.reduce((n, t) => n + t.count, 0),
+      insuredValue: typeList.reduce((n, t) => n + t.insuredValue, 0),
+      types: typeList,
+    });
+  }
+  return out.sort((a, b) => b.count - a.count);
+}
+
+const REAL_USE_TREE = buildUseTree(REAL_BUILDINGS);
+const ALL_BUILDING_TYPES = new Set(
+  REAL_BUILDINGS.map((b) => b.buildingType ?? UNCLASSIFIED),
+);
+
+/** A callout marking data that came from the council register itself,
+ *  the counterpart to DemoDataNote used everywhere else in the tool. */
+function RealDataNote({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-[5px] border border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#0B4A50] ${className}`}
+    >
+      <span className="font-semibold">Sourced data.</span> From
+      CCS_Buildings.xlsx, council's own asset register export. No
+      coordinates exist in this file, so nothing below is placed on the
+      map, it is a filterable list until a spatial export supplies a
+      position per asset.
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Real buildings register, the categorise and toggle mechanism
+ * ------------------------------------------------------------------ */
+
+function RealBuildingsRegister() {
+  const [offTypes, setOffTypes] = useState<Set<string>>(() => new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(
+    () => new Set([REAL_USE_TREE[0]?.key]),
+  );
+  const [showOther, setShowOther] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const toggleType = useCallback((key: string) => {
+    setOffTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const toggleUse = useCallback((use: UseNode) => {
+    setOffTypes((prev) => {
+      const next = new Set(prev);
+      const allOff = use.types.every((t) => next.has(t.key));
+      for (const t of use.types) {
+        if (allOff) next.delete(t.key);
+        else next.add(t.key);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleExpand = useCallback((key: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const visibleTypes = useMemo(
+    () => new Set([...ALL_BUILDING_TYPES].filter((t) => !offTypes.has(t))),
+    [offTypes],
+  );
+
+  const visibleBuildings = useMemo(
+    () =>
+      REAL_BUILDINGS.filter((b) =>
+        visibleTypes.has(b.buildingType ?? UNCLASSIFIED),
+      ),
+    [visibleTypes],
+  );
+
+  const totalInsured = REAL_BUILDINGS.reduce((n, b) => n + b.insuredValue, 0);
+  const visibleInsured = visibleBuildings.reduce((n, b) => n + b.insuredValue, 0);
+
+  const otherClasses: AssetClass[] = ['meter', 'pump', 'accessory'];
+  const otherCounts = otherClasses.map((c) => ({
+    c,
+    count: REAL_ASSETS.filter((a) => a.assetClass === c).length,
+  }));
+
+  return (
+    <div className="mb-3 border-b border-line pb-3">
+      <PanelHeading>Buildings register</PanelHeading>
+      <p className="mb-1.5 text-[9px] leading-[1.5] text-ink-2">
+        {REAL_BUILDINGS.length} physical buildings from council's asset
+        register, grouped by building use and individually toggleable by
+        building type. This replaces short description and details, which
+        are the wrong grain for a category list, one too broad, the other
+        too specific.
+      </p>
+      <RealDataNote className="mb-2" />
+
+      <div className="mb-2 grid grid-cols-2 gap-1.5">
+        <Stat
+          label="In register"
+          value={`${REAL_BUILDINGS.length}`}
+          sub={`${ALL_BUILDING_TYPES.size} building types`}
+        />
+        <Stat
+          label="Insured value"
+          value={`$${(totalInsured / 1e6).toFixed(1)}M`}
+          sub={`${REAL_BUILDINGS.filter((b) => b.insuredValue > 0).length} valued`}
+          tip={{
+            label: 'Insured amount',
+            body: 'The register’s insured amount field, taken as the higher of insured amount and replacement value where both exist. Not every asset carries a value.',
+          }}
+        />
+      </div>
+
+      <PanelHeading
+        right={
+          <span className="num text-[8px] text-ink-3">
+            {visibleBuildings.length} shown
+          </span>
+        }
+      >
+        Building type, on / off
+      </PanelHeading>
+      <div className="overflow-hidden rounded-[6px] border border-line bg-white">
+        {REAL_USE_TREE.map((use) => {
+          const isOpen = expanded.has(use.key);
+          const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
+          const allOff = offCount === use.types.length;
+          const someOff = offCount > 0 && !allOff;
+          return (
+            <div key={use.key} className="border-b border-line last:border-b-0">
+              <div className="flex items-center gap-1.5 px-2 py-1.5">
+                <button
+                  onClick={() => toggleExpand(use.key)}
+                  className="flex flex-1 items-center gap-1.5 text-left"
+                >
+                  <IconChevron
+                    size={10}
+                    className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[9.5px] font-semibold text-ink">
+                    {use.label === UNCLASSIFIED ? 'Not yet classified' : use.label}
+                  </span>
+                  <span className="num shrink-0 text-[8.5px] text-ink-3">
+                    {use.count}
+                  </span>
+                </button>
+                <button
+                  onClick={() => toggleUse(use)}
+                  className="shrink-0"
+                  aria-label={allOff ? 'Turn group on' : 'Turn group off'}
+                >
+                  <span
+                    className="flex h-[13px] w-[13px] items-center justify-center rounded-[3px] border"
+                    style={{
+                      borderColor: allOff ? '#C9D3D2' : ACCENT,
+                      background: allOff ? '#fff' : someOff ? withAlpha(ACCENT, 0.35) : ACCENT,
+                    }}
+                  >
+                    {!allOff && !someOff && (
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12.5 10 17.5 19 7" />
+                      </svg>
+                    )}
+                  </span>
+                </button>
+              </div>
+              {isOpen && (
+                <div className="fade-up pb-1">
+                  {use.types.map((t) => {
+                    const on = !offTypes.has(t.key);
+                    return (
+                      <button
+                        key={t.key}
+                        onClick={() => toggleType(t.key)}
+                        className="flex w-full items-center gap-1.5 px-2 py-[3px] pl-[26px] text-left transition-colors hover:bg-surface-2"
+                      >
+                        <Check on={on} />
+                        <span
+                          className={`min-w-0 flex-1 truncate text-[9px] ${on ? 'text-ink' : 'text-ink-3 line-through decoration-[#C9D3D2]'}`}
+                        >
+                          {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                        </span>
+                        <span className="num shrink-0 text-[8px] text-ink-3">
+                          {t.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <button
+        onClick={() => setShowOther(!showOther)}
+        className="mt-1.5 flex w-full items-center gap-1 text-[8.5px] text-ink-3 hover:text-ink"
+      >
+        <IconChevron
+          size={9}
+          className={`transition-transform ${showOther ? 'rotate-90' : ''}`}
+        />
+        Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
+      </button>
+      {showOther && (
+        <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
+          <p className="mb-1 text-[8px] leading-[1.45] text-ink-3">
+            Also in the register under the same export, but not classified
+            as buildings, so kept separate rather than folded into the
+            building type list above.
+          </p>
+          {otherCounts.filter((o) => o.count > 0).map((o) => (
+            <div key={o.c} className="flex items-center justify-between py-[2px]">
+              <span className="text-[8.5px] text-ink-2">
+                {ASSET_CLASS_LABEL[o.c]}
+              </span>
+              <span className="num text-[9px] font-semibold text-ink">
+                {o.count}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center justify-between">
+        <PanelHeading>Register, filtered</PanelHeading>
+        <span className="num text-[8px] text-ink-3">
+          ${(visibleInsured / 1e6).toFixed(1)}M shown
+        </span>
+      </div>
+      <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+        {visibleBuildings.length === 0 && (
+          <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[8.5px] text-ink-3">
+            No building types selected.
+          </div>
+        )}
+        {visibleBuildings.map((b) => {
+          const isOpen = openId === b.id;
+          const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+          const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+          return (
+            <div
+              key={b.id}
+              className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
+            >
+              <button
+                onClick={() => setOpenId(isOpen ? null : b.id)}
+                className="w-full px-2 py-1.5 text-left"
+              >
+                <div className="flex items-start justify-between gap-1.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[9.5px] font-semibold text-ink">
+                      {b.name}
+                    </span>
+                    <span className="num mt-[2px] block truncate text-[8px] text-ink-3">
+                      {b.buildingType ?? 'Not yet classified'}
+                      {b.suburb ? ` · ${b.suburb}` : ''}
+                    </span>
+                  </span>
+                  {b.insuredValue > 0 && (
+                    <span className="num shrink-0 text-[9px] font-semibold text-ink-2">
+                      ${(b.insuredValue / 1000).toFixed(0)}k
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {b.condition && (
+                    <span
+                      className="rounded-[3px] px-1 text-[8px] font-medium"
+                      style={{ background: withAlpha(condColor, 0.12), color: condColor }}
+                    >
+                      {b.condition}
+                    </span>
+                  )}
+                  {b.inherentRisk && (
+                    <span
+                      className="rounded-[3px] px-1 text-[8px] font-medium"
+                      style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}
+                    >
+                      {b.inherentRisk}
+                    </span>
+                  )}
+                </div>
+              </button>
+              {isOpen && (
+                <div className="fade-up border-t border-line px-2 py-1.5">
+                  {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
+                  {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
+                  {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
+                  {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
+                  {(b.riskConsequence || b.riskLikelihood) && (
+                    <DetailRow
+                      label="Risk rating"
+                      value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`}
+                    />
+                  )}
+                  <DetailRow
+                    label="Register components"
+                    value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 /* ------------------------------------------------------------------ *
  * Tab. Portfolio
  * ------------------------------------------------------------------ */
@@ -6000,6 +6435,18 @@ function PortfolioTab({
 
   return (
     <div className="px-2.5 py-2.5">
+      <RealBuildingsRegister />
+
+      <div className="mb-2 rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-[8.5px] leading-[1.5] text-[#7A6634]">
+        <span className="font-semibold">Everything below this line is demo data.</span>{' '}
+        The suburb, ownership tier and weighting model beneath were built to
+        show the mechanism before any real portfolio-wide asset data was
+        available. Now that the buildings register above is real, this
+        section should either be rebuilt on real data across every asset
+        class, or removed. Flagging rather than deleting until that call is
+        made.
+      </div>
+
       <p className="mb-2 text-[9.5px] leading-[1.55] text-ink-2">
         The portfolio, cut by who owns it first and what threatens it second.
         Ownership decides whether an exposure is a budget line, a shared
