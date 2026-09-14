@@ -49,7 +49,12 @@ type HazardId = 'heat' | 'flooding' | 'coastal' | 'drought';
 
 type PanelTab = 'portfolio' | 'layers' | 'place' | 'analysis' | 'help';
 
-type LayerGroup = 'hazard' | 'vulnerability' | 'overlay';
+type LayerGroup =
+  | 'hazard'
+  | 'vulnerability'
+  | 'transport'
+  | 'infrastructure'
+  | 'planning';
 
 type LayerKind = 'choropleth' | 'canvas' | 'vector';
 
@@ -496,19 +501,9 @@ const LAYERS: LayerDef[] = [
     source: 'Canopy cover audit, aerial classification',
   },
   {
-    id: 'buildings',
-    name: 'CoCS Buildings',
-    group: 'overlay',
-    kind: 'vector',
-    hi: '#7C3AED',
-    unit: 'council buildings',
-    note: 'Buildings on the council portfolio. Council owned, so council carries the damage.',
-    source: 'Corporate asset register',
-  },
-  {
     id: 'sw-pipes',
     name: 'SW Pipes',
-    group: 'overlay',
+    group: 'infrastructure',
     kind: 'vector',
     hi: '#2563EB',
     unit: 'pipe network',
@@ -518,7 +513,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'roads',
     name: 'Roads',
-    group: 'overlay',
+    group: 'transport',
     kind: 'vector',
     hi: '#475569',
     unit: 'road network',
@@ -528,7 +523,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'pt-stops',
     name: 'PT Stops',
-    group: 'overlay',
+    group: 'transport',
     kind: 'vector',
     hi: '#0891B2',
     unit: 'stops',
@@ -538,7 +533,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'railways',
     name: 'Railways',
-    group: 'overlay',
+    group: 'transport',
     kind: 'vector',
     hi: '#334155',
     unit: 'rail corridor',
@@ -548,7 +543,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'pt-freq',
     name: 'PT Freq.',
-    group: 'overlay',
+    group: 'transport',
     kind: 'vector',
     hi: '#0EA5E9',
     unit: 'services per hour',
@@ -558,7 +553,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'cycling',
     name: 'Cycling',
-    group: 'overlay',
+    group: 'transport',
     kind: 'vector',
     hi: '#059669',
     unit: 'cycle network',
@@ -568,7 +563,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'industrial',
     name: 'Industrial',
-    group: 'overlay',
+    group: 'planning',
     kind: 'vector',
     hi: '#B45309',
     unit: 'industrial land',
@@ -578,7 +573,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'zoning',
     name: 'Zoning',
-    group: 'overlay',
+    group: 'planning',
     kind: 'vector',
     hi: '#9333EA',
     unit: 'planning zones',
@@ -588,7 +583,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'heritage',
     name: 'Heritage Points',
-    group: 'overlay',
+    group: 'planning',
     kind: 'vector',
     hi: '#A16207',
     unit: 'heritage items',
@@ -598,7 +593,7 @@ const LAYERS: LayerDef[] = [
   {
     id: 'res-pipeline',
     name: 'Res. Pipeline',
-    group: 'overlay',
+    group: 'planning',
     kind: 'vector',
     hi: '#DB2777',
     unit: 'approved dwellings',
@@ -613,8 +608,10 @@ const LAYER_BY_ID: Record<string, LayerDef> = Object.fromEntries(
 
 const GROUP_LABEL: Record<LayerGroup, string> = {
   hazard: 'Hazard layers',
-  vulnerability: 'Vulnerability & City Priority layers',
-  overlay: 'Overlays',
+  vulnerability: 'Vulnerability & Population',
+  transport: 'Transport & Access',
+  infrastructure: 'Infrastructure',
+  planning: 'Planning & Land Use',
 };
 
 /* ------------------------------------------------------------------ *
@@ -632,7 +629,7 @@ const BLUEPRINTS: Blueprint[] = [
     accent: BLUEPRINT_ACCENT['flood-risk'],
     description:
       'Modelled inundation at three return periods against the drainage network and the buildings inside it. Frequent nuisance flooding and rare severe flooding are different problems, so both are on.',
-    layers: ['flood-100', 'flood-20', 'watercourses', 'sw-pipes', 'buildings'],
+    layers: ['flood-100', 'flood-20', 'watercourses', 'sw-pipes'],
     rank: 'floodScore',
     steps: [2021, 2041],
     watch: [
@@ -680,7 +677,7 @@ const BLUEPRINTS: Blueprint[] = [
     accent: BLUEPRINT_ACCENT.infrastructure,
     description:
       'The council asset portfolio against hazard extent. Answers the portfolio question, which assets carry the most exposure, before the single-site question.',
-    layers: ['buildings', 'sw-pipes', 'roads', 'flood-20'],
+    layers: ['sw-pipes', 'roads', 'flood-20'],
     rank: 'assets',
     watch: [
       'Reactive repair counts are shown per asset. Ten or more interventions in five years is where renewal usually beats maintenance.',
@@ -1711,13 +1708,11 @@ function choroplethColor(layerId: string, value: number): string {
   return lerpHex(def.lo, def.hi, value);
 }
 
-/** The first checked layer that paints a surface. Order follows the catalogue. */
-function activeSurfaceLayer(checked: Set<string>): LayerDef | null {
-  for (const l of LAYERS) {
-    if (l.kind === 'vector') continue;
-    if (checked.has(l.id)) return l;
-  }
-  return null;
+/** Every checked layer that paints a surface, in catalogue order. Any
+ *  number of these stack on the map at once, each governed by its own
+ *  opacity slider, rather than only the first one checked winning. */
+function activeSurfaceLayers(checked: Set<string>): LayerDef[] {
+  return LAYERS.filter((l) => l.kind !== 'vector' && checked.has(l.id));
 }
 
 /* ------------------------------------------------------------------ *
@@ -2238,8 +2233,8 @@ function MapView(props: MapViewProps) {
   const darkBase = !!baseDef.dark;
 
   const sa1Mode = boundsMode === 'sa1';
-  const surface = useMemo(
-    () => activeSurfaceLayer(checkedLayers),
+  const activeSurfaces = useMemo(
+    () => activeSurfaceLayers(checkedLayers),
     [checkedLayers],
   );
 
@@ -2372,16 +2367,16 @@ function MapView(props: MapViewProps) {
     const opacityFor = (id: string) =>
       clamp((layerOpacity[id] ?? 1) * overlayOpacity, 0, 1);
 
-    /* Surfaces. In compare mode two layers are drawn at once, with B
-       dropped to 40 percent so both stay readable. */
+    /* Surfaces. Any number of checked layers stack, each at its own
+       opacity slider, so any combination can be read against any other.
+       Compare mode is the one fixed case, exactly the two chosen
+       measures, B dropped to 40 percent so both stay readable. */
     const surfaces: { id: string; alpha: number }[] = compare
       ? [
           { id: compareA, alpha: 1 },
           { id: compareB, alpha: 0.4 },
         ]
-      : surface
-        ? [{ id: surface.id, alpha: 1 }]
-        : [];
+      : activeSurfaces.map((l) => ({ id: l.id, alpha: 1 }));
 
     // A canvas layer (heat vulnerability, tree canopy) still colours the
     // SA2 polygon underneath it at the same value, the per-cell texture is
@@ -2404,7 +2399,10 @@ function MapView(props: MapViewProps) {
     /* Base polygons. These are also the click and hover targets, so they
        exist even when no surface layer is on. */
     const primary = polySurfaces[0];
-    const secondary = polySurfaces[1];
+    // Every other checked surface stacks as a translucent fill above the
+    // first, same mechanism compare mode already used for its second
+    // measure, just no longer capped at exactly one extra layer.
+    const additionalSurfaces = polySurfaces.slice(1);
 
     if (sa1Mode) {
       // No layer is modelled at SA1 resolution, so SA1 fill never varies by
@@ -2474,18 +2472,29 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    /* Compare mode second surface, drawn over the first at 40 percent. */
-    if (secondary && !sa1Mode) {
-      for (const s of SUBURBS) {
-        const norm = normLayerValue(secondary.id, s, year, sc);
-        push(
-          L.polygon(s.path, {
-            stroke: false,
-            fillColor: choroplethColor(secondary.id, norm),
-            fillOpacity: opacityFor(secondary.id) * secondary.alpha,
-            interactive: false,
-          }),
-        );
+    /* Every additional checked surface stacks over the first, in compare
+       mode that's exactly the second measure at 40 percent, otherwise it
+       is however many other layers are checked, each at its own slider,
+       so any combination of hazard, vulnerability or other layers reads
+       against any other rather than only the first one checked winning. */
+    if (!sa1Mode) {
+      for (const extra of additionalSurfaces) {
+        for (const s of SUBURBS) {
+          const norm = normLayerValue(extra.id, s, year, sc);
+          push(
+            L.polygon(s.path, {
+              stroke: false,
+              fillColor: choroplethColor(extra.id, norm),
+              // Compare mode's 40 percent alpha is untouched, that
+              // behaviour already exists. General stacking outside
+              // compare mode has every extra layer at alpha 1, so it
+              // gets its own dampener, otherwise three or four checked
+              // layers would just paint over each other solid.
+              fillOpacity: opacityFor(extra.id) * extra.alpha * (compare ? 1 : 0.65),
+              interactive: false,
+            }),
+          );
+        }
       }
     }
 
@@ -2669,29 +2678,6 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    if (checkedLayers.has('buildings')) {
-      const c = LAYER_BY_ID['buildings'].hi!;
-      for (const s of SUBURBS) {
-        for (const a of s.assets) {
-          if (a.category !== 'building' && a.category !== 'service') continue;
-          push(
-            L.rectangle(
-              [
-                [a.position.lat - 0.0009, a.position.lng - 0.0012],
-                [a.position.lat + 0.0009, a.position.lng + 0.0012],
-              ],
-              {
-                color: c,
-                weight: 1,
-                fillColor: c,
-                fillOpacity: vecAlpha('buildings') * 0.55,
-              },
-            ),
-          );
-        }
-      }
-    }
-
     if (checkedLayers.has('industrial')) {
       const c = LAYER_BY_ID['industrial'].hi!;
       for (const id of ['royal-park-hendon', 'hindmarsh-brompton', 'woodville-cheltenham']) {
@@ -2795,9 +2781,9 @@ function MapView(props: MapViewProps) {
 
     /* Real buildings, on top of everything else, since the point of
        showing them is to read them against whatever hazard fill is
-       underneath. Filtered by the same Building Type toggles as the
-       Portfolio panel, geocoded positions only, no fallback to a
-       fabricated point when a building has none.
+       underneath. Filtered by the same Building Type toggles as Layers,
+       Assets, geocoded positions only, no fallback to a fabricated point
+       when a building has none.
 
        Of the 263 that geocoded inside the LGA, only 14 matched an actual
        building or named place, most register addresses are a street
@@ -2805,26 +2791,50 @@ function MapView(props: MapViewProps) {
        point sits somewhere along that street, not at the building. A
        fainter dot at the same size would still read as "the building is
        here" on a quick glance, so precise and street-level get visibly
-       different marks: a filled dot against a hollow ring. */
+       different marks: a filled dot against a hollow ring.
+
+       A second, separate problem: many buildings share one address text
+       verbatim, a whole aged care campus or a scoreboard and its oval
+       both filed under one facility name, so they geocode to the exact
+       same point. Plotting each as its own dot would stack them
+       invisibly, one dot standing in for what might be thirty buildings,
+       which reads as sparse and wrong. Grouping by exact coordinate and
+       sizing the marker by how many buildings sit there is the honest
+       version of the same information. */
     if (showBuildings) {
+      const byPoint = new Map<
+        string,
+        { lat: number; lng: number; precision: 'site' | 'street'; names: string[] }
+      >();
       for (const b of REAL_BUILDINGS) {
         const loc = BUILDING_LOCATION[b.id];
         if (!loc) continue;
         const typeKey = b.buildingType ?? UNCLASSIFIED;
         if (buildingOffTypes.has(typeKey)) continue;
-        const siteLevel = loc.precision === 'site';
+        const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
+        const bucket = byPoint.get(key);
+        if (bucket) bucket.names.push(b.name);
+        else byPoint.set(key, { lat: loc.lat, lng: loc.lng, precision: loc.precision, names: [b.name] });
+      }
+      for (const { lat, lng, precision, names } of byPoint.values()) {
+        const siteLevel = precision === 'site';
+        const count = names.length;
+        // Radius grows with count so a 29-building cluster reads as
+        // visibly bigger than a single building, not just a darker dot.
+        const radius = (siteLevel ? 5 : 4) + (count > 1 ? Math.min(9, Math.log2(count) * 3) : 0);
+        const label =
+          count === 1
+            ? `${names[0]}${siteLevel ? '' : ' — street-level estimate, not the building'}`
+            : `${count} buildings here${siteLevel ? '' : ', street-level estimate'}: ${names.slice(0, 4).join(', ')}${count > 4 ? `, +${count - 4} more` : ''}`;
         push(
-          L.circleMarker([loc.lat, loc.lng] as LatLngTuple, {
-            radius: siteLevel ? 5 : 4,
+          L.circleMarker([lat, lng] as LatLngTuple, {
+            radius,
             color: siteLevel ? '#fff' : ACCENT,
             weight: siteLevel ? 1.2 : 1.6,
             fillColor: siteLevel ? ACCENT : '#fff',
             fillOpacity: siteLevel ? 0.95 : 0.5,
             interactive: true,
-          }).bindTooltip(
-            `${b.name}${siteLevel ? '' : ' — street-level estimate, not the building'}`,
-            { direction: 'top', offset: [0, -3] },
-          ),
+          }).bindTooltip(label, { direction: 'top', offset: [0, -3] }),
         );
       }
     }
@@ -2846,7 +2856,7 @@ function MapView(props: MapViewProps) {
     boundsMode,
     sa1Mode,
     selectedId,
-    surface,
+    activeSurfaces,
     compare,
     compareA,
     compareB,
@@ -2952,9 +2962,7 @@ function MapView(props: MapViewProps) {
 
   const legendLayers = compare
     ? [compareA, compareB]
-    : surface
-      ? [surface.id]
-      : [];
+    : activeSurfaces.map((l) => l.id);
 
   return (
     <div className="relative h-full w-full">
@@ -3221,13 +3229,99 @@ function LayersTab({
   const [open, setOpen] = useState<Record<LayerGroup, boolean>>({
     hazard: true,
     vulnerability: false,
-    overlay: false,
+    transport: false,
+    infrastructure: false,
+    planning: false,
   });
   const [assetsOpen, setAssetsOpen] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
-  const groups: LayerGroup[] = ['hazard', 'vulnerability', 'overlay'];
+  // Ordered by how often a council user needs it: the hazard itself,
+  // what it threatens (assets, rendered separately below), who it
+  // threatens, then the supporting network and policy layers behind
+  // those. No group is a generic 'overlays' catch-all any more, each
+  // one names the actual category it holds.
+  const groups: LayerGroup[] = [
+    'hazard',
+    'vulnerability',
+    'transport',
+    'infrastructure',
+    'planning',
+  ];
   const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
+
+  const renderGroup = (g: LayerGroup) => {
+    const layers = LAYERS.filter((l) => l.group === g);
+    const on = layers.filter((l) => checkedLayers.has(l.id)).length;
+    return (
+      <Accordion
+        key={g}
+        title={GROUP_LABEL[g]}
+        count={`${on}/${layers.length}`}
+        open={open[g]}
+        onToggle={() => setOpen({ ...open, [g]: !open[g] })}
+      >
+        {layers.map((l) => {
+          const checked = checkedLayers.has(l.id);
+          const showSlider = checked || hoverId === l.id;
+          const op = layerOpacity[l.id] ?? 1;
+          return (
+            <div
+              key={l.id}
+              onMouseEnter={() => setHoverId(l.id)}
+              onMouseLeave={() => setHoverId(null)}
+              className={`px-2.5 py-[3px] transition-colors ${checked ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
+            >
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => toggleLayer(l.id)}
+                  className="flex flex-1 items-center gap-1.5 text-left"
+                >
+                  <Check on={checked} />
+                  <span
+                    className="h-[9px] w-[9px] shrink-0 rounded-[2px]"
+                    style={{
+                      background:
+                        l.kind === 'vector'
+                          ? l.hi
+                          : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
+                    }}
+                  />
+                  <span
+                    className={`flex-1 truncate text-[12px] ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
+                  >
+                    {l.name}
+                  </span>
+                </button>
+                <Tip label={l.name} body={l.note} source={l.source} side="left">
+                  <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
+                    i
+                  </span>
+                </Tip>
+              </div>
+              {showSlider && (
+                <div className="fade-up mt-[3px] flex items-center gap-1.5 pl-[22px]">
+                  <input
+                    type="range"
+                    min={10}
+                    max={100}
+                    value={Math.round(op * 100)}
+                    onChange={(e) =>
+                      setLayerOpacity(l.id, Number(e.target.value) / 100)
+                    }
+                    className="h-3 flex-1"
+                  />
+                  <span className="num w-[32px] text-right text-[11.5px] text-ink-3">
+                    {Math.round(op * 100)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </Accordion>
+    );
+  };
 
   return (
     <div>
@@ -3251,96 +3345,31 @@ function LayersTab({
         />
       </div>
 
-      {groups.map((g) => {
-        const layers = LAYERS.filter((l) => l.group === g);
-        const on = layers.filter((l) => checkedLayers.has(l.id)).length;
-        return (
-          <Accordion
-            key={g}
-            title={GROUP_LABEL[g]}
-            count={`${on}/${layers.length}`}
-            open={open[g]}
-            onToggle={() => setOpen({ ...open, [g]: !open[g] })}
-          >
-            {layers.map((l) => {
-              const checked = checkedLayers.has(l.id);
-              const showSlider = checked || hoverId === l.id;
-              const op = layerOpacity[l.id] ?? 1;
-              return (
-                <div
-                  key={l.id}
-                  onMouseEnter={() => setHoverId(l.id)}
-                  onMouseLeave={() => setHoverId(null)}
-                  className={`px-2.5 py-[3px] transition-colors ${checked ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
-                >
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => toggleLayer(l.id)}
-                      className="flex flex-1 items-center gap-1.5 text-left"
-                    >
-                      <Check on={checked} />
-                      <span
-                        className="h-[11px] w-[11px] shrink-0 rounded-[2px]"
-                        style={{
-                          background:
-                            l.kind === 'vector'
-                              ? l.hi
-                              : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
-                        }}
-                      />
-                      <span
-                        className={`flex-1 truncate text-[13.5px] ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
-                      >
-                        {l.name}
-                      </span>
-                    </button>
-                    <Tip label={l.name} body={l.note} source={l.source} side="left">
-                      <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center rounded-full border border-line text-[11px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
-                        i
-                      </span>
-                    </Tip>
-                  </div>
-                  {showSlider && (
-                    <div className="fade-up mt-[3px] flex items-center gap-1.5 pl-[22px]">
-                      <input
-                        type="range"
-                        min={10}
-                        max={100}
-                        value={Math.round(op * 100)}
-                        onChange={(e) =>
-                          setLayerOpacity(l.id, Number(e.target.value) / 100)
-                        }
-                        className="h-3 flex-1"
-                      />
-                      <span className="num w-[32px] text-right text-[11.5px] text-ink-3">
-                        {Math.round(op * 100)}%
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </Accordion>
-        );
-      })}
+      {/* Hazard first, it's the threat itself. */}
+      {renderGroup('hazard')}
 
-      {/* Real buildings, alongside the hazard and vulnerability layers
-          they need to be compared against, rather than a tab switch
-          away in Portfolio. Portfolio still reads this same state, it
-          just doesn't carry its own copy of the toggle any more. */}
+      {/* Assets second, what the hazard threatens. Alongside hazard and
+          vulnerability rather than a tab switch away in Portfolio, which
+          still reads this same state, it just doesn't carry its own copy
+          of the toggle any more. */}
       <Accordion
         title="Assets"
         count={`${assetsOnCount}/${ALL_BUILDING_TYPES.size}`}
         open={assetsOpen}
         onToggle={() => setAssetsOpen(!assetsOpen)}
       >
-        <div className="px-2.5">
+        <div className="px-2.5 pb-1.5">
           <AssetTypeToggles
             offTypes={buildingOffTypes}
             setOffTypes={setBuildingOffTypes}
           />
         </div>
       </Accordion>
+
+      {/* Who the hazard threatens, then the supporting network and
+          policy layers behind those, in descending order of how often a
+          council user actually reaches for them. */}
+      {groups.filter((g) => g !== 'hazard').map(renderGroup)}
 
       {/* Blueprints. A curated layer set plus its reading notes. */}
       <div className="border-t border-line px-2.5 py-2.5">
@@ -6601,10 +6630,14 @@ export default function App() {
   const showBlueprintPanel = !!activeBlueprint;
   const compare = panelTab === 'analysis';
 
-  const surface = useMemo(
-    () => activeSurfaceLayer(checkedLayers),
+  // Several layers can be stacked on the map at once now, but the
+  // timeline only ever drives one dataset's year steps. The first
+  // checked layer, by catalogue order, is the one it follows.
+  const activeSurfaces = useMemo(
+    () => activeSurfaceLayers(checkedLayers),
     [checkedLayers],
   );
+  const surface = activeSurfaces[0] ?? null;
 
   const steps = useMemo(
     () => yearStepsFor(activeBlueprint, compare ? compareA : surface?.id ?? null),
@@ -6662,7 +6695,9 @@ export default function App() {
     ? BLUEPRINT_BY_ID[activeBlueprint].title
     : compare
       ? `${LAYER_BY_ID[compareA].name} vs ${LAYER_BY_ID[compareB].name}`
-      : (surface?.name ?? 'No surface layer');
+      : activeSurfaces.length > 0
+        ? activeSurfaces.map((l) => l.name).join(' + ')
+        : 'No surface layer';
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
