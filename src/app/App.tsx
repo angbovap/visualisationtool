@@ -47,7 +47,7 @@ import ccsBuildingsGeocoded from '@/data/ccsBuildingsGeocoded.json';
 
 type HazardId = 'heat' | 'flooding' | 'coastal' | 'drought';
 
-type PanelTab = 'portfolio' | 'layers' | 'place' | 'analysis' | 'help';
+type PanelTab = 'layers' | 'place' | 'analysis' | 'help';
 
 type LayerGroup =
   | 'hazard'
@@ -778,6 +778,24 @@ function ringBBox(ring: LatLngTuple[]): { centroid: LatLngTuple; span: [number, 
     centroid: [(latLo + latHi) / 2, (lngLo + lngHi) / 2],
     span: [(latHi - latLo) / 2, (lngHi - lngLo) / 2],
   };
+}
+
+/** Standard ray-casting point-in-polygon test, used to assign a geocoded
+ *  building to the real SA2 it actually falls inside, rather than
+ *  matching the register's locality text against a name it might not
+ *  share with the SA2 (ABS suburbs and SA2s are different structures and
+ *  do not always nest cleanly). */
+function pointInRing(lat: number, lng: number, ring: LatLngTuple[]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [latI, lngI] = ring[i];
+    const [latJ, lngJ] = ring[j];
+    const intersects =
+      latI > lat !== latJ > lat &&
+      lng < ((lngJ - lngI) * (lat - latI)) / (latJ - latI) + lngI;
+    if (intersects) inside = !inside;
+  }
+  return inside;
 }
 
 /* ------------------------------------------------------------------ *
@@ -1794,14 +1812,6 @@ const IconHelp = ({ size = 17, className }: IconProps) => (
     <circle cx="12" cy="12" r="9" />
     <path d="M9.6 9.4a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.8-.9 1.4v.4" />
     <path d="M12 17h.01" />
-  </svg>
-);
-
-const IconPortfolio = ({ size = 17, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <rect x="3" y="10" width="7.5" height="10.5" rx="1" />
-    <rect x="13.5" y="10" width="7.5" height="10.5" rx="1" />
-    <rect x="8.25" y="3" width="7.5" height="6" rx="1" />
   </svg>
 );
 
@@ -3421,6 +3431,8 @@ interface PlaceTabProps {
   sc: Scenario;
   hoveredAsset: HoveredAsset | null;
   setHoveredAsset: (h: HoveredAsset | null) => void;
+  buildingOffTypes: Set<string>;
+  onManageCategories: () => void;
 }
 
 /** Top ranked suburb on a metric, used by the LGA overview cards. */
@@ -3446,8 +3458,11 @@ function PlaceTab({
   sc,
   hoveredAsset,
   setHoveredAsset,
+  buildingOffTypes,
+  onManageCategories,
 }: PlaceTabProps) {
   const [openAsset, setOpenAsset] = useState<string | null>(null);
+  const [showRealBuildings, setShowRealBuildings] = useState(false);
 
   if (!selectedId) {
     const cards = [
@@ -3558,6 +3573,13 @@ function PlaceTab({
           ))}
         </div>
         <DemoDataNote className="mt-2.5" />
+
+        <div className="mt-3 border-t border-line pt-3">
+          <RealBuildingsRegister
+            offTypes={buildingOffTypes}
+            onManageCategories={onManageCategories}
+          />
+        </div>
       </div>
     );
   }
@@ -3590,12 +3612,45 @@ function PlaceTab({
         </div>
         <div className="rounded-[6px] border border-dashed border-line bg-surface-2 px-2.5 py-3 text-[12.5px] leading-[1.6] text-ink-2">
           Beverley is a real Charles Sturt SA2, its boundary here is the
-          exact ABS ASGS 2021 shape. No population, hazard score or asset
-          data has been sourced for it, so it carries none of the
-          indicative figures shown for the other seven SA2s rather than a
-          guessed one. It is left out of Analysis, Insights and the
-          Portfolio ranking for the same reason.
+          exact ABS ASGS 2021 shape. No population, hazard score or
+          demographic figure has been sourced for it, so it carries none
+          of the indicative figures shown for the other seven SA2s rather
+          than a guessed one, and it is left out of Analysis for the same
+          reason.
         </div>
+
+        {(() => {
+          const buildings = REAL_BUILDINGS_BY_SUBURB[BEVERLEY_ID] ?? [];
+          if (buildings.length === 0) return null;
+          const value = buildings.reduce((n, b) => n + b.insuredValue, 0);
+          return (
+            <div className="mt-2.5">
+              <PanelHeading
+                right={<span className="num text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M</span>}
+              >
+                Real buildings here, {buildings.length}
+              </PanelHeading>
+              <p className="mb-1.5 text-[11px] leading-[1.5] text-ink-3">
+                Population and hazard data have not been sourced for
+                Beverley, but its real buildings have, geocoded from the
+                register and spatially matched to this exact boundary.
+                Council's Beverley works precinct accounts for most of
+                these.
+              </p>
+              <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                {buildings.map((b) => (
+                  <BuildingCard
+                    key={b.id}
+                    b={b}
+                    isOpen={openAsset === b.id}
+                    onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         <DemoDataNote className="mt-2.5" />
       </div>
     );
@@ -3731,6 +3786,40 @@ function PlaceTab({
         />
       </div>
 
+      {(() => {
+        const buildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+        if (buildings.length === 0) return null;
+        const value = buildings.reduce((n, b) => n + b.insuredValue, 0);
+        return (
+          <div className="mb-2.5">
+            <button
+              onClick={() => setShowRealBuildings(!showRealBuildings)}
+              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+            >
+              <span className="flex items-center gap-1.5">
+                <IconChevron size={13} className={`text-ink-3 transition-transform ${showRealBuildings ? 'rotate-90' : ''}`} />
+                <span className="text-[12.5px] font-medium text-ink">
+                  Real buildings here, {buildings.length}
+                </span>
+              </span>
+              <span className="num text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M</span>
+            </button>
+            {showRealBuildings && (
+              <div className="fade-up mt-1 max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                {buildings.map((b) => (
+                  <BuildingCard
+                    key={b.id}
+                    b={b}
+                    isOpen={openAsset === b.id}
+                    onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       <PanelHeading
         right={
           <span className="num text-[11px] text-ink-3">
@@ -3738,7 +3827,7 @@ function PlaceTab({
           </span>
         }
       >
-        Key assets
+        Illustrative key assets (demo)
       </PanelHeading>
       <div className="space-y-1">
         {s.assets.map((a) => {
@@ -5277,19 +5366,14 @@ const TAB_META: Record<
   PanelTab,
   { title: string; subtitle: string; icon: (p: IconProps) => React.ReactElement }
 > = {
-  portfolio: {
-    title: 'Portfolio',
-    subtitle: 'What council owns, and what threatens it',
-    icon: IconPortfolio,
-  },
   layers: {
     title: 'Layers',
-    subtitle: 'Hazard, vulnerability and overlay catalogue',
+    subtitle: 'Hazards, real buildings and the network behind them',
     icon: IconLayers,
   },
   place: {
     title: 'Place',
-    subtitle: 'SA2 profile, assets and what is exposed',
+    subtitle: 'SA2 profile, real buildings and the register at large',
     icon: IconPlace,
   },
   analysis: {
@@ -5311,7 +5395,7 @@ function IconRail({
   tab: PanelTab;
   setTab: (t: PanelTab) => void;
 }) {
-  const order: PanelTab[] = ['portfolio', 'layers', 'place', 'analysis', 'help'];
+  const order: PanelTab[] = ['layers', 'place', 'analysis', 'help'];
   return (
     <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
@@ -5348,198 +5432,6 @@ function IconRail({
     </nav>
   );
 }
-
-/* ------------------------------------------------------------------ *
- * Ownership
- *
- * The first cut a council makes is not hazard, it is "is this mine".
- * Budget, control and obligation all hang off that answer, so it is a
- * field in its own right rather than something inferred from the layer
- * an asset happens to sit in.
- *
- * The categorisation lives in one table on purpose. It is a judgement
- * call per asset, it will be argued about, and it should be reviewable
- * without reading the registers around it.
- * ------------------------------------------------------------------ */
-
-type OwnerTier = 'owned' | 'operated' | 'dependent' | 'private';
-
-const OWNER_ORDER: OwnerTier[] = ['owned', 'operated', 'dependent', 'private'];
-
-const OWNER_SHORT: Record<OwnerTier, string> = {
-  owned: 'Mine',
-  operated: 'Mine, run by others',
-  dependent: 'Depend on',
-  private: 'Private',
-};
-
-const OWNER_LABEL: Record<OwnerTier, string> = {
-  owned: 'Council owned and maintained',
-  operated: 'Council owned, operated by others',
-  dependent: 'Not council owned, council depends on it',
-  private: 'Privately held',
-};
-
-const OWNER_NOTE: Record<OwnerTier, string> = {
-  owned:
-    'Council holds the asset and the renewal liability. Direct control over what gets spent and when.',
-  operated:
-    'Council holds the asset, a club or operator holds the service. The spend is council, the continuity is shared.',
-  dependent:
-    'Someone else owns it and council plans assume it keeps working. Real exposure, no control, and no line in the capital programme.',
-  private:
-    'Outside the portfolio. Most flood damage and nearly all the canopy sit here, and council can only influence it.',
-};
-
-const OWNER_COLOR: Record<OwnerTier, string> = {
-  owned: '#006E78',
-  operated: '#0891B2',
-  dependent: '#B45309',
-  private: '#7E8D8C',
-};
-
-const ASSET_OWNER: Record<string, OwnerTier> = {
-  'Woodville Road corridor': 'owned',
-  'Cheltenham Park Reserve': 'owned',
-  'Woodville Community Centre': 'owned',
-  'Cheltenham trunk drain': 'owned',
-  'Woodville operations depot': 'owned',
-
-  'West Lakes Boulevard': 'owned',
-  'Lake edge revetment': 'owned',
-  'West Lakes Library': 'owned',
-  'Lake outlet control gate': 'owned',
-  'Bower Road reserve': 'owned',
-
-  'Seaton High School': 'dependent',
-  'Grange Road': 'owned',
-  'Seaton Park drain': 'owned',
-  'Grange Golf Course edge': 'private',
-  'Seaton Recreation Centre': 'operated',
-
-  'Henley Beach Esplanade': 'owned',
-  'Henley Beach seawall': 'owned',
-  'Henley Square': 'owned',
-  'Henley jetty': 'owned',
-  'Henley Beach Primary': 'dependent',
-
-  'West Beach dune system': 'owned',
-  'Tapleys Hill Road': 'dependent',
-  'West Beach Reserve': 'owned',
-  'Barcoo coastal outlet': 'owned',
-  'West Beach Surf Life Saving Club': 'operated',
-
-  'Royal Park Community Centre': 'owned',
-  'Hendon industrial drain': 'owned',
-  'Old Port Road': 'dependent',
-  'Royal Park Reserve': 'owned',
-  'Hendon renewal precinct': 'dependent',
-
-  'Port Road corridor': 'dependent',
-  'Hindmarsh stadium precinct': 'dependent',
-  'Brompton stormwater main': 'owned',
-  'Brompton Green': 'owned',
-  'Bowden rail interchange': 'dependent',
-  'Hindmarsh heritage row': 'private',
-
-  'Priceline Stadium': 'operated',
-  'River Torrens linear park': 'owned',
-  'Findon Road': 'owned',
-  'Flinders Park Primary': 'dependent',
-  'Torrens flood levee': 'owned',
-};
-
-interface PortfolioRow {
-  asset: Asset;
-  suburb: Suburb;
-  owner: OwnerTier;
-}
-
-/** Flattened portfolio. The asset is the entity here, place is an attribute. */
-const PORTFOLIO: PortfolioRow[] = SUBURBS.flatMap((s) =>
-  s.assets.map((a) => ({
-    asset: a,
-    suburb: s,
-    owner: ASSET_OWNER[a.name] ?? 'owned',
-  })),
-);
-
-const MAX_REPAIRS = Math.max(...PORTFOLIO.map((r) => r.asset.repairs5yr));
-
-const SIGNIFICANCE_RANK: Record<Significance, number> = {
-  local: 1,
-  district: 2,
-  state: 3,
-};
-
-/* ------------------------------------------------------------------ *
- * Investment lens
- *
- * Three components, kept apart because they come from different places
- * and carry different confidence. Exposure is a spatial result,
- * condition is a maintenance record, criticality is a judgement about
- * who depends on the thing.
- *
- * The weighting is the reader's, not the tool's. Defaults are equal,
- * which is a deliberate refusal to imply a council position that has not
- * been agreed. Move the sliders and the ordering becomes yours.
- * ------------------------------------------------------------------ */
-
-interface Weights {
-  exposure: number;
-  condition: number;
-  criticality: number;
-}
-
-const DEFAULT_WEIGHTS: Weights = {
-  exposure: 50,
-  condition: 50,
-  criticality: 50,
-};
-
-/** How many hazards the asset sits inside, against the worst case of three. */
-const exposureScore = (a: Asset) => clamp(a.hazards.length / 3, 0, 1);
-
-/** Reactive interventions against the busiest asset in the portfolio. */
-const conditionScore = (a: Asset) => clamp(a.repairs5yr / MAX_REPAIRS, 0, 1);
-
-/** Who carries the consequence if the service stops. */
-const criticalityScore = (a: Asset) => SIGNIFICANCE_RANK[a.significance] / 3;
-
-function investmentIndex(a: Asset, w: Weights): number {
-  const total = w.exposure + w.condition + w.criticality;
-  if (total <= 0) return 0;
-  return (
-    (exposureScore(a) * w.exposure +
-      conditionScore(a) * w.condition +
-      criticalityScore(a) * w.criticality) /
-    total
-  );
-}
-
-
-/* ------------------------------------------------------------------ *
- * Real buildings register
- *
- * Sourced from CCS_Buildings.xlsx, an export from council's own asset
- * register (a Confirm/Assetic-style system). The export is one row per
- * asset COMPONENT, not per building, an "asset" is a fitout, an
- * electricity meter, a superstructure and so on. Rows are collapsed here
- * onto their shared GIS ID, one row per physical asset, and every field
- * below is copied straight from the register.
- *
- * Two problems in the raw export drove the shape of this section. Short
- * Description (43 values) names the asset COMPONENT, "Building
- * Superstructure" or "Electricity Meter", not what the place actually is.
- * Details is a free-text string, near unique per row, too specific to
- * group by. Building Type sits between the two, the same grain as the
- * council's own building classification, so it is the field used for
- * individual toggles here. Building Use is the broader grouping above it.
- *
- * There are no coordinates anywhere in this export. Nothing here is
- * placed on the map. It is a register, not a layer, until a spatial
- * export supplies a position for each GIS ID.
- * ------------------------------------------------------------------ */
 
 type AssetClass = 'building' | 'meter' | 'pump' | 'accessory';
 
@@ -5654,6 +5546,101 @@ const BUILDING_LOCATION = ccsBuildingsGeocoded as Record<
   string,
   { lat: number; lng: number; precision: 'site' | 'street' }
 >;
+
+/** Real buildings grouped by the SA2 their geocoded point actually falls
+ *  inside, a spatial join against the real boundaries rather than a
+ *  guess from the register's locality text. Keyed by app suburb id for
+ *  the seven with attribute data, and by BEVERLEY_ID for the eighth,
+ *  which has real buildings even though it has no demographic data.
+ *  Only buildings with a geocoded position can appear here, the 171
+ *  without one are real too, they just cannot be placed in a suburb
+ *  without inventing where. */
+const REAL_BUILDINGS_BY_SUBURB: Record<string, RealAsset[]> = {};
+for (const b of REAL_BUILDINGS) {
+  const loc = BUILDING_LOCATION[b.id];
+  if (!loc) continue;
+  const hit = SA2_BOUNDARIES.find((s) => pointInRing(loc.lat, loc.lng, s.ring));
+  if (!hit) continue;
+  const suburbId = SA2_CODE_TO_SUBURB_ID[hit.code];
+  if (!suburbId) continue;
+  (REAL_BUILDINGS_BY_SUBURB[suburbId] ??= []).push(b);
+}
+
+/** One real building, expandable to its full register detail. Shared
+ *  between the LGA-wide register list and the per-suburb building lists
+ *  in Place, so a building reads identically wherever it turns up. */
+function BuildingCard({
+  b,
+  isOpen,
+  onToggle,
+}: {
+  b: RealAsset;
+  isOpen: boolean;
+  onToggle: () => void;
+}) {
+  const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+  const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+  const loc = BUILDING_LOCATION[b.id];
+  const located = !!loc;
+  return (
+    <div
+      className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
+    >
+      <button onClick={onToggle} className="w-full px-2 py-1.5 text-left">
+        <div className="flex items-start justify-between gap-1.5">
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[12px] font-semibold text-ink">{b.name}</span>
+            <span className="num mt-[2px] block truncate text-[10.5px] text-ink-3">
+              {b.buildingType ?? 'Not yet classified'}
+              {b.suburb ? ` · ${b.suburb}` : ''}
+              {!located && ' · not mapped'}
+            </span>
+          </span>
+          {b.insuredValue > 0 && (
+            <span className="num shrink-0 text-[11px] font-semibold text-ink-2">
+              ${(b.insuredValue / 1000).toFixed(0)}k
+            </span>
+          )}
+        </div>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {b.condition && (
+            <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
+              {b.condition}
+            </span>
+          )}
+          {b.inherentRisk && (
+            <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
+              {b.inherentRisk}
+            </span>
+          )}
+        </div>
+      </button>
+      {isOpen && (
+        <div className="fade-up border-t border-line px-2 py-1.5">
+          {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
+          {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
+          {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
+          {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
+          {(b.riskConsequence || b.riskLikelihood) && (
+            <DetailRow label="Risk rating" value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`} />
+          )}
+          <DetailRow label="Register components" value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`} />
+          <DetailRow
+            label="Map position"
+            value={
+              !located
+                ? 'Not shown on the map, no address in the register resolved to a location.'
+                : loc!.precision === 'site'
+                  ? 'Shown on the map, geocoded to the actual building or named place.'
+                  : 'Shown on the map as a hollow marker, geocoded to the street only, the address had no number so this is not the building itself.'
+            }
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ *
  * Asset category toggles
  *
@@ -5961,530 +5948,16 @@ function RealBuildingsRegister({
               No building types selected.
             </div>
           )}
-          {visibleBuildings.map((b) => {
-            const isOpen = openId === b.id;
-            const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-            const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-            const loc = BUILDING_LOCATION[b.id];
-            const located = !!loc;
-            return (
-              <div
-                key={b.id}
-                className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
-              >
-                <button onClick={() => setOpenId(isOpen ? null : b.id)} className="w-full px-2 py-1.5 text-left">
-                  <div className="flex items-start justify-between gap-1.5">
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[12px] font-semibold text-ink">{b.name}</span>
-                      <span className="num mt-[2px] block truncate text-[10.5px] text-ink-3">
-                        {b.buildingType ?? 'Not yet classified'}
-                        {b.suburb ? ` · ${b.suburb}` : ''}
-                        {!located && ' · not mapped'}
-                      </span>
-                    </span>
-                    {b.insuredValue > 0 && (
-                      <span className="num shrink-0 text-[11px] font-semibold text-ink-2">
-                        ${(b.insuredValue / 1000).toFixed(0)}k
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {b.condition && (
-                      <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
-                        {b.condition}
-                      </span>
-                    )}
-                    {b.inherentRisk && (
-                      <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
-                        {b.inherentRisk}
-                      </span>
-                    )}
-                  </div>
-                </button>
-                {isOpen && (
-                  <div className="fade-up border-t border-line px-2 py-1.5">
-                    {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
-                    {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
-                    {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
-                    {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
-                    {(b.riskConsequence || b.riskLikelihood) && (
-                      <DetailRow label="Risk rating" value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`} />
-                    )}
-                    <DetailRow label="Register components" value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`} />
-                    <DetailRow
-                      label="Map position"
-                      value={
-                        !located
-                          ? 'Not shown on the map, no address in the register resolved to a location.'
-                          : loc!.precision === 'site'
-                            ? 'Shown on the map, geocoded to the actual building or named place.'
-                            : 'Shown on the map as a hollow marker, geocoded to the street only, the address had no number so this is not the building itself.'
-                      }
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {visibleBuildings.map((b) => (
+            <BuildingCard
+              key={b.id}
+              b={b}
+              isOpen={openId === b.id}
+              onToggle={() => setOpenId(openId === b.id ? null : b.id)}
+            />
+          ))}
         </div>
       )}
-    </div>
-  );
-}
-/* ------------------------------------------------------------------ *
- * Tab. Portfolio
- * ------------------------------------------------------------------ */
-
-interface PortfolioTabProps {
-  selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-  hoveredAsset: HoveredAsset | null;
-  setHoveredAsset: (h: HoveredAsset | null) => void;
-  weights: Weights;
-  setWeights: (w: Weights) => void;
-  ownerFilter: OwnerTier | 'all';
-  setOwnerFilter: (o: OwnerTier | 'all') => void;
-  buildingOffTypes: Set<string>;
-  onManageCategories: () => void;
-}
-
-function PortfolioTab({
-  selectedId,
-  setSelectedId,
-  hoveredAsset,
-  setHoveredAsset,
-  weights,
-  setWeights,
-  ownerFilter,
-  setOwnerFilter,
-  buildingOffTypes,
-  onManageCategories,
-}: PortfolioTabProps) {
-  const [showDemo, setShowDemo] = useState(false);
-  const [classFilter, setClassFilter] = useState<AssetCategory | 'all'>('all');
-  const [placeOnly, setPlaceOnly] = useState(false);
-  const [openAsset, setOpenAsset] = useState<string | null>(null);
-
-  const scoped = useMemo(
-    () =>
-      PORTFOLIO.filter(
-        (r) =>
-          (ownerFilter === 'all' || r.owner === ownerFilter) &&
-          (classFilter === 'all' || r.asset.category === classFilter) &&
-          (!placeOnly || !selectedId || r.suburb.id === selectedId),
-      ),
-    [ownerFilter, classFilter, placeOnly, selectedId],
-  );
-
-  const totals = useMemo(() => {
-    const value = scoped.reduce((n, r) => n + assetValueM(r.asset), 0);
-    const exposed = scoped.filter((r) => r.asset.hazards.length > 0);
-    const exposedValue = exposed.reduce((n, r) => n + assetValueM(r.asset), 0);
-    const over = scoped.filter((r) => r.asset.repairs5yr >= 10);
-    return { value, exposed, exposedValue, over };
-  }, [scoped]);
-
-  const byClass = useMemo(() => {
-    const classes: AssetCategory[] = [
-      'road',
-      'stormwater',
-      'building',
-      'service',
-      'open-space',
-      'coastal',
-    ];
-    return classes
-      .map((c) => {
-        const rows = PORTFOLIO.filter(
-          (r) =>
-            r.asset.category === c &&
-            (ownerFilter === 'all' || r.owner === ownerFilter) &&
-            (!placeOnly || !selectedId || r.suburb.id === selectedId),
-        );
-        return {
-          c,
-          count: rows.length,
-          value: rows.reduce((n, r) => n + assetValueM(r.asset), 0),
-          exposed: rows.filter((r) => r.asset.hazards.length > 0).length,
-          over: rows.filter((r) => r.asset.repairs5yr >= 10).length,
-        };
-      })
-      .filter((r) => r.count > 0);
-  }, [ownerFilter, placeOnly, selectedId]);
-
-  const ranked = useMemo(() => {
-    const rows = scoped.map((r) => ({
-      ...r,
-      score: investmentIndex(r.asset, weights),
-    }));
-    rows.sort((a, b) => b.score - a.score);
-    return rows;
-  }, [scoped, weights]);
-
-  const maxClassValue = Math.max(...byClass.map((r) => r.value), 1);
-
-  const ownerCounts = useMemo(() => {
-    const m: Record<string, number> = { all: PORTFOLIO.length };
-    for (const t of OWNER_ORDER) {
-      m[t] = PORTFOLIO.filter((r) => r.owner === t).length;
-    }
-    return m;
-  }, []);
-
-  return (
-    <div className="px-2.5 py-2.5">
-      <RealBuildingsRegister
-        offTypes={buildingOffTypes}
-        onManageCategories={onManageCategories}
-      />
-
-      <button
-        onClick={() => setShowDemo(!showDemo)}
-        className="mb-3 flex w-full items-center gap-1.5 rounded-[5px] border border-dashed border-[#D8C9A8] bg-[#FDF9EF] px-2 py-1.5 text-left text-[11.5px] leading-[1.4] text-[#7A6634] transition-colors hover:bg-[#FBF3DF]"
-      >
-        <IconChevron
-          size={12}
-          className={`shrink-0 transition-transform ${showDemo ? 'rotate-90' : ''}`}
-        />
-        <span className="flex-1">
-          <span className="font-semibold">Illustrative scenario (demo data).</span>{' '}
-          A weighting model shown on invented ownership and asset figures,
-          kept only to demonstrate the mechanism. Collapsed by default.
-        </span>
-      </button>
-
-      {showDemo && (
-        <>
-          <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
-            The portfolio, cut by who owns it first and what threatens it
-            second. Ownership decides whether an exposure is a budget line,
-            a shared problem, or something council can only raise with
-            somebody else.
-          </p>
-
-          <PanelHeading>Whose asset</PanelHeading>
-          <div className="mb-1.5 flex flex-wrap gap-1">
-        <button
-          onClick={() => setOwnerFilter('all')}
-          className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
-          style={
-            ownerFilter === 'all'
-              ? { borderColor: ACCENT, background: ACCENT, color: '#fff' }
-              : { borderColor: '#E2E7E7', color: '#4A5A59' }
-          }
-        >
-          All <span className="num">{ownerCounts.all}</span>
-        </button>
-        {OWNER_ORDER.map((t) => {
-          const on = ownerFilter === t;
-          const c = OWNER_COLOR[t];
-          return (
-            <Tip key={t} label={OWNER_LABEL[t]} body={OWNER_NOTE[t]} side="top">
-              <button
-                onClick={() => setOwnerFilter(t)}
-                className="rounded-[4px] border px-1.5 py-[2px] text-[11.5px] font-medium transition-colors"
-                style={
-                  on
-                    ? { borderColor: c, background: c, color: '#fff' }
-                    : { borderColor: '#E2E7E7', color: '#4A5A59' }
-                }
-              >
-                {OWNER_SHORT[t]} <span className="num">{ownerCounts[t]}</span>
-              </button>
-            </Tip>
-          );
-        })}
-      </div>
-
-      {selectedId && SUBURB_BY_ID[selectedId] && (
-        <button
-          onClick={() => setPlaceOnly(!placeOnly)}
-          className="mb-2 flex w-full items-center gap-1.5 rounded-[4px] border px-1.5 py-1 text-left text-[11.5px] transition-colors"
-          style={{
-            borderColor: placeOnly ? ACCENT : '#E2E7E7',
-            color: placeOnly ? ACCENT : '#4A5A59',
-          }}
-        >
-          <Check on={placeOnly} />
-          Limit to {SUBURB_BY_ID[selectedId].name}
-        </button>
-      )}
-
-      <div className="mb-2 grid grid-cols-2 gap-1.5">
-        <Stat
-          label="In scope"
-          value={`$${totals.value.toFixed(0)}M`}
-          sub={`${scoped.length} assets`}
-        />
-        <Stat
-          label="Exposed value"
-          value={`$${totals.exposedValue.toFixed(0)}M`}
-          sub={`${totals.exposed.length} sit in a hazard`}
-          tone="accent"
-          tip={{
-            label: 'Exposed value',
-            body: 'Replacement value of assets intersecting at least one hazard layer. Exposure is not damage. It says the asset is in the footprint, not what the event would cost.',
-          }}
-        />
-        <Stat
-          label="Over repair threshold"
-          value={`${totals.over.length}`}
-          sub="10 or more in 5 years"
-          tone={totals.over.length > 0 ? 'warn' : 'default'}
-          tip={{
-            label: 'Repair threshold',
-            body: 'The ten in five years figure is a convention carried into this tool, not a council standard. Replace it with whatever the asset teams already use.',
-          }}
-        />
-        <Stat
-          label="No control"
-          value={`${scoped.filter((r) => r.owner === 'dependent').length}`}
-          sub="depended on, not owned"
-          tip={{
-            label: 'Assets outside the portfolio',
-            body: 'Council plans assume these keep working, but they cannot be funded through the capital programme. They belong in a conversation with the owner, not in a bid.',
-          }}
-        />
-      </div>
-
-      <PanelHeading
-        right={
-          classFilter !== 'all' ? (
-            <button
-              onClick={() => setClassFilter('all')}
-              className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
-            >
-              clear
-            </button>
-          ) : undefined
-        }
-      >
-        By asset class
-      </PanelHeading>
-      <div className="mb-2 overflow-hidden rounded-[6px] border border-line bg-white">
-        {byClass.map((r) => {
-          const on = classFilter === r.c;
-          return (
-            <button
-              key={r.c}
-              onClick={() => setClassFilter(on ? 'all' : r.c)}
-              className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1.5 text-left last:border-b-0 ${on ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="flex items-baseline justify-between gap-1.5">
-                  <span className="truncate text-[12.5px] font-medium text-ink">
-                    {CATEGORY_LABEL[r.c]}
-                  </span>
-                  <span className="num shrink-0 text-[12.5px] font-semibold text-ink">
-                    ${r.value.toFixed(1)}M
-                  </span>
-                </span>
-                <span className="mt-[3px] block">
-                  <MiniBar value={r.value / maxClassValue} height={3} />
-                </span>
-                <span className="num mt-[3px] block text-[11px] text-ink-3">
-                  {r.count} assets · {r.exposed} exposed · {r.over} over
-                  threshold
-                </span>
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <PanelHeading
-        right={
-          <button
-            onClick={() => setWeights(DEFAULT_WEIGHTS)}
-            className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
-          >
-            reset
-          </button>
-        }
-      >
-        Your weighting
-      </PanelHeading>
-      <div className="mb-1.5 rounded-[6px] border border-line bg-white px-2 py-1.5">
-        {(
-          [
-            {
-              k: 'exposure' as const,
-              label: 'Exposure',
-              note: 'Hazard layers the asset sits inside. A spatial result.',
-            },
-            {
-              k: 'condition' as const,
-              label: 'Condition',
-              note: 'Reactive interventions in the last five years. A maintenance record.',
-            },
-            {
-              k: 'criticality' as const,
-              label: 'Criticality',
-              note: 'Local, district or state consequence if the service stops. A judgement.',
-            },
-          ]
-        ).map((w) => (
-          <div key={w.k} className="mb-1.5 last:mb-0">
-            <div className="flex items-center justify-between">
-              <Tip label={w.label} body={w.note} side="top">
-                <span className="cursor-help text-[12px] text-ink-2 underline decoration-dotted decoration-[#CBD5D4]">
-                  {w.label}
-                </span>
-              </Tip>
-              <span className="num text-[12px] font-semibold text-accent">
-                {weights[w.k]}
-              </span>
-            </div>
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={weights[w.k]}
-              onChange={(e) =>
-                setWeights({ ...weights, [w.k]: Number(e.target.value) })
-              }
-              className="mt-[3px] w-full"
-            />
-          </div>
-        ))}
-      </div>
-      <div className="mb-2 rounded-[5px] border border-dashed border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#265C60]">
-        This ordering is produced by the weights above, which you set. Council
-        has not agreed a weighting, and the tool does not supply one. Defaults
-        are equal so the list starts from no position at all.
-      </div>
-
-      <PanelHeading
-        right={<span className="num text-[11px] text-ink-3">{ranked.length}</span>}
-      >
-        Ranked under your weighting
-      </PanelHeading>
-      <div className="space-y-1">
-        {ranked.map((r) => {
-          const isOpen = openAsset === r.asset.name;
-          const flagged = r.asset.repairs5yr >= 10;
-          return (
-            <div
-              key={r.asset.name}
-              onMouseEnter={() =>
-                setHoveredAsset({ asset: r.asset, suburbId: r.suburb.id })
-              }
-              onMouseLeave={() => setHoveredAsset(null)}
-              className={`rounded-[5px] border bg-white transition-colors ${
-                hoveredAsset?.asset.name === r.asset.name
-                  ? 'border-accent'
-                  : 'border-line'
-              }`}
-            >
-              <button
-                onClick={() =>
-                  setOpenAsset(isOpen ? null : r.asset.name)
-                }
-                className="w-full px-2 py-1.5 text-left"
-              >
-                <div className="flex items-start gap-1.5">
-                  <span
-                    className="mt-[3px] h-[7px] w-[7px] shrink-0 rounded-full"
-                    style={{ background: OWNER_COLOR[r.owner] }}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-semibold leading-tight text-ink">
-                      {r.asset.name}
-                    </span>
-                    <span className="num mt-[2px] block truncate text-[11px] text-ink-3">
-                      {r.suburb.name} · {CATEGORY_LABEL[r.asset.category]} ·{' '}
-                      {OWNER_SHORT[r.owner]}
-                    </span>
-                  </span>
-                  {r.asset.value && (
-                    <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
-                      {r.asset.value}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <span className="flex-1">
-                    <MiniBar value={r.score} height={4} />
-                  </span>
-                  <span className="num w-[28px] shrink-0 text-right text-[12px] font-semibold text-ink">
-                    {(r.score * 100).toFixed(0)}
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {r.asset.hazards.map((h) => (
-                    <HazardChip key={h} hazard={h} small />
-                  ))}
-                  {flagged && (
-                    <span className="num rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
-                      {r.asset.repairs5yr} repairs
-                    </span>
-                  )}
-                </div>
-              </button>
-              {isOpen && (
-                <div className="fade-up border-t border-line px-2 py-1.5">
-                  <div className="mb-1.5 grid grid-cols-3 gap-1">
-                    <Component
-                      label="Exposure"
-                      value={exposureScore(r.asset)}
-                      weight={weights.exposure}
-                    />
-                    <Component
-                      label="Condition"
-                      value={conditionScore(r.asset)}
-                      weight={weights.condition}
-                    />
-                    <Component
-                      label="Criticality"
-                      value={criticalityScore(r.asset)}
-                      weight={weights.criticality}
-                    />
-                  </div>
-                  <DetailRow label="Ownership" value={OWNER_NOTE[r.owner]} />
-                  <DetailRow label="Purpose" value={r.asset.purpose} />
-                  <DetailRow label="Who uses it" value={r.asset.users} />
-                  <button
-                    onClick={() => setSelectedId(r.suburb.id)}
-                    className={`mt-1.5 rounded-[3px] border px-1 py-[1px] text-[11px] transition-colors ${
-                      selectedId === r.suburb.id
-                        ? 'border-accent text-accent'
-                        : 'border-line text-ink-3 hover:border-accent hover:text-accent'
-                    }`}
-                  >
-                    Open {r.suburb.name}
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-          </div>
-          <DemoDataNote className="mt-2.5" />
-        </>
-      )}
-    </div>
-  );
-}
-
-/** One component of the investment index, shown with the weight applied to it. */
-function Component({
-  label,
-  value,
-  weight,
-}: {
-  label: string;
-  value: number;
-  weight: number;
-}) {
-  return (
-    <div className="rounded-[4px] bg-surface-2 px-1.5 py-1">
-      <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">
-        {label}
-      </div>
-      <div className="num text-[14.5px] font-semibold leading-none text-ink">
-        {(value * 100).toFixed(0)}
-      </div>
-      <div className="num mt-[2px] text-[11px] text-ink-3">w {weight}</div>
     </div>
   );
 }
@@ -6593,7 +6066,7 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
  * ------------------------------------------------------------------ */
 
 export default function App() {
-  const [panelTab, setPanelTab] = useState<PanelTab>('portfolio');
+  const [panelTab, setPanelTab] = useState<PanelTab>('layers');
   const [year, setYear] = useState(2021);
   const [sc, setSc] = useState<Scenario>('ssp245');
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
@@ -6617,12 +6090,10 @@ export default function App() {
   const [planYear, setPlanYear] = useState(2041);
   const [showQuadrant, setShowQuadrant] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
-  const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
-  const [ownerFilter, setOwnerFilter] = useState<OwnerTier | 'all'>('all');
   // Building types switched off in Layers, Assets. Lifted to root so the
-  // map and Portfolio's register both read the one state. Starts with
-  // everything off, matching every other overlay in Layers, on the map
-  // is opt-in, not a surprise on first load.
+  // map and Place's buildings register both read the one state. Starts
+  // with everything off, matching every other overlay in Layers, on the
+  // map is opt-in, not a surprise on first load.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
     () => new Set(ALL_BUILDING_TYPES),
   );
@@ -6724,20 +6195,6 @@ export default function App() {
         </header>
 
         <div className="thin-scroll flex-1 overflow-y-auto">
-          {panelTab === 'portfolio' && (
-            <PortfolioTab
-              selectedId={selectedId}
-              setSelectedId={setSelectedId}
-              hoveredAsset={hoveredAsset}
-              setHoveredAsset={setHoveredAsset}
-              weights={weights}
-              setWeights={setWeights}
-              ownerFilter={ownerFilter}
-              setOwnerFilter={setOwnerFilter}
-              buildingOffTypes={buildingOffTypes}
-              onManageCategories={() => setPanelTab('layers')}
-            />
-          )}
           {panelTab === 'layers' && (
             <LayersTab
               checkedLayers={checkedLayers}
@@ -6760,6 +6217,8 @@ export default function App() {
               sc={sc}
               hoveredAsset={hoveredAsset}
               setHoveredAsset={setHoveredAsset}
+              buildingOffTypes={buildingOffTypes}
+              onManageCategories={() => setPanelTab('layers')}
             />
           )}
           {panelTab === 'analysis' && (
