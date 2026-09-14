@@ -35,6 +35,12 @@ import ccsBuildingsRaw from '@/data/ccsBuildings.json';
 import sa2BoundaryData from '@/data/sa2Boundaries.json';
 import sa1BoundaryData from '@/data/sa1Boundaries.json';
 
+// Approximate positions for real buildings, geocoded from the register's
+// own address field via OpenStreetMap Nominatim (free, no key, one-time
+// batch at their 1 request/second limit). Not part of the source export.
+// See BUILDING_LOCATION below for why most of these are street-level.
+import ccsBuildingsGeocoded from '@/data/ccsBuildingsGeocoded.json';
+
 /* ------------------------------------------------------------------ *
  * Types
  * ------------------------------------------------------------------ */
@@ -2404,6 +2410,8 @@ interface MapViewProps {
   blueprintOpen: boolean;
   blueprintAccent: string;
   onZoomChange: (z: number) => void;
+  showBuildings: boolean;
+  buildingOffTypes: Set<string>;
 }
 
 /** Deterministic value in 0 to 1 from a pair of integers, for canvas texture. */
@@ -2446,6 +2454,8 @@ function MapView(props: MapViewProps) {
     blueprintOpen,
     blueprintAccent,
     onZoomChange,
+    showBuildings,
+    buildingOffTypes,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -3015,6 +3025,42 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    /* Real buildings, on top of everything else, since the point of
+       showing them is to read them against whatever hazard fill is
+       underneath. Filtered by the same Building Type toggles as the
+       Portfolio panel, geocoded positions only, no fallback to a
+       fabricated point when a building has none.
+
+       Of the 263 that geocoded inside the LGA, only 14 matched an actual
+       building or named place, most register addresses are a street
+       name with no number. The other 249 matched a road, meaning the
+       point sits somewhere along that street, not at the building. A
+       fainter dot at the same size would still read as "the building is
+       here" on a quick glance, so precise and street-level get visibly
+       different marks: a filled dot against a hollow ring. */
+    if (showBuildings) {
+      for (const b of REAL_BUILDINGS) {
+        const loc = BUILDING_LOCATION[b.id];
+        if (!loc) continue;
+        const typeKey = b.buildingType ?? UNCLASSIFIED;
+        if (buildingOffTypes.has(typeKey)) continue;
+        const siteLevel = loc.precision === 'site';
+        push(
+          L.circleMarker([loc.lat, loc.lng] as LatLngTuple, {
+            radius: siteLevel ? 5 : 4,
+            color: siteLevel ? '#fff' : ACCENT,
+            weight: siteLevel ? 1.2 : 1.6,
+            fillColor: siteLevel ? ACCENT : '#fff',
+            fillOpacity: siteLevel ? 0.95 : 0.5,
+            interactive: true,
+          }).bindTooltip(
+            `${b.name}${siteLevel ? '' : ' — street-level estimate, not the building'}`,
+            { direction: 'top', offset: [0, -3] },
+          ),
+        );
+      }
+    }
+
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -3040,6 +3086,8 @@ function MapView(props: MapViewProps) {
     onSelectSuburb,
     setHoveredSuburb,
     darkBase,
+    showBuildings,
+    buildingOffTypes,
   ]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
@@ -3396,9 +3444,11 @@ function LayersTab({
   activeBlueprint,
   applyBlueprint,
 }: LayersTabProps) {
+  // Only the hazard group opens by default. Two accordions open at once was
+  // pushing the blueprint buttons below the fold on first load.
   const [open, setOpen] = useState<Record<LayerGroup, boolean>>({
     hazard: true,
-    vulnerability: true,
+    vulnerability: false,
     overlay: false,
   });
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -5925,63 +5975,75 @@ const ALL_BUILDING_TYPES = new Set(
   REAL_BUILDINGS.map((b) => b.buildingType ?? UNCLASSIFIED),
 );
 
-/** A callout marking data that came from the council register itself,
- *  the counterpart to DemoDataNote used everywhere else in the tool. */
-function RealDataNote({ className = '' }: { className?: string }) {
-  return (
-    <div
-      className={`rounded-[5px] border border-accent-line bg-accent-soft/40 px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#0B4A50] ${className}`}
-    >
-      <span className="font-semibold">Sourced data.</span> From
-      CCS_Buildings.xlsx, council's own asset register export. No
-      coordinates exist in this file, so nothing below is placed on the
-      map, it is a filterable list until a spatial export supplies a
-      position per asset.
-    </div>
-  );
-}
+/** Real building id to an approximate map position, geocoded from the
+ *  register's own address field via OpenStreetMap Nominatim, not
+ *  surveyed and not present in the source export. 'site' means the
+ *  geocoder matched an actual building or named place; 'street' means it
+ *  only matched the road, most register addresses carry no house number,
+ *  so the point sits somewhere along that street, not at the building.
+ *  Buildings with no usable address, or whose geocode fell outside the
+ *  LGA, are absent here rather than guessed. */
+const BUILDING_LOCATION = ccsBuildingsGeocoded as Record<
+  string,
+  { lat: number; lng: number; precision: 'site' | 'street' }
+>;
+
+/** How this section reads. Content for a header tooltip rather than a
+ *  paragraph sitting in the flow, so the panel opens on numbers and
+ *  controls, not prose. */
+const BUILDINGS_REGISTER_EXPLAINER =
+  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Grouped by Building Use, individually toggled by Building Type, both real register fields chosen because Short Description names the component not the place, and Details is a near-unique string per row. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
 
 /* ------------------------------------------------------------------ *
  * Real buildings register, the categorise and toggle mechanism
+ *
+ * Redesigned around two rules a council tool needs to hold to: the
+ * headline numbers and the category controls fit in view without
+ * scrolling, and every category is a single tappable chip rather than a
+ * row in a tree, so eight groups and twenty types cost a few lines, not
+ * a page.
  * ------------------------------------------------------------------ */
 
-function RealBuildingsRegister() {
-  const [offTypes, setOffTypes] = useState<Set<string>>(() => new Set());
-  const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set([REAL_USE_TREE[0]?.key]),
-  );
+interface RealBuildingsRegisterProps {
+  offTypes: Set<string>;
+  setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
+}
+
+function RealBuildingsRegister({
+  offTypes,
+  setOffTypes,
+}: RealBuildingsRegisterProps) {
+  const [openUse, setOpenUse] = useState<string | null>(null);
   const [showOther, setShowOther] = useState(false);
+  const [showList, setShowList] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const toggleType = useCallback((key: string) => {
-    setOffTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
+  const toggleType = useCallback(
+    (key: string) => {
+      setOffTypes((prev) => {
+        const next = new Set(prev);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+      });
+    },
+    [setOffTypes],
+  );
 
-  const toggleUse = useCallback((use: UseNode) => {
-    setOffTypes((prev) => {
-      const next = new Set(prev);
-      const allOff = use.types.every((t) => next.has(t.key));
-      for (const t of use.types) {
-        if (allOff) next.delete(t.key);
-        else next.add(t.key);
-      }
-      return next;
-    });
-  }, []);
-
-  const toggleExpand = useCallback((key: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }, []);
+  const toggleUse = useCallback(
+    (use: UseNode) => {
+      setOffTypes((prev) => {
+        const next = new Set(prev);
+        const allOff = use.types.every((t) => next.has(t.key));
+        for (const t of use.types) {
+          if (allOff) next.delete(t.key);
+          else next.add(t.key);
+        }
+        return next;
+      });
+    },
+    [setOffTypes],
+  );
 
   const visibleTypes = useMemo(
     () => new Set([...ALL_BUILDING_TYPES].filter((t) => !offTypes.has(t))),
@@ -5998,6 +6060,10 @@ function RealBuildingsRegister() {
 
   const totalInsured = REAL_BUILDINGS.reduce((n, b) => n + b.insuredValue, 0);
   const visibleInsured = visibleBuildings.reduce((n, b) => n + b.insuredValue, 0);
+  const preciseCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
+  const approxCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'street').length;
+  const mappedCount = preciseCount + approxCount;
+  const visibleMapped = visibleBuildings.filter((b) => BUILDING_LOCATION[b.id]).length;
 
   const otherClasses: AssetClass[] = ['meter', 'pump', 'accessory'];
   const otherCounts = otherClasses.map((c) => ({
@@ -6007,227 +6073,247 @@ function RealBuildingsRegister() {
 
   return (
     <div className="mb-3 border-b border-line pb-3">
-      <PanelHeading>Buildings register</PanelHeading>
-      <p className="mb-1.5 text-[12px] leading-[1.5] text-ink-2">
-        {REAL_BUILDINGS.length} physical buildings from council's asset
-        register, grouped by building use and individually toggleable by
-        building type. This replaces short description and details, which
-        are the wrong grain for a category list, one too broad, the other
-        too specific.
-      </p>
-      <RealDataNote className="mb-2" />
+      {/* Header: the headline numbers, always in view, no prose above them. */}
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[13px] font-semibold text-ink">
+            Buildings register
+          </span>
+          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="right">
+            <span className="flex h-[15px] w-[15px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
+              i
+            </span>
+          </Tip>
+        </div>
+        <Tip
+          label="Map coverage"
+          body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+          side="left"
+        >
+          <span className="num cursor-help text-[11px] text-ink-3 underline decoration-dotted">
+            {mappedCount} of {REAL_BUILDINGS.length} on map
+          </span>
+        </Tip>
+      </div>
 
       <div className="mb-2 grid grid-cols-2 gap-1.5">
-        <Stat
-          label="In register"
-          value={`${REAL_BUILDINGS.length}`}
-          sub={`${ALL_BUILDING_TYPES.size} building types`}
-        />
+        <Stat label="Buildings" value={`${REAL_BUILDINGS.length}`} sub={`${ALL_BUILDING_TYPES.size} types`} />
         <Stat
           label="Insured value"
           value={`$${(totalInsured / 1e6).toFixed(1)}M`}
           sub={`${REAL_BUILDINGS.filter((b) => b.insuredValue > 0).length} valued`}
-          tip={{
-            label: 'Insured amount',
-            body: 'The register’s insured amount field, taken as the higher of insured amount and replacement value where both exist. Not every asset carries a value.',
-          }}
         />
       </div>
 
+      <div className="mb-2 flex items-center gap-3 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[10.5px] text-ink-3">
+        <span className="flex items-center gap-1">
+          <span className="h-[9px] w-[9px] rounded-full border border-white" style={{ background: ACCENT }} />
+          {preciseCount} precise
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="h-[9px] w-[9px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
+          {approxCount} street-level only
+        </span>
+        <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
+      </div>
+
+      {/* Category chips. One tap toggles a whole use, a second row of
+          chips for its types only appears for the use currently open,
+          so opening one never pushes the other seven down the page. */}
       <PanelHeading
         right={
-          <span className="num text-[11px] text-ink-3">
-            {visibleBuildings.length} shown
-          </span>
+          offTypes.size > 0 ? (
+            <button
+              onClick={() => setOffTypes(() => new Set())}
+              className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
+            >
+              show all
+            </button>
+          ) : undefined
         }
       >
-        Building type, on / off
+        Building use, tap to open
       </PanelHeading>
-      <div className="overflow-hidden rounded-[6px] border border-line bg-white">
+      <div className="flex flex-wrap gap-1">
         {REAL_USE_TREE.map((use) => {
-          const isOpen = expanded.has(use.key);
           const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
           const allOff = offCount === use.types.length;
-          const someOff = offCount > 0 && !allOff;
+          const isOpen = openUse === use.key;
           return (
-            <div key={use.key} className="border-b border-line last:border-b-0">
-              <div className="flex items-center gap-1.5 px-2 py-1.5">
-                <button
-                  onClick={() => toggleExpand(use.key)}
-                  className="flex flex-1 items-center gap-1.5 text-left"
-                >
-                  <IconChevron
-                    size={13}
-                    className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] font-semibold text-ink">
-                    {use.label === UNCLASSIFIED ? 'Not yet classified' : use.label}
-                  </span>
-                  <span className="num shrink-0 text-[11.5px] text-ink-3">
-                    {use.count}
-                  </span>
-                </button>
-                <button
-                  onClick={() => toggleUse(use)}
-                  className="shrink-0"
-                  aria-label={allOff ? 'Turn group on' : 'Turn group off'}
-                >
-                  <span
-                    className="flex h-[17px] w-[17px] items-center justify-center rounded-[4px] border"
-                    style={{
-                      borderColor: allOff ? '#C9D3D2' : ACCENT,
-                      background: allOff ? '#fff' : someOff ? withAlpha(ACCENT, 0.35) : ACCENT,
-                    }}
-                  >
-                    {!allOff && !someOff && (
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12.5 10 17.5 19 7" />
-                      </svg>
-                    )}
-                  </span>
-                </button>
-              </div>
-              {isOpen && (
-                <div className="fade-up pb-1">
-                  {use.types.map((t) => {
-                    const on = !offTypes.has(t.key);
-                    return (
-                      <button
-                        key={t.key}
-                        onClick={() => toggleType(t.key)}
-                        className="flex w-full items-center gap-1.5 px-2 py-[3px] pl-[30px] text-left transition-colors hover:bg-surface-2"
-                      >
-                        <Check on={on} />
-                        <span
-                          className={`min-w-0 flex-1 truncate text-[12px] ${on ? 'text-ink' : 'text-ink-3 line-through decoration-[#C9D3D2]'}`}
-                        >
-                          {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                        </span>
-                        <span className="num shrink-0 text-[11px] text-ink-3">
-                          {t.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <button
+              key={use.key}
+              onClick={() => setOpenUse(isOpen ? null : use.key)}
+              className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
+              style={
+                isOpen
+                  ? { borderColor: ACCENT, background: withAlpha(ACCENT, 0.08) }
+                  : allOff
+                    ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
+                    : { borderColor: '#E2E7E7', background: '#fff' }
+              }
+            >
+              <span
+                className="h-[7px] w-[7px] shrink-0 rounded-full"
+                style={{ background: allOff ? '#C9D3D2' : ACCENT }}
+              />
+              <span className="text-[11.5px] font-medium text-ink">
+                {use.label === UNCLASSIFIED ? 'Not yet classified' : use.label}
+              </span>
+              <span className="num text-[10.5px] text-ink-3">{use.count}</span>
+            </button>
           );
         })}
       </div>
 
+      {/* The open use's types, compact wrapping chips, individually
+          toggleable. Only one use's types are ever shown at a time. */}
+      {openUse && (
+        <div className="fade-up mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-ink-2">
+              {REAL_USE_TREE.find((u) => u.key === openUse)?.label}
+            </span>
+            <button
+              onClick={() => toggleUse(REAL_USE_TREE.find((u) => u.key === openUse)!)}
+              className="text-[10.5px] text-accent hover:underline"
+            >
+              toggle all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {REAL_USE_TREE.find((u) => u.key === openUse)?.types.map((t) => {
+              const on = !offTypes.has(t.key);
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => toggleType(t.key)}
+                  className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
+                  style={
+                    on
+                      ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
+                      : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
+                  }
+                >
+                  <Check on={on} />
+                  {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                  <span className="num text-[10px] opacity-70">{t.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <button
         onClick={() => setShowOther(!showOther)}
-        className="mt-1.5 flex w-full items-center gap-1 text-[11.5px] text-ink-3 hover:text-ink"
+        className="mt-2 flex items-center gap-1 text-[11px] text-ink-3 hover:text-ink"
       >
-        <IconChevron
-          size={12}
-          className={`transition-transform ${showOther ? 'rotate-90' : ''}`}
-        />
+        <IconChevron size={12} className={`transition-transform ${showOther ? 'rotate-90' : ''}`} />
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
         <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          <p className="mb-1 text-[11px] leading-[1.45] text-ink-3">
-            Also in the register under the same export, but not classified
-            as buildings, so kept separate rather than folded into the
-            building type list above.
-          </p>
           {otherCounts.filter((o) => o.count > 0).map((o) => (
             <div key={o.c} className="flex items-center justify-between py-[2px]">
-              <span className="text-[11.5px] text-ink-2">
-                {ASSET_CLASS_LABEL[o.c]}
-              </span>
-              <span className="num text-[12px] font-semibold text-ink">
-                {o.count}
-              </span>
+              <span className="text-[11px] text-ink-2">{ASSET_CLASS_LABEL[o.c]}</span>
+              <span className="num text-[11px] font-semibold text-ink">{o.count}</span>
             </div>
           ))}
         </div>
       )}
 
-      <div className="mt-2 flex items-center justify-between">
-        <PanelHeading>Register, filtered</PanelHeading>
-        <span className="num text-[11px] text-ink-3">
-          ${(visibleInsured / 1e6).toFixed(1)}M shown
+      {/* The individual list is a deliberate browse area below the fold,
+          not the answer to the question above. Closed by default so
+          picking categories never has to compete with a long list. */}
+      <button
+        onClick={() => setShowList(!showList)}
+        className="mt-2.5 flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+      >
+        <span className="flex items-center gap-1.5">
+          <IconChevron size={12} className={`text-ink-3 transition-transform ${showList ? 'rotate-90' : ''}`} />
+          <span className="text-[11.5px] font-medium text-ink">
+            List {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
+          </span>
         </span>
-      </div>
-      <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-        {visibleBuildings.length === 0 && (
-          <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11.5px] text-ink-3">
-            No building types selected.
-          </div>
-        )}
-        {visibleBuildings.map((b) => {
-          const isOpen = openId === b.id;
-          const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-          const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-          return (
-            <div
-              key={b.id}
-              className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
-            >
-              <button
-                onClick={() => setOpenId(isOpen ? null : b.id)}
-                className="w-full px-2 py-1.5 text-left"
-              >
-                <div className="flex items-start justify-between gap-1.5">
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[12.5px] font-semibold text-ink">
-                      {b.name}
-                    </span>
-                    <span className="num mt-[2px] block truncate text-[11px] text-ink-3">
-                      {b.buildingType ?? 'Not yet classified'}
-                      {b.suburb ? ` · ${b.suburb}` : ''}
-                    </span>
-                  </span>
-                  {b.insuredValue > 0 && (
-                    <span className="num shrink-0 text-[12px] font-semibold text-ink-2">
-                      ${(b.insuredValue / 1000).toFixed(0)}k
-                    </span>
-                  )}
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {b.condition && (
-                    <span
-                      className="rounded-[3px] px-1 text-[11px] font-medium"
-                      style={{ background: withAlpha(condColor, 0.12), color: condColor }}
-                    >
-                      {b.condition}
-                    </span>
-                  )}
-                  {b.inherentRisk && (
-                    <span
-                      className="rounded-[3px] px-1 text-[11px] font-medium"
-                      style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}
-                    >
-                      {b.inherentRisk}
-                    </span>
-                  )}
-                </div>
-              </button>
-              {isOpen && (
-                <div className="fade-up border-t border-line px-2 py-1.5">
-                  {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
-                  {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
-                  {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
-                  {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
-                  {(b.riskConsequence || b.riskLikelihood) && (
-                    <DetailRow
-                      label="Risk rating"
-                      value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`}
-                    />
-                  )}
-                  <DetailRow
-                    label="Register components"
-                    value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`}
-                  />
-                </div>
-              )}
+        <span className="num text-[10.5px] text-ink-3">
+          ${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped
+        </span>
+      </button>
+
+      {showList && (
+        <div className="fade-up mt-1.5 max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+          {visibleBuildings.length === 0 && (
+            <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
+              No building types selected.
             </div>
-          );
-        })}
-      </div>
+          )}
+          {visibleBuildings.map((b) => {
+            const isOpen = openId === b.id;
+            const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+            const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
+            const loc = BUILDING_LOCATION[b.id];
+            const located = !!loc;
+            return (
+              <div
+                key={b.id}
+                className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
+              >
+                <button onClick={() => setOpenId(isOpen ? null : b.id)} className="w-full px-2 py-1.5 text-left">
+                  <div className="flex items-start justify-between gap-1.5">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12px] font-semibold text-ink">{b.name}</span>
+                      <span className="num mt-[2px] block truncate text-[10.5px] text-ink-3">
+                        {b.buildingType ?? 'Not yet classified'}
+                        {b.suburb ? ` · ${b.suburb}` : ''}
+                        {!located && ' · not mapped'}
+                      </span>
+                    </span>
+                    {b.insuredValue > 0 && (
+                      <span className="num shrink-0 text-[11px] font-semibold text-ink-2">
+                        ${(b.insuredValue / 1000).toFixed(0)}k
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {b.condition && (
+                      <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
+                        {b.condition}
+                      </span>
+                    )}
+                    {b.inherentRisk && (
+                      <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
+                        {b.inherentRisk}
+                      </span>
+                    )}
+                  </div>
+                </button>
+                {isOpen && (
+                  <div className="fade-up border-t border-line px-2 py-1.5">
+                    {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
+                    {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
+                    {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
+                    {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
+                    {(b.riskConsequence || b.riskLikelihood) && (
+                      <DetailRow label="Risk rating" value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`} />
+                    )}
+                    <DetailRow label="Register components" value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`} />
+                    <DetailRow
+                      label="Map position"
+                      value={
+                        !located
+                          ? 'Not shown on the map, no address in the register resolved to a location.'
+                          : loc!.precision === 'site'
+                            ? 'Shown on the map, geocoded to the actual building or named place.'
+                            : 'Shown on the map as a hollow marker, geocoded to the street only, the address had no number so this is not the building itself.'
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -6244,6 +6330,8 @@ interface PortfolioTabProps {
   setWeights: (w: Weights) => void;
   ownerFilter: OwnerTier | 'all';
   setOwnerFilter: (o: OwnerTier | 'all') => void;
+  buildingOffTypes: Set<string>;
+  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 function PortfolioTab({
@@ -6255,6 +6343,8 @@ function PortfolioTab({
   setWeights,
   ownerFilter,
   setOwnerFilter,
+  buildingOffTypes,
+  setBuildingOffTypes,
 }: PortfolioTabProps) {
   const [showDemo, setShowDemo] = useState(false);
   const [classFilter, setClassFilter] = useState<AssetCategory | 'all'>('all');
@@ -6329,7 +6419,10 @@ function PortfolioTab({
 
   return (
     <div className="px-2.5 py-2.5">
-      <RealBuildingsRegister />
+      <RealBuildingsRegister
+        offTypes={buildingOffTypes}
+        setOffTypes={setBuildingOffTypes}
+      />
 
       <button
         onClick={() => setShowDemo(!showDemo)}
@@ -6812,6 +6905,11 @@ export default function App() {
   const [showInfo, setShowInfo] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
   const [ownerFilter, setOwnerFilter] = useState<OwnerTier | 'all'>('all');
+  // Building types turned off in Portfolio. Lifted to root so the map can
+  // draw the same filtered set of real buildings the panel is showing.
+  const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const showBlueprintPanel = !!activeBlueprint;
   const compare = panelTab === 'analysis';
@@ -6914,6 +7012,8 @@ export default function App() {
               setWeights={setWeights}
               ownerFilter={ownerFilter}
               setOwnerFilter={setOwnerFilter}
+              buildingOffTypes={buildingOffTypes}
+              setBuildingOffTypes={setBuildingOffTypes}
             />
           )}
           {panelTab === 'layers' && (
@@ -6997,6 +7097,8 @@ export default function App() {
               activeBlueprint ? BLUEPRINT_ACCENT[activeBlueprint] : ACCENT
             }
             onZoomChange={setZoom}
+            showBuildings={panelTab === 'portfolio'}
+            buildingOffTypes={buildingOffTypes}
           />
 
           {showBlueprintPanel && activeBlueprint && (
