@@ -1,0 +1,69 @@
+@import './fonts.css';
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  --color-accent: #006E78;
+  --color-accent-soft: #E3F1F2;
+  --color-accent-line: #B6DADD;
+  --color-ink: #14201F;
+  --color-ink-2: #4A5A59;
+  --color-ink-3: #7E8D8C;
+  --color-line: #E2E7E7;
+  --color-surface: #FFFFFF;
+  --color-surface-2: #F6F8F8;
+
+  --color-haz-heat: #DC2626;
+  --color-haz-flooding: #2563EB;
+  --color-haz-coastal: #0EA5E9;
+  --color-haz-drought: #D97706;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Numbers always read in the mono face, tabular so columns line up. */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+button { font-family: inherit; color: inherit; }
+input, select { font-family: inherit; }
+
+/* Thin scrollbars keep the dense panels from losing width to chrome. */
+.thin-scroll { scrollbar-width: thin; scrollbar-color: #CBD5D4 transparent; }
+.thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #CBD5D4; border-radius: 3px; }
+.thin-scroll::-webkit-scrollbar-track { background: transparent; }
+
+/* Leaflet defaults are tuned for larger type than this tool uses. */
+.leaflet-container { font-family: var(--font-sans); background: #EEF2F2; outline: none; }
+.leaflet-container a { color: var(--color-accent); }
+.leaflet-control-attribution { font-size: 8px !important; background: rgba(255,255,255,0.72) !important; }
+.leaflet-interactive:focus { outline: none; }
+
+/* Range inputs carry the accent in every state. */
+input[type='range'] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+input[type='range']::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--color-line); }
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; margin-top: -3.5px;
+  height: 10px; width: 10px; border-radius: 50%;
+  background: var(--color-accent); border: 1.5px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0,110,120,0.35);
+}
+input[type='range']::-moz-range-track { height: 3px; border-radius: 2px; background: var(--color-line); }
+input[type='range']::-moz-range-thumb {
+  height: 10px; width: 10px; border: 1.5px solid #fff; border-radius: 50%; background: var(--color-accent);
+}
+
+@keyframes fadeUp { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fadeUp 140ms ease-out; }
