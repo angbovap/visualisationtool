@@ -3200,6 +3200,8 @@ interface LayersTabProps {
   setLayerOpacity: (id: string, v: number) => void;
   activeBlueprint: BlueprintId | null;
   applyBlueprint: (id: BlueprintId) => void;
+  buildingOffTypes: Set<string>;
+  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 function LayersTab({
@@ -3211,6 +3213,8 @@ function LayersTab({
   setLayerOpacity,
   activeBlueprint,
   applyBlueprint,
+  buildingOffTypes,
+  setBuildingOffTypes,
 }: LayersTabProps) {
   // Only the hazard group opens by default. Two accordions open at once was
   // pushing the blueprint buttons below the fold on first load.
@@ -3219,9 +3223,11 @@ function LayersTab({
     vulnerability: false,
     overlay: false,
   });
+  const [assetsOpen, setAssetsOpen] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
   const groups: LayerGroup[] = ['hazard', 'vulnerability', 'overlay'];
+  const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
 
   return (
     <div>
@@ -3317,6 +3323,24 @@ function LayersTab({
           </Accordion>
         );
       })}
+
+      {/* Real buildings, alongside the hazard and vulnerability layers
+          they need to be compared against, rather than a tab switch
+          away in Portfolio. Portfolio still reads this same state, it
+          just doesn't carry its own copy of the toggle any more. */}
+      <Accordion
+        title="Assets"
+        count={`${assetsOnCount}/${ALL_BUILDING_TYPES.size}`}
+        open={assetsOpen}
+        onToggle={() => setAssetsOpen(!assetsOpen)}
+      >
+        <div className="px-2.5">
+          <AssetTypeToggles
+            offTypes={buildingOffTypes}
+            setOffTypes={setBuildingOffTypes}
+          />
+        </div>
+      </Accordion>
 
       {/* Blueprints. A curated layer set plus its reading notes. */}
       <div className="border-t border-line px-2.5 py-2.5">
@@ -5601,36 +5625,24 @@ const BUILDING_LOCATION = ccsBuildingsGeocoded as Record<
   string,
   { lat: number; lng: number; precision: 'site' | 'street' }
 >;
-
-/** How this section reads. Content for a header tooltip rather than a
- *  paragraph sitting in the flow, so the panel opens on numbers and
- *  controls, not prose. */
-const BUILDINGS_REGISTER_EXPLAINER =
-  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Grouped by Building Use, individually toggled by Building Type, both real register fields chosen because Short Description names the component not the place, and Details is a near-unique string per row. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
-
 /* ------------------------------------------------------------------ *
- * Real buildings register, the categorise and toggle mechanism
+ * Asset category toggles
  *
- * Redesigned around two rules a council tool needs to hold to: the
- * headline numbers and the category controls fit in view without
- * scrolling, and every category is a single tappable chip rather than a
- * row in a tree, so eight groups and twenty types cost a few lines, not
- * a page.
+ * One control surface for "what real buildings show, on the map and in
+ * Portfolio's register", living in Layers next to the hazard and
+ * vulnerability toggles it needs to be compared against. Portfolio no
+ * longer carries its own copy of this control, a category picked here
+ * is picked everywhere, so nothing needs re-picking by switching tabs.
  * ------------------------------------------------------------------ */
 
-interface RealBuildingsRegisterProps {
+interface AssetTypeTogglesProps {
   offTypes: Set<string>;
   setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
-function RealBuildingsRegister({
-  offTypes,
-  setOffTypes,
-}: RealBuildingsRegisterProps) {
+function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
   const [openUse, setOpenUse] = useState<string | null>(null);
   const [showOther, setShowOther] = useState(false);
-  const [showList, setShowList] = useState(false);
-  const [openId, setOpenId] = useState<string | null>(null);
 
   const toggleType = useCallback(
     (key: string) => {
@@ -5659,6 +5671,161 @@ function RealBuildingsRegister({
     [setOffTypes],
   );
 
+  const otherClasses: AssetClass[] = ['meter', 'pump', 'accessory'];
+  const otherCounts = otherClasses.map((c) => ({
+    c,
+    count: REAL_ASSETS.filter((a) => a.assetClass === c).length,
+  }));
+
+  const onCount = ALL_BUILDING_TYPES.size - offTypes.size;
+
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="text-[11px] text-ink-3">
+          {onCount} of {ALL_BUILDING_TYPES.size} types shown
+        </span>
+        <button
+          onClick={() => setOffTypes(() => new Set())}
+          className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
+        >
+          show all
+        </button>
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {REAL_USE_TREE.map((use) => {
+          const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
+          const allOff = offCount === use.types.length;
+          const isOpen = openUse === use.key;
+          const isUnclassified = use.key === UNCLASSIFIED;
+          const chip = (
+            <button
+              onClick={() => setOpenUse(isOpen ? null : use.key)}
+              className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
+              style={
+                isOpen
+                  ? { borderColor: ACCENT, background: withAlpha(ACCENT, 0.08) }
+                  : allOff
+                    ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
+                    : { borderColor: '#E2E7E7', background: '#fff' }
+              }
+            >
+              <span
+                className="h-[7px] w-[7px] shrink-0 rounded-full"
+                style={{ background: allOff ? '#C9D3D2' : ACCENT }}
+              />
+              <span className="text-[11.5px] font-medium text-ink">
+                {isUnclassified ? 'Not yet classified' : use.label}
+              </span>
+              <span className="num text-[10.5px] text-ink-3">{use.count}</span>
+            </button>
+          );
+          return (
+            <span key={use.key}>
+              {isUnclassified ? (
+                <Tip
+                  label="Not yet classified"
+                  body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
+                  side="top"
+                >
+                  {chip}
+                </Tip>
+              ) : (
+                chip
+              )}
+            </span>
+          );
+        })}
+      </div>
+
+      {openUse && (
+        <div className="fade-up mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-ink-2">
+              {REAL_USE_TREE.find((u) => u.key === openUse)?.label}
+            </span>
+            <button
+              onClick={() => toggleUse(REAL_USE_TREE.find((u) => u.key === openUse)!)}
+              className="text-[10.5px] text-accent hover:underline"
+            >
+              toggle all
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {REAL_USE_TREE.find((u) => u.key === openUse)?.types.map((t) => {
+              const on = !offTypes.has(t.key);
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => toggleType(t.key)}
+                  className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
+                  style={
+                    on
+                      ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
+                      : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
+                  }
+                >
+                  <Check on={on} />
+                  {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                  <span className="num text-[10px] opacity-70">{t.count}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <button
+        onClick={() => setShowOther(!showOther)}
+        className="mt-2 flex items-center gap-1 text-[11px] text-ink-3 hover:text-ink"
+      >
+        <IconChevron size={12} className={`transition-transform ${showOther ? 'rotate-90' : ''}`} />
+        Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
+      </button>
+      {showOther && (
+        <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
+          <p className="mb-1 text-[10.5px] leading-[1.45] text-ink-3">
+            Real, in the same export, not classed as buildings, so kept
+            out of the toggle list above rather than folded in.
+          </p>
+          {otherCounts.filter((o) => o.count > 0).map((o) => (
+            <div key={o.c} className="flex items-center justify-between py-[2px]">
+              <span className="text-[11px] text-ink-2">{ASSET_CLASS_LABEL[o.c]}</span>
+              <span className="num text-[11px] font-semibold text-ink">{o.count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** How this section reads. Content for a header tooltip rather than a
+ *  paragraph sitting in the flow, so the panel opens on numbers and
+ *  controls, not prose. */
+const BUILDINGS_REGISTER_EXPLAINER =
+  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Categories are turned on and off in Layers, Assets, the same toggle the map markers below use. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
+
+/* ------------------------------------------------------------------ *
+ * Real buildings register
+ *
+ * A browse and inspect view, not a control surface. It reads whichever
+ * categories are switched on in Layers, Assets, it does not carry a
+ * second copy of that toggle.
+ * ------------------------------------------------------------------ */
+
+interface RealBuildingsRegisterProps {
+  offTypes: Set<string>;
+  onManageCategories: () => void;
+}
+
+function RealBuildingsRegister({
+  offTypes,
+  onManageCategories,
+}: RealBuildingsRegisterProps) {
+  const [showList, setShowList] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+
   const visibleTypes = useMemo(
     () => new Set([...ALL_BUILDING_TYPES].filter((t) => !offTypes.has(t))),
     [offTypes],
@@ -5678,12 +5845,7 @@ function RealBuildingsRegister({
   const approxCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'street').length;
   const mappedCount = preciseCount + approxCount;
   const visibleMapped = visibleBuildings.filter((b) => BUILDING_LOCATION[b.id]).length;
-
-  const otherClasses: AssetClass[] = ['meter', 'pump', 'accessory'];
-  const otherCounts = otherClasses.map((c) => ({
-    c,
-    count: REAL_ASSETS.filter((a) => a.assetClass === c).length,
-  }));
+  const onCount = ALL_BUILDING_TYPES.size - offTypes.size;
 
   return (
     <div className="mb-3 border-b border-line pb-3">
@@ -5731,117 +5893,26 @@ function RealBuildingsRegister({
         <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
       </div>
 
-      {/* Category chips. One tap toggles a whole use, a second row of
-          chips for its types only appears for the use currently open,
-          so opening one never pushes the other seven down the page. */}
-      <PanelHeading
-        right={
-          offTypes.size > 0 ? (
-            <button
-              onClick={() => setOffTypes(() => new Set())}
-              className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
-            >
-              show all
-            </button>
-          ) : undefined
-        }
-      >
-        Building use, tap to open
-      </PanelHeading>
-      <div className="flex flex-wrap gap-1">
-        {REAL_USE_TREE.map((use) => {
-          const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
-          const allOff = offCount === use.types.length;
-          const isOpen = openUse === use.key;
-          return (
-            <button
-              key={use.key}
-              onClick={() => setOpenUse(isOpen ? null : use.key)}
-              className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
-              style={
-                isOpen
-                  ? { borderColor: ACCENT, background: withAlpha(ACCENT, 0.08) }
-                  : allOff
-                    ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
-                    : { borderColor: '#E2E7E7', background: '#fff' }
-              }
-            >
-              <span
-                className="h-[7px] w-[7px] shrink-0 rounded-full"
-                style={{ background: allOff ? '#C9D3D2' : ACCENT }}
-              />
-              <span className="text-[11.5px] font-medium text-ink">
-                {use.label === UNCLASSIFIED ? 'Not yet classified' : use.label}
-              </span>
-              <span className="num text-[10.5px] text-ink-3">{use.count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* The open use's types, compact wrapping chips, individually
-          toggleable. Only one use's types are ever shown at a time. */}
-      {openUse && (
-        <div className="fade-up mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-ink-2">
-              {REAL_USE_TREE.find((u) => u.key === openUse)?.label}
-            </span>
-            <button
-              onClick={() => toggleUse(REAL_USE_TREE.find((u) => u.key === openUse)!)}
-              className="text-[10.5px] text-accent hover:underline"
-            >
-              toggle all
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {REAL_USE_TREE.find((u) => u.key === openUse)?.types.map((t) => {
-              const on = !offTypes.has(t.key);
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => toggleType(t.key)}
-                  className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
-                  style={
-                    on
-                      ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
-                      : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
-                  }
-                >
-                  <Check on={on} />
-                  {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                  <span className="num text-[10px] opacity-70">{t.count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+      {/* No toggle UI here, it lives in Layers so hazard and asset
+          categories sit in one place. This just shows what is currently
+          on and a one-click way to get to it. */}
       <button
-        onClick={() => setShowOther(!showOther)}
-        className="mt-2 flex items-center gap-1 text-[11px] text-ink-3 hover:text-ink"
+        onClick={onManageCategories}
+        className="mb-2.5 flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
       >
-        <IconChevron size={12} className={`transition-transform ${showOther ? 'rotate-90' : ''}`} />
-        Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
+        <span className="text-[11.5px] text-ink-2">
+          <span className="num font-semibold text-ink">{onCount}</span> of{' '}
+          {ALL_BUILDING_TYPES.size} building types shown on the map
+        </span>
+        <span className="text-[11px] text-accent">Layers → Assets</span>
       </button>
-      {showOther && (
-        <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          {otherCounts.filter((o) => o.count > 0).map((o) => (
-            <div key={o.c} className="flex items-center justify-between py-[2px]">
-              <span className="text-[11px] text-ink-2">{ASSET_CLASS_LABEL[o.c]}</span>
-              <span className="num text-[11px] font-semibold text-ink">{o.count}</span>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* The individual list is a deliberate browse area below the fold,
           not the answer to the question above. Closed by default so
           picking categories never has to compete with a long list. */}
       <button
         onClick={() => setShowList(!showList)}
-        className="mt-2.5 flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+        className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
       >
         <span className="flex items-center gap-1.5">
           <IconChevron size={12} className={`text-ink-3 transition-transform ${showList ? 'rotate-90' : ''}`} />
@@ -5945,7 +6016,7 @@ interface PortfolioTabProps {
   ownerFilter: OwnerTier | 'all';
   setOwnerFilter: (o: OwnerTier | 'all') => void;
   buildingOffTypes: Set<string>;
-  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
+  onManageCategories: () => void;
 }
 
 function PortfolioTab({
@@ -5958,7 +6029,7 @@ function PortfolioTab({
   ownerFilter,
   setOwnerFilter,
   buildingOffTypes,
-  setBuildingOffTypes,
+  onManageCategories,
 }: PortfolioTabProps) {
   const [showDemo, setShowDemo] = useState(false);
   const [classFilter, setClassFilter] = useState<AssetCategory | 'all'>('all');
@@ -6035,7 +6106,7 @@ function PortfolioTab({
     <div className="px-2.5 py-2.5">
       <RealBuildingsRegister
         offTypes={buildingOffTypes}
-        setOffTypes={setBuildingOffTypes}
+        onManageCategories={onManageCategories}
       />
 
       <button
@@ -6519,10 +6590,12 @@ export default function App() {
   const [showInfo, setShowInfo] = useState(false);
   const [weights, setWeights] = useState<Weights>(DEFAULT_WEIGHTS);
   const [ownerFilter, setOwnerFilter] = useState<OwnerTier | 'all'>('all');
-  // Building types turned off in Portfolio. Lifted to root so the map can
-  // draw the same filtered set of real buildings the panel is showing.
+  // Building types switched off in Layers, Assets. Lifted to root so the
+  // map and Portfolio's register both read the one state. Starts with
+  // everything off, matching every other overlay in Layers, on the map
+  // is opt-in, not a surprise on first load.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
-    () => new Set(),
+    () => new Set(ALL_BUILDING_TYPES),
   );
 
   const showBlueprintPanel = !!activeBlueprint;
@@ -6627,7 +6700,7 @@ export default function App() {
               ownerFilter={ownerFilter}
               setOwnerFilter={setOwnerFilter}
               buildingOffTypes={buildingOffTypes}
-              setBuildingOffTypes={setBuildingOffTypes}
+              onManageCategories={() => setPanelTab('layers')}
             />
           )}
           {panelTab === 'layers' && (
@@ -6640,6 +6713,8 @@ export default function App() {
               setLayerOpacity={setLayerOpacity}
               activeBlueprint={activeBlueprint}
               applyBlueprint={applyBlueprint}
+              buildingOffTypes={buildingOffTypes}
+              setBuildingOffTypes={setBuildingOffTypes}
             />
           )}
           {panelTab === 'place' && (
@@ -6705,7 +6780,7 @@ export default function App() {
               activeBlueprint ? BLUEPRINT_ACCENT[activeBlueprint] : ACCENT
             }
             onZoomChange={setZoom}
-            showBuildings={panelTab === 'portfolio'}
+            showBuildings={buildingOffTypes.size < ALL_BUILDING_TYPES.size}
             buildingOffTypes={buildingOffTypes}
           />
 
