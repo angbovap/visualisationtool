@@ -40,6 +40,7 @@ import sa1BoundaryData from '@/data/sa1Boundaries.json';
 // batch at their 1 request/second limit). Not part of the source export.
 // See BUILDING_LOCATION below for why most of these are street-level.
 import ccsBuildingsGeocoded from '@/data/ccsBuildingsGeocoded.json';
+import vapLogo from '@/assets/vaplogo.png';
 
 /* ------------------------------------------------------------------ *
  * Types
@@ -6547,8 +6548,13 @@ export default function App() {
         </div>
 
         <footer className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
-          <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">
-            City of Charles Sturt
+          <span className="flex items-center gap-1.5">
+            <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">
+              City of Charles Sturt
+            </span>
+            <Tip label="Prepared by" body="Value Advisory Partners" side="top">
+              <img src={vapLogo} alt="Value Advisory Partners" className="h-[15px] w-[15px] shrink-0 opacity-70" />
+            </Tip>
           </span>
           <span className="num text-[11px] text-ink-3">
             {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
