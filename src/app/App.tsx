@@ -3295,18 +3295,49 @@ function LayersTab({
   ];
   const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
 
-  const subTabs: { value: LayersSection; label: string; count: string }[] = [
-    ...groups.slice(0, 1).map((g) => ({
-      value: g as LayersSection,
-      label: GROUP_LABEL[g],
-      count: `${LAYERS.filter((l) => l.group === g && checkedLayers.has(l.id)).length}/${LAYERS.filter((l) => l.group === g).length}`,
-    })),
-    { value: 'assets' as LayersSection, label: 'Assets', count: `${assetsOnCount}/${ALL_BUILDING_TYPES.size}` },
-    ...groups.slice(1).map((g) => ({
-      value: g as LayersSection,
-      label: GROUP_LABEL[g],
-      count: `${LAYERS.filter((l) => l.group === g && checkedLayers.has(l.id)).length}/${LAYERS.filter((l) => l.group === g).length}`,
-    })),
+  const categories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
+    {
+      value: 'hazard',
+      label: GROUP_LABEL.hazard,
+      color: '#DC2626',
+      on: LAYERS.filter((l) => l.group === 'hazard' && checkedLayers.has(l.id)).length,
+      total: LAYERS.filter((l) => l.group === 'hazard').length,
+    },
+    {
+      value: 'assets',
+      label: 'Assets',
+      color: ACCENT,
+      on: assetsOnCount,
+      total: ALL_BUILDING_TYPES.size,
+    },
+    {
+      value: 'vulnerability',
+      label: GROUP_LABEL.vulnerability,
+      color: '#7C3AED',
+      on: LAYERS.filter((l) => l.group === 'vulnerability' && checkedLayers.has(l.id)).length,
+      total: LAYERS.filter((l) => l.group === 'vulnerability').length,
+    },
+    {
+      value: 'transport',
+      label: GROUP_LABEL.transport,
+      color: '#0891B2',
+      on: LAYERS.filter((l) => l.group === 'transport' && checkedLayers.has(l.id)).length,
+      total: LAYERS.filter((l) => l.group === 'transport').length,
+    },
+    {
+      value: 'infrastructure',
+      label: GROUP_LABEL.infrastructure,
+      color: '#2563EB',
+      on: LAYERS.filter((l) => l.group === 'infrastructure' && checkedLayers.has(l.id)).length,
+      total: LAYERS.filter((l) => l.group === 'infrastructure').length,
+    },
+    {
+      value: 'planning',
+      label: GROUP_LABEL.planning,
+      color: '#059669',
+      on: LAYERS.filter((l) => l.group === 'planning' && checkedLayers.has(l.id)).length,
+      total: LAYERS.filter((l) => l.group === 'planning').length,
+    },
   ];
 
   const renderLayerList = (g: LayerGroup) => {
@@ -3398,7 +3429,39 @@ function LayersTab({
         />
       </div>
 
-      <SubTabStrip tabs={subTabs} value={activeTab} onChange={setActiveTab} />
+      {/* Category cards, not a row of plain tab buttons, a colour and a
+          live on/total count read faster than a label alone, and the
+          grid matches the Blueprint cards below rather than introducing
+          a third visual language in the same panel. */}
+      <div className="border-b border-line px-2.5 py-2">
+        <div className="grid grid-cols-2 gap-1.5">
+          {categories.map((c) => {
+            const on = activeTab === c.value;
+            return (
+              <button
+                key={c.value}
+                onClick={() => setActiveTab(c.value)}
+                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
+                style={{
+                  borderColor: on ? c.color : '#E2E7E7',
+                  background: on ? withAlpha(c.color, 0.08) : '#fff',
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
+                  <span className="num text-[10.5px] text-ink-3">{c.on}/{c.total}</span>
+                </div>
+                <span
+                  className="mt-1 block text-[12px] font-semibold leading-tight"
+                  style={{ color: on ? c.color : '#14201F' }}
+                >
+                  {c.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {activeTab === 'assets' ? (
         <div className="px-2.5 py-2">
@@ -4935,6 +4998,14 @@ function BlueprintPanel({
 
   const plan = selected ? PLANNING[selected.id] : null;
   const [tab, setTab] = useState<'overview' | 'spotlight' | 'ranking'>('overview');
+
+  // Picking a suburb, on the map or from Ranking, is a request to look at
+  // it, not to keep browsing whatever tab happened to be open. Jump to
+  // Spotlight so the click actually shows something instead of updating
+  // a tab nobody is looking at.
+  useEffect(() => {
+    if (selectedId) setTab('spotlight');
+  }, [selectedId]);
 
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
