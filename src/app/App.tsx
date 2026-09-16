@@ -4998,6 +4998,7 @@ function BlueprintPanel({
 
   const plan = selected ? PLANNING[selected.id] : null;
   const [tab, setTab] = useState<'overview' | 'spotlight' | 'ranking'>('overview');
+  const [openBuildingId, setOpenBuildingId] = useState<string | null>(null);
 
   // Picking a suburb, on the map or from Ranking, is a request to look at
   // it, not to keep browsing whatever tab happened to be open. Jump to
@@ -5233,38 +5234,39 @@ function BlueprintPanel({
               </div>
             )}
 
-            <div className="mt-2">
-              <PanelHeading>Related assets</PanelHeading>
-              <div className="space-y-1">
-                {relatedAssets(bp.id, selected).map((a) => (
-                  <div
-                    key={a.name}
-                    className="rounded-[5px] border border-line bg-white px-2 py-1"
+            {(() => {
+              const buildings = REAL_BUILDINGS_BY_SUBURB[selected.id] ?? [];
+              const value = buildings.reduce((n, b) => n + b.insuredValue, 0);
+              return (
+                <div className="mt-2">
+                  <PanelHeading
+                    right={
+                      buildings.length > 0 && (
+                        <span className="num text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M</span>
+                      )
+                    }
                   >
-                    <div className="flex items-baseline justify-between gap-1.5">
-                      <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink">
-                        {a.name}
-                      </span>
-                      {a.value && (
-                        <span className="num shrink-0 text-[11.5px] text-ink-3">
-                          {a.value}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-[3px] flex flex-wrap gap-1">
-                      {a.hazards.map((h) => (
-                        <HazardChip key={h} hazard={h} small />
+                    Council buildings here, {buildings.length}
+                  </PanelHeading>
+                  {buildings.length === 0 ? (
+                    <p className="text-[11px] leading-[1.5] text-ink-3">
+                      No building in the register geocoded to this SA2.
+                    </p>
+                  ) : (
+                    <div className="space-y-1">
+                      {buildings.map((b) => (
+                        <BuildingCard
+                          key={b.id}
+                          b={b}
+                          isOpen={openBuildingId === b.id}
+                          onToggle={() => setOpenBuildingId(openBuildingId === b.id ? null : b.id)}
+                        />
                       ))}
-                      {a.repairs5yr >= 10 && (
-                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
-                          {a.repairs5yr} repairs
-                        </span>
-                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         ))}
 
@@ -5375,14 +5377,6 @@ function relevantRisks(id: BlueprintId): HazardId[] {
     default:
       return ['heat', 'flooding'];
   }
-}
-
-function relatedAssets(id: BlueprintId, s: Suburb): Asset[] {
-  const wanted = relevantRisks(id);
-  const matches = s.assets.filter((a) =>
-    a.hazards.some((h) => wanted.includes(h)),
-  );
-  return (matches.length ? matches : s.assets).slice(0, 4);
 }
 
 /** Three point trend line. Enough to show direction without implying precision. */
