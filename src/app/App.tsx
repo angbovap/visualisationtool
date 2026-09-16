@@ -2849,6 +2849,29 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    /* Critical facilities: not council's to toggle off, they matter
+       regardless of which layer someone is looking at, so they render
+       unconditionally rather than behind the Assets checklist. Currently
+       one confirmed real entry, the LGA's only hospital. A white cross
+       on a solid marker reads as "emergency service", not "building",
+       deliberately distinct from both the teal building dots and the
+       red hazard-preview scatter. */
+    for (const f of CRITICAL_FACILITIES) {
+      push(
+        L.circleMarker([f.lat, f.lng] as LatLngTuple, {
+          radius: 7,
+          color: '#fff',
+          weight: 1.5,
+          fillColor: '#DC2626',
+          fillOpacity: 0.95,
+          interactive: true,
+        }).bindTooltip(
+          `${f.name} — ${CRITICAL_FACILITY_LABEL[f.type]}, state significant`,
+          { direction: 'top', offset: [0, -4] },
+        ),
+      );
+    }
+
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -3619,6 +3642,23 @@ function PlaceTab({
           reason.
         </div>
 
+        {CRITICAL_FACILITIES.filter((f) => f.suburbId === BEVERLEY_ID).map((f) => (
+          <div key={f.id} className="mt-2.5 rounded-[6px] border border-[#F3C6C6] bg-[#FEF2F2] px-2.5 py-2">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[10px] font-bold text-white">+</span>
+              <span className="text-[12.5px] font-semibold text-ink">{f.name}</span>
+            </div>
+            <div className="mt-1 text-[11px] leading-[1.5] text-ink-2">
+              {CRITICAL_FACILITY_LABEL[f.type]}, state significant, not council owned or maintained.
+              Council's own risk planning depends on it regardless, the
+              "key state services" consequence category in council's
+              consequence framework exists for exactly this case.
+            </div>
+            <div className="num mt-1 text-[10.5px] text-ink-3">{f.address}</div>
+            <div className="mt-1 text-[10px] leading-[1.4] text-ink-3">{f.source}</div>
+          </div>
+        ))}
+
         {(() => {
           const buildings = REAL_BUILDINGS_BY_SUBURB[BEVERLEY_ID] ?? [];
           if (buildings.length === 0) return null;
@@ -4318,6 +4358,60 @@ function HelpTab() {
             2021 and 2041. Changing the active dataset snaps the year to the
             nearest step it supports.
           </p>
+        </>,
+      )}
+      {section(
+        'consequence',
+        'Consequence framework',
+        <>
+          <p>
+            Council's own draft framework for what a hazard actually
+            costs, seven categories, shared via project correspondence
+            between Value Advisory Partners and The Systems Cooperative
+            in September 2026. The category names and metrics below are
+            real. The thresholds that would turn a metric into a pass or
+            fail are not, they were still being workshopped when this was
+            shared, so they show here as an open gap rather than a
+            guessed number.
+          </p>
+          <div className="mt-2 space-y-1.5">
+            {CONSEQUENCE_CATEGORIES.map((c) => (
+              <div key={c.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11.5px] font-semibold text-ink">{c.name}</span>
+                  <span className="rounded-[3px] bg-[#FDF9EF] px-1 text-[9.5px] font-medium text-[#7A6634]">
+                    tolerance not yet set
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  {c.metrics.map((m) => (
+                    <span key={m} className="rounded-[3px] bg-surface-2 px-1 text-[10.5px] text-ink-2">
+                      {m}
+                    </span>
+                  ))}
+                </div>
+                {c.mapsToPrepare && (
+                  <div className="mt-1.5 text-[10.5px] leading-[1.5] text-ink-3">
+                    <span className="font-semibold text-ink-2">Maps to prepare: </span>
+                    {c.mapsToPrepare.join(', ')}
+                    {c.mapsToPrepare.some((m) => /road hierarchy|traffic|conditions|canopy/i.test(m)) && (
+                      <span className="text-[#B45309]">
+                        {' '}
+                        — road hierarchy, traffic, condition and canopy are not yet in this tool,
+                        real SA road hierarchy data exists at data.sa.gov.au and has not been pulled in yet.
+                      </span>
+                    )}
+                  </div>
+                )}
+                {c.provocation && (
+                  <div className="mt-1 text-[10.5px] leading-[1.5] text-ink-3">
+                    <span className="font-semibold text-ink-2">Provocation for services: </span>
+                    {c.provocation}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </>,
       )}
       {section(
@@ -5565,6 +5659,152 @@ for (const b of REAL_BUILDINGS) {
   if (!suburbId) continue;
   (REAL_BUILDINGS_BY_SUBURB[suburbId] ??= []).push(b);
 }
+
+/* ------------------------------------------------------------------ *
+ * Critical facilities
+ *
+ * Not council owned or maintained, but council's own risk planning
+ * depends on them, the "key state services" consequence category from
+ * council's real consequence framework (Value Advisory Partners /
+ * The Systems Cooperative, workshop correspondence Sep 2026). A
+ * council-owned building failing is a budget and reputation problem;
+ * one of these failing during a hazard event is a life-safety and
+ * service-continuity problem regardless of who owns it.
+ *
+ * Charles Sturt's planning team identified, from the state's Hospital
+ * and Clinic Locations dataset, that exactly one hospital sits inside
+ * the LGA: The Queen Elizabeth Hospital, Woodville South. Its position
+ * here is geocoded against that confirmed real name and suburb, and
+ * lands inside Beverley by the real boundary, not Woodville-Cheltenham
+ * as its address name would suggest, one more reason not to assign
+ * places by locality name.
+ *
+ * Schools, police stations and power infrastructure were named in the
+ * same workshop as facilities worth flagging the same way. None are
+ * added here. Confirming which specific ones sit inside Charles Sturt
+ * needs the same kind of authoritative source the hospital had, not a
+ * guess at which school or station is nearby. */
+
+type CriticalFacilityType = 'hospital' | 'school' | 'police' | 'power';
+
+interface CriticalFacility {
+  id: string;
+  name: string;
+  type: CriticalFacilityType;
+  lat: number;
+  lng: number;
+  address: string;
+  suburbId: string;
+  source: string;
+}
+
+const CRITICAL_FACILITY_LABEL: Record<CriticalFacilityType, string> = {
+  hospital: 'Hospital',
+  school: 'School',
+  police: 'Police station',
+  power: 'Power infrastructure',
+};
+
+/* ------------------------------------------------------------------ *
+ * Consequence framework
+ *
+ * Council's own draft categorisation of what a hazard actually costs,
+ * from project correspondence between Value Advisory Partners and The
+ * Systems Cooperative (Sam Culley, Sept 2026), not authored here. Seven
+ * categories, each with the metrics council itself proposed to measure
+ * it by. Two things are deliberately absent: a tolerance or threshold
+ * per category, and a verdict on any specific asset. Both were still
+ * being workshopped at the time this was shared, "it would be good to
+ * fill out that last column this week" in Sam's own words, so a number
+ * here would be invented, not sourced. The category and metric names are
+ * real, the thresholds are not, and the difference is shown rather than
+ * hidden. */
+
+interface ConsequenceCategory {
+  id: string;
+  name: string;
+  metrics: string[];
+  mapsToPrepare?: string[];
+  provocation?: string;
+}
+
+const CONSEQUENCE_CATEGORIES: ConsequenceCategory[] = [
+  {
+    id: 'financial',
+    name: 'Financial',
+    metrics: ['Expenditure', '% of annual budget', 'Impact on budget'],
+  },
+  {
+    id: 'core-delivery',
+    name: 'Core delivery / Asset management',
+    metrics: ['Compliance', 'Disciplinary action', 'Court costs'],
+    mapsToPrepare: [
+      'Average daily max temperature',
+      'Days max temperature above 35C',
+      'Road hierarchy',
+      'Estimated road traffic',
+      'Road conditions',
+      'Road canopy cover ratio (road shaded)',
+    ],
+    provocation: 'Same as core hazard/asset maps, plus road function and active transport routes',
+  },
+  {
+    id: 'legislative',
+    name: 'Legislative',
+    metrics: ['Media impact and duration', 'Local response', 'Net Promoter Score'],
+  },
+  {
+    id: 'reputational',
+    name: 'Reputational',
+    metrics: [
+      'WHS incident severity',
+      'Staff turnover',
+      'Volunteer numbers',
+      'Staff culture',
+      'Conduct breaches',
+    ],
+  },
+  {
+    id: 'key-state-services',
+    name: 'Key state services / Our people',
+    metrics: [
+      'Council facility impact duration',
+      'Core service impact duration',
+      'BCP activation',
+      'Impact on Civic Centre',
+      'Impact on Beverley Depot',
+      'Impact on MRF',
+    ],
+  },
+  {
+    id: 'environment',
+    name: 'Environment',
+    metrics: ['Impact duration on "environment"', 'EPA Act 1993 classification'],
+  },
+  {
+    id: 'community-wellbeing',
+    name: 'Community wellbeing, health and safety',
+    metrics: [
+      'Utilisation of facilities',
+      'Number of people with wellbeing or safety compromised',
+      'Building density',
+    ],
+  },
+];
+
+const CRITICAL_FACILITIES: CriticalFacility[] = [
+  {
+    id: 'qeh',
+    name: 'The Queen Elizabeth Hospital',
+    type: 'hospital',
+    lat: -34.8836476,
+    lng: 138.5341211,
+    address: 'Woodville Road, Woodville South',
+    suburbId: BEVERLEY_ID,
+    source:
+      "Identified from the SA Government's Hospital and Clinic Locations dataset as the only hospital inside Charles Sturt, geocoded from that confirmed name and address via OpenStreetMap.",
+  },
+];
 
 /** One real building, expandable to its full register detail. Shared
  *  between the LGA-wide register list and the per-suburb building lists
