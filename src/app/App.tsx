@@ -2082,6 +2082,49 @@ function Check({ on }: { on: boolean }) {
 }
 
 /** Segmented control. Used for scenario, bounds, metric and horizon. */
+/** A row of tabs one level below the icon rail, so a panel with several
+ *  distinct sections shows exactly one at a time instead of stacking all
+ *  of them. Wraps onto more than one line rather than shrinking to fit,
+ *  since a 320px panel and six section names do not both fit on one
+ *  row. An optional count badge lets a tab say how much is inside it
+ *  without opening it. */
+function SubTabStrip<T extends string>({
+  tabs,
+  value,
+  onChange,
+  accent = ACCENT,
+}: {
+  tabs: { value: T; label: string; count?: string }[];
+  value: T;
+  onChange: (v: T) => void;
+  accent?: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1 border-b border-line px-2.5 py-2">
+      {tabs.map((t) => {
+        const on = t.value === value;
+        return (
+          <button
+            key={t.value}
+            onClick={() => onChange(t.value)}
+            className="flex items-center gap-1 rounded-[5px] border px-2 py-1 text-left transition-colors"
+            style={
+              on
+                ? { borderColor: accent, background: accent, color: '#fff' }
+                : { borderColor: '#E2E7E7', background: '#fff', color: '#4A5A59' }
+            }
+          >
+            <span className="text-[11.5px] font-medium">{t.label}</span>
+            {t.count && (
+              <span className="num text-[10px] opacity-80">{t.count}</span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function Segmented<T extends string | number>({
   options,
   value,
@@ -3232,23 +3275,17 @@ function LayersTab({
   buildingOffTypes,
   setBuildingOffTypes,
 }: LayersTabProps) {
-  // Only the hazard group opens by default. Two accordions open at once was
-  // pushing the blueprint buttons below the fold on first load.
-  const [open, setOpen] = useState<Record<LayerGroup, boolean>>({
-    hazard: true,
-    vulnerability: false,
-    transport: false,
-    infrastructure: false,
-    planning: false,
-  });
-  const [assetsOpen, setAssetsOpen] = useState(false);
   const [hoverId, setHoverId] = useState<string | null>(null);
 
   // Ordered by how often a council user needs it: the hazard itself,
-  // what it threatens (assets, rendered separately below), who it
-  // threatens, then the supporting network and policy layers behind
-  // those. No group is a generic 'overlays' catch-all any more, each
-  // one names the actual category it holds.
+  // what it threatens (assets), who it threatens, then the supporting
+  // network and policy layers behind those. No group is a generic
+  // 'overlays' catch-all, each one names the actual category it holds.
+  // One sub-tab visible at a time, not six accordions stacked, so
+  // picking a category costs a tap, not a scroll past the other five.
+  type LayersSection = LayerGroup | 'assets';
+  const [activeTab, setActiveTab] = useState<LayersSection>('hazard');
+
   const groups: LayerGroup[] = [
     'hazard',
     'vulnerability',
@@ -3258,17 +3295,24 @@ function LayersTab({
   ];
   const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
 
-  const renderGroup = (g: LayerGroup) => {
+  const subTabs: { value: LayersSection; label: string; count: string }[] = [
+    ...groups.slice(0, 1).map((g) => ({
+      value: g as LayersSection,
+      label: GROUP_LABEL[g],
+      count: `${LAYERS.filter((l) => l.group === g && checkedLayers.has(l.id)).length}/${LAYERS.filter((l) => l.group === g).length}`,
+    })),
+    { value: 'assets' as LayersSection, label: 'Assets', count: `${assetsOnCount}/${ALL_BUILDING_TYPES.size}` },
+    ...groups.slice(1).map((g) => ({
+      value: g as LayersSection,
+      label: GROUP_LABEL[g],
+      count: `${LAYERS.filter((l) => l.group === g && checkedLayers.has(l.id)).length}/${LAYERS.filter((l) => l.group === g).length}`,
+    })),
+  ];
+
+  const renderLayerList = (g: LayerGroup) => {
     const layers = LAYERS.filter((l) => l.group === g);
-    const on = layers.filter((l) => checkedLayers.has(l.id)).length;
     return (
-      <Accordion
-        key={g}
-        title={GROUP_LABEL[g]}
-        count={`${on}/${layers.length}`}
-        open={open[g]}
-        onToggle={() => setOpen({ ...open, [g]: !open[g] })}
-      >
+      <div className="pb-1.5">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const showSlider = checked || hoverId === l.id;
@@ -3278,7 +3322,7 @@ function LayersTab({
               key={l.id}
               onMouseEnter={() => setHoverId(l.id)}
               onMouseLeave={() => setHoverId(null)}
-              className={`px-2.5 py-[3px] transition-colors ${checked ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
+              className={`px-2.5 py-[5px] transition-colors ${checked ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
             >
               <div className="flex items-center gap-1.5">
                 <button
@@ -3327,13 +3371,14 @@ function LayersTab({
             </div>
           );
         })}
-      </Accordion>
+      </div>
     );
   };
 
   return (
     <div>
-      {/* Global opacity sits above everything it governs. */}
+      {/* Global opacity sits above everything it governs, the one
+          control that applies regardless of which section is open. */}
       <div className="border-b border-line px-2.5 py-2">
         <div className="flex items-center justify-between">
           <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-ink-3">
@@ -3353,33 +3398,21 @@ function LayersTab({
         />
       </div>
 
-      {/* Hazard first, it's the threat itself. */}
-      {renderGroup('hazard')}
+      <SubTabStrip tabs={subTabs} value={activeTab} onChange={setActiveTab} />
 
-      {/* Assets second, what the hazard threatens. Alongside hazard and
-          vulnerability rather than a tab switch away in Portfolio, which
-          still reads this same state, it just doesn't carry its own copy
-          of the toggle any more. */}
-      <Accordion
-        title="Assets"
-        count={`${assetsOnCount}/${ALL_BUILDING_TYPES.size}`}
-        open={assetsOpen}
-        onToggle={() => setAssetsOpen(!assetsOpen)}
-      >
-        <div className="px-2.5 pb-1.5">
+      {activeTab === 'assets' ? (
+        <div className="px-2.5 py-2">
           <AssetTypeToggles
             offTypes={buildingOffTypes}
             setOffTypes={setBuildingOffTypes}
           />
         </div>
-      </Accordion>
+      ) : (
+        renderLayerList(activeTab)
+      )}
 
-      {/* Who the hazard threatens, then the supporting network and
-          policy layers behind those, in descending order of how often a
-          council user actually reaches for them. */}
-      {groups.filter((g) => g !== 'hazard').map(renderGroup)}
-
-      {/* Blueprints. A curated layer set plus its reading notes. */}
+      {/* Blueprints. Pinned below the sections rather than one of them,
+          it is a quick action, not something to browse. */}
       <div className="border-t border-line px-2.5 py-2.5">
         <PanelHeading>Blueprints</PanelHeading>
         <div className="grid grid-cols-2 gap-1.5">
@@ -3461,6 +3494,8 @@ function PlaceTab({
 }: PlaceTabProps) {
   const [openAsset, setOpenAsset] = useState<string | null>(null);
   const [showRealBuildings, setShowRealBuildings] = useState(false);
+  const [lgaTab, setLgaTab] = useState<'overview' | 'register'>('overview');
+  const [placeTab, setPlaceTab] = useState<'overview' | 'demographics' | 'register'>('overview');
 
   if (!selectedId) {
     const cards = [
@@ -3533,51 +3568,63 @@ function PlaceTab({
     ];
 
     return (
-      <div className="px-2.5 py-2.5">
-        <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
-          No suburb selected. The cards below name the leading SA2 on each
-          measure. Selecting one, here or on the map, opens its full profile.
-          Leading is not the same as most urgent, the measures are not weighted
-          against each other.
-        </p>
-        <div className="space-y-1">
-          {cards.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => setSelectedId(c.suburb.id)}
-              className="flex w-full items-center gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span
-                className="h-6 w-[2.5px] shrink-0 rounded-full"
-                style={{ background: c.color }}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                  {c.label}
-                </span>
-                <span className="block truncate text-[13.5px] font-semibold text-ink">
-                  {c.suburb.name}
-                </span>
-              </span>
-              <span className="shrink-0 text-right">
-                <span className="num block text-[16px] font-semibold leading-none text-ink">
-                  {c.fmt(c.value)}
-                </span>
-                <span className="mt-[2px] block text-[11px] text-ink-3">
-                  {c.unit}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-        <DemoDataNote className="mt-2.5" />
-
-        <div className="mt-3 border-t border-line pt-3">
-          <RealBuildingsRegister
-            offTypes={buildingOffTypes}
-            onManageCategories={onManageCategories}
-          />
-        </div>
+      <div>
+        <SubTabStrip
+          tabs={[
+            { value: 'overview', label: 'Overview' },
+            { value: 'register', label: 'Buildings register', count: `${REAL_BUILDINGS.length}` },
+          ]}
+          value={lgaTab}
+          onChange={setLgaTab}
+        />
+        {lgaTab === 'overview' ? (
+          <div className="px-2.5 py-2.5">
+            <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
+              No suburb selected. The cards below name the leading SA2 on each
+              measure. Selecting one, here or on the map, opens its full profile.
+              Leading is not the same as most urgent, the measures are not weighted
+              against each other.
+            </p>
+            <div className="space-y-1">
+              {cards.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setSelectedId(c.suburb.id)}
+                  className="flex w-full items-center gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                >
+                  <span
+                    className="h-6 w-[2.5px] shrink-0 rounded-full"
+                    style={{ background: c.color }}
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
+                      {c.label}
+                    </span>
+                    <span className="block truncate text-[13.5px] font-semibold text-ink">
+                      {c.suburb.name}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className="num block text-[16px] font-semibold leading-none text-ink">
+                      {c.fmt(c.value)}
+                    </span>
+                    <span className="mt-[2px] block text-[11px] text-ink-3">
+                      {c.unit}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <DemoDataNote className="mt-2.5" />
+          </div>
+        ) : (
+          <div className="px-2.5 py-2.5">
+            <RealBuildingsRegister
+              offTypes={buildingOffTypes}
+              onManageCategories={onManageCategories}
+            />
+          </div>
+        )}
       </div>
     );
   }
@@ -3660,9 +3707,12 @@ function PlaceTab({
   const proj = s.pop2041[sc];
   const delta = growthPct(s, sc);
 
+  const realBuildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+  const realBuildingsValue = realBuildings.reduce((n, b) => n + b.insuredValue, 0);
+
   return (
-    <div className="px-2.5 py-2.5">
-      <div className="mb-2 flex items-start justify-between gap-2">
+    <div>
+      <div className="flex items-start justify-between gap-2 px-2.5 pt-2.5">
         <div className="min-w-0">
           <div className="truncate text-[17px] font-semibold leading-tight text-ink">
             {s.name}
@@ -3679,199 +3729,217 @@ function PlaceTab({
         </button>
       </div>
 
-      {/* Population and the projection it is heading toward. */}
-      <div className="mb-2 rounded-[6px] border border-line bg-white p-2">
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
-              Population {year}
-            </div>
-            <div className="num mt-0.5 text-[28px] font-semibold leading-none text-ink">
-              {fmtInt(pop)}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[11.5px] text-ink-3">
-              2041 {SCENARIO_LABEL[sc]}
-            </div>
-            <div className="num text-[16px] font-semibold text-accent">
-              {fmtInt(proj)}
-            </div>
-            <div className="num text-[12px] text-ink-3">{fmtSigned(delta, 1)}</div>
-          </div>
-        </div>
-        <div className="mt-1.5">
-          <MiniBar value={pop / proj} color={ACCENT} height={3} />
-        </div>
-        <div className="num mt-1 flex justify-between text-[11px] text-ink-3">
-          <span>2021 {fmtInt(s.pop2021)}</span>
-          <span>2041 {fmtInt(proj)}</span>
-        </div>
-      </div>
-
-      <div className="mb-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
-        Risk scores and how this place maps onto council's consequence
-        framework now live in the analysis panel on the right.
-      </div>
-
-      <PanelHeading>Demographics and cover</PanelHeading>
-      <div className="mb-2.5 grid grid-cols-2 gap-1.5">
-        <Stat
-          label="SEIFA"
-          value={`${s.seifa} / 10`}
-          sub="1 is most disadvantaged"
-          tip={{
-            label: 'SEIFA IRSD',
-            body: 'Index of relative socio-economic disadvantage, aggregated from SA1. It describes capacity to respond, not the hazard itself.',
-            source: 'SEIFA IRSD',
-          }}
-        />
-        <Stat
-          label="Tree canopy"
-          value={`${s.treeCanopy}%`}
-          sub={`LGA average 14.8%`}
-          tip={{
-            label: 'Tree canopy',
-            body: 'Cover across all tenures. Most of it sits on private land, which limits how much of the deficit council can close directly.',
-            source: 'Canopy audit',
-          }}
-        />
-        <Stat label="Green space" value={`${s.greenSpace}%`} sub="of land area" />
-        <Stat
-          label="Density"
-          value={fmtInt(s.densityPerKm2)}
-          sub="persons per km2"
+      <div className="mt-2">
+        <SubTabStrip
+          tabs={[
+            { value: 'overview', label: 'Overview' },
+            { value: 'demographics', label: 'Demographics' },
+            { value: 'register', label: 'Register', count: `${realBuildings.length + s.assets.length}` },
+          ]}
+          value={placeTab}
+          onChange={setPlaceTab}
         />
       </div>
 
-      {(() => {
-        const buildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
-        if (buildings.length === 0) return null;
-        const value = buildings.reduce((n, b) => n + b.insuredValue, 0);
-        return (
-          <div className="mb-2.5">
-            <button
-              onClick={() => setShowRealBuildings(!showRealBuildings)}
-              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span className="flex items-center gap-1.5">
-                <IconChevron size={13} className={`text-ink-3 transition-transform ${showRealBuildings ? 'rotate-90' : ''}`} />
-                <span className="text-[12.5px] font-medium text-ink">
-                  Real buildings here, {buildings.length}
-                </span>
-              </span>
-              <span className="num text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M</span>
-            </button>
-            {showRealBuildings && (
-              <div className="fade-up mt-1 max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-                {buildings.map((b) => (
-                  <BuildingCard
-                    key={b.id}
-                    b={b}
-                    isOpen={openAsset === b.id}
-                    onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
-                  />
-                ))}
+      {placeTab === 'overview' && (
+        <div className="px-2.5 py-2.5">
+          {/* Population and the projection it is heading toward. */}
+          <div className="rounded-[6px] border border-line bg-white p-2">
+            <div className="flex items-end justify-between">
+              <div>
+                <div className="text-[11.5px] font-medium uppercase tracking-[0.06em] text-ink-3">
+                  Population {year}
+                </div>
+                <div className="num mt-0.5 text-[28px] font-semibold leading-none text-ink">
+                  {fmtInt(pop)}
+                </div>
               </div>
-            )}
+              <div className="text-right">
+                <div className="text-[11.5px] text-ink-3">
+                  2041 {SCENARIO_LABEL[sc]}
+                </div>
+                <div className="num text-[16px] font-semibold text-accent">
+                  {fmtInt(proj)}
+                </div>
+                <div className="num text-[12px] text-ink-3">{fmtSigned(delta, 1)}</div>
+              </div>
+            </div>
+            <div className="mt-1.5">
+              <MiniBar value={pop / proj} color={ACCENT} height={3} />
+            </div>
+            <div className="num mt-1 flex justify-between text-[11px] text-ink-3">
+              <span>2021 {fmtInt(s.pop2021)}</span>
+              <span>2041 {fmtInt(proj)}</span>
+            </div>
           </div>
-        );
-      })()}
 
-      <PanelHeading
-        right={
-          <span className="num text-[11px] text-ink-3">
-            {s.assets.length} listed
-          </span>
-        }
-      >
-        Illustrative key assets (demo)
-      </PanelHeading>
-      <div className="space-y-1">
-        {s.assets.map((a) => {
-          const isOpen = openAsset === a.name;
-          const flagged = a.repairs5yr >= 10;
-          return (
-            <div
-              key={a.name}
-              onMouseEnter={() => setHoveredAsset({ asset: a, suburbId: s.id })}
-              onMouseLeave={() => setHoveredAsset(null)}
-              className={`rounded-[5px] border bg-white transition-colors ${
-                hoveredAsset?.asset.name === a.name
-                  ? 'border-accent'
-                  : 'border-line'
-              }`}
-            >
+          <div className="mt-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
+            Risk scores and how this place maps onto council's consequence
+            framework are in the analysis panel on the right.
+          </div>
+        </div>
+      )}
+
+      {placeTab === 'demographics' && (
+        <div className="px-2.5 py-2.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <Stat
+              label="SEIFA"
+              value={`${s.seifa} / 10`}
+              sub="1 is most disadvantaged"
+              tip={{
+                label: 'SEIFA IRSD',
+                body: 'Index of relative socio-economic disadvantage, aggregated from SA1. It describes capacity to respond, not the hazard itself.',
+                source: 'SEIFA IRSD',
+              }}
+            />
+            <Stat
+              label="Tree canopy"
+              value={`${s.treeCanopy}%`}
+              sub={`LGA average 14.8%`}
+              tip={{
+                label: 'Tree canopy',
+                body: 'Cover across all tenures. Most of it sits on private land, which limits how much of the deficit council can close directly.',
+                source: 'Canopy audit',
+              }}
+            />
+            <Stat label="Green space" value={`${s.greenSpace}%`} sub="of land area" />
+            <Stat
+              label="Density"
+              value={fmtInt(s.densityPerKm2)}
+              sub="persons per km2"
+            />
+          </div>
+        </div>
+      )}
+
+      {placeTab === 'register' && (
+        <div className="px-2.5 py-2.5">
+          {realBuildings.length > 0 && (
+            <div className="mb-2.5">
               <button
-                onClick={() => setOpenAsset(isOpen ? null : a.name)}
-                className="flex w-full items-start gap-1.5 px-2 py-1.5 text-left"
+                onClick={() => setShowRealBuildings(!showRealBuildings)}
+                className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
               >
-                <IconChevron
-                  size={13}
-                  className={`mt-[3px] shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold leading-tight text-ink">
-                    {a.name}
-                  </span>
-                  <span className="mt-[3px] flex flex-wrap items-center gap-1">
-                    <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
-                      {CATEGORY_LABEL[a.category]}
-                    </span>
-                    <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
-                      {SIGNIFICANCE_LABEL[a.significance]}
-                    </span>
-                    {a.hazards.map((h) => (
-                      <HazardChip key={h} hazard={h} small />
-                    ))}
+                <span className="flex items-center gap-1.5">
+                  <IconChevron size={13} className={`text-ink-3 transition-transform ${showRealBuildings ? 'rotate-90' : ''}`} />
+                  <span className="text-[12.5px] font-medium text-ink">
+                    Real buildings here, {realBuildings.length}
                   </span>
                 </span>
-                {a.value && (
-                  <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
-                    {a.value}
-                  </span>
-                )}
+                <span className="num text-[11px] text-ink-3">${(realBuildingsValue / 1e6).toFixed(1)}M</span>
               </button>
-              {isOpen && (
-                <div className="fade-up border-t border-line px-2 py-1.5">
-                  <DetailRow label="Purpose" value={a.purpose} />
-                  <DetailRow label="Who uses it" value={a.users} />
-                  <div className="mt-1.5 flex items-center justify-between rounded-[4px] bg-surface-2 px-1.5 py-1">
-                    <span className="text-[11.5px] text-ink-2">
-                      Reactive repairs, 5 years
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className="num text-[14.5px] font-semibold"
-                        style={{ color: flagged ? '#B45309' : '#14201F' }}
-                      >
-                        {a.repairs5yr}
-                      </span>
-                      {flagged && (
-                        <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
-                          over threshold
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="num mt-1 text-[11px] leading-tight text-ink-3">
-                    Threshold applied here is 10 interventions in 5 years, the
-                    point at which renewal is usually assessed against
-                    continued maintenance. The threshold is a convention, not a
-                    rule.
-                  </div>
+              {showRealBuildings && (
+                <div className="fade-up mt-1 max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                  {realBuildings.map((b) => (
+                    <BuildingCard
+                      key={b.id}
+                      b={b}
+                      isOpen={openAsset === b.id}
+                      onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                    />
+                  ))}
                 </div>
               )}
             </div>
-          );
-        })}
-      </div>
+          )}
 
-      <div className="mt-2 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-[1.5] text-ink-2">
-        Hovering an asset draws a 120m radius at its actual location. Heat
-        exposed assets also show a coarse 300m grid preview across the SA2.
-      </div>
-      <DemoDataNote className="mt-2" />
+          <PanelHeading
+            right={
+              <span className="num text-[11px] text-ink-3">
+                {s.assets.length} listed
+              </span>
+            }
+          >
+            Illustrative key assets (demo)
+          </PanelHeading>
+          <div className="space-y-1">
+            {s.assets.map((a) => {
+              const isOpen = openAsset === a.name;
+              const flagged = a.repairs5yr >= 10;
+              return (
+                <div
+                  key={a.name}
+                  onMouseEnter={() => setHoveredAsset({ asset: a, suburbId: s.id })}
+                  onMouseLeave={() => setHoveredAsset(null)}
+                  className={`rounded-[5px] border bg-white transition-colors ${
+                    hoveredAsset?.asset.name === a.name
+                      ? 'border-accent'
+                      : 'border-line'
+                  }`}
+                >
+                  <button
+                    onClick={() => setOpenAsset(isOpen ? null : a.name)}
+                    className="flex w-full items-start gap-1.5 px-2 py-1.5 text-left"
+                  >
+                    <IconChevron
+                      size={13}
+                      className={`mt-[3px] shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13.5px] font-semibold leading-tight text-ink">
+                        {a.name}
+                      </span>
+                      <span className="mt-[3px] flex flex-wrap items-center gap-1">
+                        <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
+                          {CATEGORY_LABEL[a.category]}
+                        </span>
+                        <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
+                          {SIGNIFICANCE_LABEL[a.significance]}
+                        </span>
+                        {a.hazards.map((h) => (
+                          <HazardChip key={h} hazard={h} small />
+                        ))}
+                      </span>
+                    </span>
+                    {a.value && (
+                      <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
+                        {a.value}
+                      </span>
+                    )}
+                  </button>
+                  {isOpen && (
+                    <div className="fade-up border-t border-line px-2 py-1.5">
+                      <DetailRow label="Purpose" value={a.purpose} />
+                      <DetailRow label="Who uses it" value={a.users} />
+                      <div className="mt-1.5 flex items-center justify-between rounded-[4px] bg-surface-2 px-1.5 py-1">
+                        <span className="text-[11.5px] text-ink-2">
+                          Reactive repairs, 5 years
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className="num text-[14.5px] font-semibold"
+                            style={{ color: flagged ? '#B45309' : '#14201F' }}
+                          >
+                            {a.repairs5yr}
+                          </span>
+                          {flagged && (
+                            <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
+                              over threshold
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <div className="num mt-1 text-[11px] leading-tight text-ink-3">
+                        Threshold applied here is 10 interventions in 5 years, the
+                        point at which renewal is usually assessed against
+                        continued maintenance. The threshold is a convention, not a
+                        rule.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-2 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-[1.5] text-ink-2">
+            Hovering an asset draws a 120m radius at its actual location. Heat
+            exposed assets also show a coarse 300m grid preview across the SA2.
+          </div>
+          <DemoDataNote className="mt-2" />
+        </div>
+      )}
     </div>
   );
 }
@@ -4866,6 +4934,7 @@ function BlueprintPanel({
   }, [rankKey, year, sc, isPop, planYear]);
 
   const plan = selected ? PLANNING[selected.id] : null;
+  const [tab, setTab] = useState<'overview' | 'spotlight' | 'ranking'>('overview');
 
   return (
     <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
@@ -4894,72 +4963,92 @@ function BlueprintPanel({
         </button>
       </header>
 
-      <div className="thin-scroll flex-1 overflow-y-auto">
-        <p className="border-b border-line px-2.5 py-2 text-[12px] leading-[1.55] text-ink-2">
-          {bp.description}
-        </p>
+      <SubTabStrip
+        tabs={[
+          { value: 'overview', label: 'Overview' },
+          { value: 'spotlight', label: 'Spotlight', count: selected ? '1' : undefined },
+          { value: 'ranking', label: 'Ranking' },
+        ]}
+        value={tab}
+        onChange={setTab}
+        accent={bp.accent}
+      />
 
-        {isPop && (
-          <div className="border-b border-line px-2.5 py-2">
-            <PanelHeading>Metric</PanelHeading>
-            <Segmented
-              dense
-              accent={bp.accent}
-              value={planMetric}
-              onChange={setPlanMetric}
-              options={[
-                { value: 'count' as PlanMetric, label: 'Count' },
-                { value: 'growth' as PlanMetric, label: 'Growth' },
-                { value: 'density' as PlanMetric, label: 'Density' },
-                { value: 'gap' as PlanMetric, label: 'Gap' },
-              ]}
-            />
-            <div className="mt-2">
-              <PanelHeading>Horizon</PanelHeading>
-              <Segmented
-                dense
-                accent={bp.accent}
-                value={planYear}
-                onChange={setPlanYear}
-                options={[
-                  { value: 2021, label: 'Baseline' },
-                  { value: 2031, label: '2031' },
-                  { value: 2041, label: '2041' },
-                ]}
-              />
+      <div className="thin-scroll flex-1 overflow-y-auto">
+        {tab === 'overview' && (
+          <>
+            <p className="border-b border-line px-2.5 py-2 text-[12px] leading-[1.55] text-ink-2">
+              {bp.description}
+            </p>
+
+            {isPop && (
+              <div className="border-b border-line px-2.5 py-2">
+                <PanelHeading>Metric</PanelHeading>
+                <Segmented
+                  dense
+                  accent={bp.accent}
+                  value={planMetric}
+                  onChange={setPlanMetric}
+                  options={[
+                    { value: 'count' as PlanMetric, label: 'Count' },
+                    { value: 'growth' as PlanMetric, label: 'Growth' },
+                    { value: 'density' as PlanMetric, label: 'Density' },
+                    { value: 'gap' as PlanMetric, label: 'Gap' },
+                  ]}
+                />
+                <div className="mt-2">
+                  <PanelHeading>Horizon</PanelHeading>
+                  <Segmented
+                    dense
+                    accent={bp.accent}
+                    value={planYear}
+                    onChange={setPlanYear}
+                    options={[
+                      { value: 2021, label: 'Baseline' },
+                      { value: 2031, label: '2031' },
+                      { value: 2041, label: '2041' },
+                    ]}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="px-2.5 py-2">
+              <PanelHeading>LGA at a glance</PanelHeading>
+              <div className="space-y-1">
+                {glance.map((g) => (
+                  <div
+                    key={g.label}
+                    className="flex items-start justify-between gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
+                        {g.label}
+                      </span>
+                      <span className="mt-[2px] block text-[11px] leading-tight text-ink-3">
+                        {g.sub}
+                      </span>
+                    </span>
+                    <span
+                      className="num shrink-0 text-[17px] font-semibold leading-none"
+                      style={{ color: bp.accent }}
+                    >
+                      {g.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
 
-        <div className="border-b border-line px-2.5 py-2">
-          <PanelHeading>LGA at a glance</PanelHeading>
-          <div className="space-y-1">
-            {glance.map((g) => (
-              <div
-                key={g.label}
-                className="flex items-start justify-between gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                    {g.label}
-                  </span>
-                  <span className="mt-[2px] block text-[11px] leading-tight text-ink-3">
-                    {g.sub}
-                  </span>
-                </span>
-                <span
-                  className="num shrink-0 text-[17px] font-semibold leading-none"
-                  style={{ color: bp.accent }}
-                >
-                  {g.value}
-                </span>
-              </div>
-            ))}
+        {tab === 'spotlight' && (!selected ? (
+          <div className="px-2.5 py-3 text-center text-[12px] leading-[1.6] text-ink-3">
+            Select a suburb on the map, or from Ranking, to see its detail
+            here.
           </div>
-        </div>
-
-        {selected && (
-          <div className="border-b border-line px-2.5 py-2">
+        ) : (
+          <div className="px-2.5 py-2">
             <PanelHeading
               right={
                 <button
@@ -5106,28 +5195,31 @@ function BlueprintPanel({
               </div>
             </div>
           </div>
+        ))}
+
+        {tab === 'overview' && (
+          <div className="border-t border-line px-2.5 py-2">
+            <PanelHeading>Watch for</PanelHeading>
+            <ol className="space-y-1.5">
+              {bp.watch.map((w, i) => (
+                <li key={i} className="flex gap-1.5">
+                  <span
+                    className="num mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                    style={{
+                      background: withAlpha(bp.accent, 0.12),
+                      color: bp.accent,
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="text-[11.5px] leading-[1.5] text-ink-2">{w}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
         )}
 
-        <div className="border-b border-line px-2.5 py-2">
-          <PanelHeading>Watch for</PanelHeading>
-          <ol className="space-y-1.5">
-            {bp.watch.map((w, i) => (
-              <li key={i} className="flex gap-1.5">
-                <span
-                  className="num mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
-                  style={{
-                    background: withAlpha(bp.accent, 0.12),
-                    color: bp.accent,
-                  }}
-                >
-                  {i + 1}
-                </span>
-                <span className="text-[11.5px] leading-[1.5] text-ink-2">{w}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
+        {tab === 'ranking' && (
         <div className="px-2.5 py-2">
           <PanelHeading
             right={
@@ -5174,6 +5266,7 @@ function BlueprintPanel({
             })}
           </div>
         </div>
+        )}
       </div>
 
       <footer className="border-t border-line px-2.5 py-2">
