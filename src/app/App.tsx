@@ -2180,8 +2180,11 @@ interface MapViewProps {
   compare: boolean;
   compareA: string;
   compareB: string;
-  blueprintOpen: boolean;
-  blueprintAccent: string;
+  /** Tint for the selected-suburb pill. Plain teal normally, the active
+   *  blueprint's colour when the right panel is showing one. The map no
+   *  longer needs to know the panel is open for layout purposes, it is a
+   *  true flex sibling now, not an overlay it has to dodge. */
+  rightPanelAccent: string;
   onZoomChange: (z: number) => void;
   showBuildings: boolean;
   buildingOffTypes: Set<string>;
@@ -2224,8 +2227,7 @@ function MapView(props: MapViewProps) {
     compare,
     compareA,
     compareB,
-    blueprintOpen,
-    blueprintAccent,
+    rightPanelAccent,
     onZoomChange,
     showBuildings,
     buildingOffTypes,
@@ -2991,7 +2993,6 @@ function MapView(props: MapViewProps) {
 
   const selected = selectedId ? SUBURB_BY_ID[selectedId] : null;
   const hovered = hoveredSuburb ? SUBURB_BY_ID[hoveredSuburb] : null;
-  const controlShift = blueprintOpen ? 332 : 12;
 
   const legendLayers = compare
     ? [compareA, compareB]
@@ -3015,11 +3016,10 @@ function MapView(props: MapViewProps) {
         </div>
       </div>
 
-      {/* Boundary control. Steps aside when the blueprint panel opens. */}
-      <div
-        className="absolute top-3 z-[999] transition-[right] duration-200"
-        style={{ right: controlShift }}
-      >
+      {/* Boundary control. The right analysis panel is a flex sibling now,
+          not an overlay, so the map's own width already makes room for
+          it, this never needs to dodge anything. */}
+      <div className="absolute right-3 top-3 z-[999]">
         <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
           <div className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Bounds
@@ -3046,12 +3046,12 @@ function MapView(props: MapViewProps) {
             className="fade-up flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-[0_2px_10px_rgba(20,32,31,0.12)]"
             style={{
               background: '#fff',
-              borderColor: blueprintOpen ? blueprintAccent : ACCENT,
+              borderColor: rightPanelAccent,
             }}
           >
             <span
               className="h-1.5 w-1.5 rounded-full"
-              style={{ background: blueprintOpen ? blueprintAccent : ACCENT }}
+              style={{ background: rightPanelAccent }}
             />
             <span className="text-[13.5px] font-semibold text-ink">
               {selected ? selected.name : 'Beverley'}
@@ -3192,11 +3192,8 @@ function MapView(props: MapViewProps) {
         </div>
       )}
 
-      {/* Zoom. Also steps aside for the blueprint panel. */}
-      <div
-        className="absolute bottom-3 z-[999] flex flex-col gap-[3px] transition-[right] duration-200"
-        style={{ right: controlShift }}
-      >
+      {/* Zoom. */}
+      <div className="absolute bottom-3 right-3 z-[999] flex flex-col gap-[3px]">
         <button
           onClick={() => mapRef.current?.zoomIn()}
           className="flex h-6 w-6 items-center justify-center rounded-[5px] border border-line bg-white/95 text-ink-2 shadow-[0_1px_5px_rgba(20,32,31,0.1)] transition-colors hover:border-accent hover:text-accent"
@@ -3701,13 +3698,6 @@ function PlaceTab({
   const proj = s.pop2041[sc];
   const delta = growthPct(s, sc);
 
-  const risks: { id: HazardId; label: string; score: number }[] = [
-    { id: 'heat', label: 'Heat', score: s.heatScore },
-    { id: 'flooding', label: 'Flood', score: s.floodScore },
-    { id: 'coastal', label: 'Coastal', score: s.coastalScore },
-    { id: 'drought', label: 'Drought', score: s.droughtScore },
-  ];
-
   return (
     <div className="px-2.5 py-2.5">
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -3757,43 +3747,9 @@ function PlaceTab({
         </div>
       </div>
 
-      <PanelHeading
-        right={
-          <Tip
-            label="Risk scores"
-            body="Relative within this LGA on a 1 to 5 scale, not an absolute or cross-council measure. They combine modelled hazard extent with the sensitivity of what is inside it."
-            side="left"
-          >
-            <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
-              how read
-            </span>
-          </Tip>
-        }
-      >
-        Risk scores
-      </PanelHeading>
-      <div className="mb-2.5 grid grid-cols-2 gap-1.5">
-        {risks.map((r) => (
-          <div
-            key={r.id}
-            className="rounded-[5px] border border-line bg-white px-2 py-1.5"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                {r.label}
-              </span>
-              <span
-                className="num text-[14.5px] font-semibold"
-                style={{ color: HAZARD_COLOR[r.id] }}
-              >
-                {r.score}
-              </span>
-            </div>
-            <div className="mt-1">
-              <ScorePips score={r.score} color={HAZARD_COLOR[r.id]} />
-            </div>
-          </div>
-        ))}
+      <div className="mb-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
+        Risk scores and how this place maps onto council's consequence
+        framework now live in the analysis panel on the right.
       </div>
 
       <PanelHeading>Demographics and cover</PanelHeading>
@@ -3983,12 +3939,6 @@ interface AnalysisTabProps {
   compareB: string;
   setCompareA: (id: string) => void;
   setCompareB: (id: string) => void;
-  year: number;
-  sc: Scenario;
-  selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-  hoveredSuburb: string | null;
-  setHoveredSuburb: (id: string | null) => void;
 }
 
 function LayerSelect({
@@ -4037,33 +3987,11 @@ function AnalysisTab({
   compareB,
   setCompareA,
   setCompareB,
-  year,
-  sc,
-  selectedId,
-  setSelectedId,
-  hoveredSuburb,
-  setHoveredSuburb,
 }: AnalysisTabProps) {
   const defA = LAYER_BY_ID[compareA];
   const defB = LAYER_BY_ID[compareB];
   const colA = defA.hi ?? ACCENT;
   const colB = defB.hi ?? '#B45309';
-
-  const rows = useMemo(
-    () =>
-      SUBURBS.map((s) => ({
-        s,
-        rawA: rawLayerValue(compareA, s, year, sc),
-        rawB: rawLayerValue(compareB, s, year, sc),
-        normA: normLayerValue(compareA, s, year, sc),
-        normB: normLayerValue(compareB, s, year, sc),
-      })),
-    [compareA, compareB, year, sc],
-  );
-
-  const chartH = 118;
-  const barW = 7;
-  const groupW = 30;
 
   return (
     <div className="px-2.5 py-2.5">
@@ -4082,141 +4010,12 @@ function AnalysisTab({
         />
       </div>
 
-      <p className="mt-2 text-[11.5px] leading-[1.5] text-ink-2">
-        Bars are scaled within each measure separately, so heights compare
-        across suburbs but not across the two measures. The map shows A at full
-        opacity with B at 40 percent over it.
-      </p>
-
-      <div className="mt-2 rounded-[6px] border border-line bg-white p-2">
-        <svg
-          width="100%"
-          viewBox={`0 0 ${groupW * SUBURBS.length + 8} ${chartH + 30}`}
-          className="overflow-visible"
-        >
-          {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-            <line
-              key={g}
-              x1={0}
-              x2={groupW * SUBURBS.length + 8}
-              y1={chartH - g * chartH}
-              y2={chartH - g * chartH}
-              stroke="#EDF1F1"
-              strokeWidth={1}
-            />
-          ))}
-          {rows.map((r, i) => {
-            const x = i * groupW + 6;
-            const hA = Math.max(2, r.normA * chartH);
-            const hB = Math.max(2, r.normB * chartH);
-            const active =
-              hoveredSuburb === r.s.id || selectedId === r.s.id;
-            return (
-              <g
-                key={r.s.id}
-                onMouseEnter={() => setHoveredSuburb(r.s.id)}
-                onMouseLeave={() => setHoveredSuburb(null)}
-                onClick={() => setSelectedId(r.s.id)}
-                style={{ cursor: 'pointer' }}
-              >
-                <rect
-                  x={x - 5}
-                  y={0}
-                  width={groupW - 2}
-                  height={chartH + 26}
-                  fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'}
-                />
-                <rect
-                  x={x}
-                  y={chartH - hA}
-                  width={barW}
-                  height={hA}
-                  rx={1.5}
-                  fill={colA}
-                  opacity={active ? 1 : 0.86}
-                />
-                <rect
-                  x={x + barW + 2}
-                  y={chartH - hB}
-                  width={barW}
-                  height={hB}
-                  rx={1.5}
-                  fill={colB}
-                  opacity={active ? 1 : 0.86}
-                />
-                <text
-                  x={x + barW}
-                  y={chartH + 10}
-                  textAnchor="middle"
-                  fontSize={12}
-                  fontFamily="JetBrains Mono, monospace"
-                  fill={active ? '#14201F' : '#7E8D8C'}
-                >
-                  {r.s.name.split('-')[0].slice(0, 8)}
-                </text>
-                <text
-                  x={x + barW}
-                  y={chartH + 19}
-                  textAnchor="middle"
-                  fontSize={12}
-                  fontFamily="JetBrains Mono, monospace"
-                  fill="#A8B5B4"
-                >
-                  {r.s.sa2.slice(-4)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+      <div className="mt-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
+        The chart and comparison table for these two layers are in the
+        analysis panel on the right.
       </div>
 
-      <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
-        <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
-          <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
-            Suburb
-          </span>
-          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">
-            A
-          </span>
-          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">
-            B
-          </span>
-        </div>
-        {rows.map((r) => {
-          const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
-          return (
-            <button
-              key={r.s.id}
-              onMouseEnter={() => setHoveredSuburb(r.s.id)}
-              onMouseLeave={() => setHoveredSuburb(null)}
-              onClick={() => setSelectedId(r.s.id)}
-              className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] font-medium text-ink">
-                  {r.s.name}
-                </span>
-                <span className="mt-[3px] flex gap-[3px]">
-                  <span className="w-1/2">
-                    <MiniBar value={r.normA} color={colA} height={3} />
-                  </span>
-                  <span className="w-1/2">
-                    <MiniBar value={r.normB} color={colB} height={3} />
-                  </span>
-                </span>
-              </span>
-              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
-                {formatLayerValue(compareA, r.rawA)}
-              </span>
-              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
-                {formatLayerValue(compareB, r.rawB)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-2 space-y-1.5">
+      <div className="mt-2.5 space-y-1.5">
         <div className="rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
             {defA.name}
@@ -4244,6 +4043,361 @@ function AnalysisTab({
     </div>
   );
 }
+/* ------------------------------------------------------------------ *
+ * Right analysis panel, shared shell
+ *
+ * One consistent wrapper for whatever the right side is currently
+ * showing, a blueprint, a place's risk profile, or a comparison result.
+ * Only ever one of these renders at a time, and only when there is
+ * something real to show, an empty analysis panel reserving space for
+ * nothing is exactly the clutter this tool has been trying to remove.
+ * ------------------------------------------------------------------ */
+
+function RightPanelShell({
+  accent,
+  eyebrow,
+  title,
+  onClose,
+  children,
+}: {
+  accent: string;
+  eyebrow: string;
+  title: string;
+  onClose?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
+      <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
+        <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
+        <div className="min-w-0 flex-1">
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+            {eyebrow}
+          </div>
+          <div className="truncate text-[14px] font-semibold leading-tight" style={{ color: accent }}>
+            {title}
+          </div>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="mt-[2px] shrink-0 rounded-[4px] p-[3px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+            aria-label="Close"
+          >
+            <IconClose />
+          </button>
+        )}
+      </header>
+      <div className="thin-scroll flex-1 overflow-y-auto">{children}</div>
+    </aside>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Place analysis panel
+ *
+ * Risk scores, moved out of the left panel because a score is a
+ * judgement about the data, not the data itself, plus a new synthesis
+ * this tool did not have before: which of council's own real
+ * consequence categories a place's numbers actually connect to, and
+ * why. The connections are a small set of transparent rules, not a
+ * hidden score, each one names the exact figure that triggered it, and
+ * the category names themselves are real, from council's own framework.
+ * ------------------------------------------------------------------ */
+
+interface ConsequenceLink {
+  categoryId: string;
+  reason: string;
+}
+
+function consequenceLinksFor(s: Suburb, realBuildingValue: number, hasCriticalFacility: boolean): ConsequenceLink[] {
+  const links: ConsequenceLink[] = [];
+  if (s.heatScore >= 4) {
+    links.push({
+      categoryId: 'community-wellbeing',
+      reason: `Heat score ${s.heatScore}/5, among the highest in the LGA.`,
+    });
+  }
+  if (s.floodScore >= 4 || s.coastalScore >= 4) {
+    links.push({
+      categoryId: 'core-delivery',
+      reason: `Flood score ${s.floodScore}/5, coastal score ${s.coastalScore}/5, both feed road and drainage asset condition.`,
+    });
+  }
+  if (realBuildingValue > 0) {
+    links.push({
+      categoryId: 'financial',
+      reason: `$${(realBuildingValue / 1e6).toFixed(1)}M in real council buildings insured value sits here.`,
+    });
+  }
+  if (hasCriticalFacility) {
+    links.push({
+      categoryId: 'key-state-services',
+      reason: 'A state critical facility sits inside this SA2, not council owned, but council response plans depend on it.',
+    });
+  }
+  if (s.seifa <= 4) {
+    links.push({
+      categoryId: 'community-wellbeing',
+      reason: `SEIFA decile ${s.seifa}/10, lower response capacity if a hazard event lands here.`,
+    });
+  }
+  return links;
+}
+
+function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
+  const s = selectedId ? SUBURB_BY_ID[selectedId] : null;
+
+  if (!s) {
+    const boundary = selectedId === BEVERLEY_ID ? SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE] : null;
+    const facilities = selectedId ? CRITICAL_FACILITIES.filter((f) => f.suburbId === selectedId) : [];
+    const buildingValue = selectedId
+      ? (REAL_BUILDINGS_BY_SUBURB[selectedId] ?? []).reduce((n, b) => n + b.insuredValue, 0)
+      : 0;
+    return (
+      <RightPanelShell accent={ACCENT} eyebrow="Analysis" title="No risk profile">
+        <div className="px-2.5 py-2">
+          <p className="text-[11.5px] leading-[1.55] text-ink-2">
+            {boundary
+              ? 'Beverley has no sourced hazard score, so there is nothing here to score against council’s consequence categories, only what its real data can support.'
+              : 'Select a suburb to see its risk scores and how they connect to council’s consequence categories.'}
+          </p>
+          {facilities.length > 0 && (
+            <div className="mt-2 rounded-[5px] border border-line bg-white px-2 py-1.5">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+                Key state services
+              </div>
+              {facilities.map((f) => (
+                <div key={f.id} className="mt-1 text-[11.5px] text-ink-2">{f.name} — {CRITICAL_FACILITY_LABEL[f.type]}</div>
+              ))}
+            </div>
+          )}
+          {buildingValue > 0 && (
+            <div className="mt-2 rounded-[5px] border border-line bg-white px-2 py-1.5">
+              <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">Financial</div>
+              <div className="mt-1 text-[11.5px] text-ink-2">${(buildingValue / 1e6).toFixed(1)}M in real buildings insured value here.</div>
+            </div>
+          )}
+        </div>
+      </RightPanelShell>
+    );
+  }
+
+  const risks: { id: HazardId; label: string; score: number }[] = [
+    { id: 'heat', label: 'Heat', score: s.heatScore },
+    { id: 'flooding', label: 'Flood', score: s.floodScore },
+    { id: 'coastal', label: 'Coastal', score: s.coastalScore },
+    { id: 'drought', label: 'Drought', score: s.droughtScore },
+  ];
+  const buildingValue = (REAL_BUILDINGS_BY_SUBURB[s.id] ?? []).reduce((n, b) => n + b.insuredValue, 0);
+  const hasCriticalFacility = CRITICAL_FACILITIES.some((f) => f.suburbId === s.id);
+  const links = consequenceLinksFor(s, buildingValue, hasCriticalFacility);
+  const linkedCategoryIds = new Set(links.map((l) => l.categoryId));
+
+  return (
+    <RightPanelShell accent={ACCENT} eyebrow="Analysis" title={s.name}>
+      <div className="px-2.5 py-2">
+        <PanelHeading
+          right={
+            <Tip
+              label="Risk scores"
+              body="Relative within this LGA on a 1 to 5 scale, not an absolute or cross-council measure. They combine modelled hazard extent with the sensitivity of what is inside it."
+              side="left"
+            >
+              <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">how read</span>
+            </Tip>
+          }
+        >
+          Risk scores
+        </PanelHeading>
+        <div className="mb-3 grid grid-cols-2 gap-1.5">
+          {risks.map((r) => (
+            <div key={r.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">{r.label}</span>
+                <span className="num text-[14.5px] font-semibold" style={{ color: HAZARD_COLOR[r.id] }}>{r.score}</span>
+              </div>
+              <div className="mt-1">
+                <ScorePips score={r.score} color={HAZARD_COLOR[r.id]} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <PanelHeading
+          right={
+            <Tip
+              label="Consequence framework"
+              body="Council's own draft categories (Value Advisory Partners / The Systems Cooperative, Sept 2026). A category lights up here when a real or modelled figure for this place plausibly connects to it, the connection is a transparent rule shown below the category, not a hidden score, and no tolerance has been set for any of them yet."
+              side="left"
+            >
+              <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">how read</span>
+            </Tip>
+          }
+        >
+          Consequence relevance
+        </PanelHeading>
+        <div className="space-y-1">
+          {CONSEQUENCE_CATEGORIES.map((c) => {
+            const link = links.find((l) => l.categoryId === c.id);
+            const on = linkedCategoryIds.has(c.id);
+            return (
+              <div
+                key={c.id}
+                className={`rounded-[5px] border px-2 py-1.5 transition-colors ${on ? 'border-accent bg-accent-soft/40' : 'border-line bg-white opacity-60'}`}
+              >
+                <span className={`text-[11.5px] ${on ? 'font-semibold text-ink' : 'text-ink-3'}`}>{c.name}</span>
+                {link && <div className="mt-[3px] text-[10.5px] leading-[1.45] text-ink-2">{link.reason}</div>}
+              </div>
+            );
+          })}
+        </div>
+        <DemoDataNote className="mt-2.5" />
+      </div>
+    </RightPanelShell>
+  );
+}
+
+/* ------------------------------------------------------------------ *
+ * Analysis results panel
+ *
+ * The chart and comparison table moved out of the left Analysis tab,
+ * which now only holds the two layer pickers, the config, not the
+ * output. Same data, same interaction, just on the side of the screen
+ * that is now reserved for what the numbers mean rather than what they
+ * are.
+ * ------------------------------------------------------------------ */
+
+interface AnalysisResultsPanelProps {
+  compareA: string;
+  compareB: string;
+  year: number;
+  sc: Scenario;
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+  hoveredSuburb: string | null;
+  setHoveredSuburb: (id: string | null) => void;
+}
+
+function AnalysisResultsPanel({
+  compareA,
+  compareB,
+  year,
+  sc,
+  selectedId,
+  setSelectedId,
+  hoveredSuburb,
+  setHoveredSuburb,
+}: AnalysisResultsPanelProps) {
+  const defA = LAYER_BY_ID[compareA];
+  const defB = LAYER_BY_ID[compareB];
+  const colA = defA.hi ?? ACCENT;
+  const colB = defB.hi ?? '#B45309';
+
+  const rows = useMemo(
+    () =>
+      SUBURBS.map((s) => ({
+        s,
+        rawA: rawLayerValue(compareA, s, year, sc),
+        rawB: rawLayerValue(compareB, s, year, sc),
+        normA: normLayerValue(compareA, s, year, sc),
+        normB: normLayerValue(compareB, s, year, sc),
+      })),
+    [compareA, compareB, year, sc],
+  );
+
+  const chartH = 118;
+  const barW = 7;
+  const groupW = 30;
+
+  return (
+    <RightPanelShell accent={ACCENT} eyebrow="Analysis" title={`${defA.name} vs ${defB.name}`}>
+      <div className="px-2.5 py-2">
+        <p className="mb-2 text-[11.5px] leading-[1.5] text-ink-2">
+          Bars are scaled within each measure separately, so heights compare
+          across suburbs but not across the two measures. The map shows A at
+          full opacity with B at 40 percent over it.
+        </p>
+
+        <div className="rounded-[6px] border border-line bg-white p-2">
+          <svg width="100%" viewBox={`0 0 ${groupW * SUBURBS.length + 8} ${chartH + 30}`} className="overflow-visible">
+            {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+              <line
+                key={g}
+                x1={0}
+                x2={groupW * SUBURBS.length + 8}
+                y1={chartH - g * chartH}
+                y2={chartH - g * chartH}
+                stroke="#EDF1F1"
+                strokeWidth={1}
+              />
+            ))}
+            {rows.map((r, i) => {
+              const x = i * groupW + 6;
+              const hA = Math.max(2, r.normA * chartH);
+              const hB = Math.max(2, r.normB * chartH);
+              const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
+              return (
+                <g
+                  key={r.s.id}
+                  onMouseEnter={() => setHoveredSuburb(r.s.id)}
+                  onMouseLeave={() => setHoveredSuburb(null)}
+                  onClick={() => setSelectedId(r.s.id)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <rect x={x - 5} y={0} width={groupW - 2} height={chartH + 26} fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'} />
+                  <rect x={x} y={chartH - hA} width={barW} height={hA} rx={1.5} fill={colA} opacity={active ? 1 : 0.86} />
+                  <rect x={x + barW + 2} y={chartH - hB} width={barW} height={hB} rx={1.5} fill={colB} opacity={active ? 1 : 0.86} />
+                  <text x={x + barW} y={chartH + 10} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill={active ? '#14201F' : '#7E8D8C'}>
+                    {r.s.name.split('-')[0].slice(0, 8)}
+                  </text>
+                  <text x={x + barW} y={chartH + 19} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill="#A8B5B4">
+                    {r.s.sa2.slice(-4)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
+          <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
+            <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Suburb</span>
+            <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">A</span>
+            <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">B</span>
+          </div>
+          {rows.map((r) => {
+            const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
+            return (
+              <button
+                key={r.s.id}
+                onMouseEnter={() => setHoveredSuburb(r.s.id)}
+                onMouseLeave={() => setHoveredSuburb(null)}
+                onClick={() => setSelectedId(r.s.id)}
+                className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[12.5px] font-medium text-ink">{r.s.name}</span>
+                  <span className="mt-[3px] flex gap-[3px]">
+                    <span className="w-1/2"><MiniBar value={r.normA} color={colA} height={3} /></span>
+                    <span className="w-1/2"><MiniBar value={r.normB} color={colB} height={3} /></span>
+                  </span>
+                </span>
+                <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
+                  {formatLayerValue(compareA, r.rawA)}
+                </span>
+                <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
+                  {formatLayerValue(compareB, r.rawB)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </RightPanelShell>
+  );
+}
+
 
 
 /* ------------------------------------------------------------------ *
@@ -4286,29 +4440,44 @@ function HelpTab() {
         </>,
       )}
       {section(
+        'layout',
+        'Data on the left, analysis on the right',
+        <>
+          <p>
+            The left panel only ever holds data: layer definitions, a
+            place's population and register entries, an asset's address
+            and condition. Nothing there ranks, scores, or tells you what
+            a number means, it is what was measured or recorded.
+          </p>
+          <p className="mt-1.5">
+            Judgement lives on the right, in a panel that only opens when
+            there is something to show, a suburb's risk scores and which
+            of council's consequence categories they touch, or a
+            comparison's chart and table. It closes and gives the map
+            that width back the moment there is nothing to analyse.
+          </p>
+        </>,
+      )}
+      {section(
         'tabs',
         'What each tab does',
         <ul className="space-y-1.5">
           <li>
-            <span className="font-semibold text-ink">Portfolio.</span> The
-            real buildings register, categorised by building use and type,
-            with the same toggles the map's building markers respond to.
-          </li>
-          <li>
             <span className="font-semibold text-ink">Layers.</span> The full
-            hazard, vulnerability and overlay catalogue, plus the same
-            building toggles as Portfolio under Assets. Global opacity at
-            the top, per-layer opacity on hover.
+            hazard, vulnerability and overlay catalogue, plus the real
+            building toggles under Assets. Global opacity at the top,
+            per-layer opacity on hover.
           </li>
           <li>
-            <span className="font-semibold text-ink">Place.</span> One SA2 at a
-            time. Population, risk scores, demographics and the asset list.
-            Hovering an asset locates it on the map.
+            <span className="font-semibold text-ink">Place.</span> One SA2 at
+            a time, its population, demographics and real buildings
+            register. Its risk scores and consequence relevance open on
+            the right once selected.
           </li>
           <li>
-            <span className="font-semibold text-ink">Analysis.</span> Two
-            measures side by side across the seven SA2s with data. Opening this tab
-            also puts the map into compare mode.
+            <span className="font-semibold text-ink">Analysis.</span> Pick
+            two measures here, the comparison chart and table open on the
+            right. Opening this tab also puts the map into compare mode.
           </li>
         </ul>,
       )}
@@ -4755,7 +4924,7 @@ function BlueprintPanel({
   const plan = selected ? PLANNING[selected.id] : null;
 
   return (
-    <aside className="absolute bottom-0 right-0 top-0 z-[998] flex w-80 flex-col border-l border-line bg-white/97 shadow-[-4px_0_18px_rgba(20,32,31,0.08)] backdrop-blur">
+    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
       <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
         <span
           className="mt-[5px] h-2 w-2 shrink-0 rounded-full"
@@ -5195,7 +5364,7 @@ function PlanningQuadrant({
   const py = (v: number) => H - 40 - ((v - yLo) / (yHi - yLo)) * (H - 70);
 
   return (
-    <div className="absolute inset-0 z-[1200] flex items-center justify-center bg-[#0C1918]/55 p-5 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-[#0C1918]/55 p-5 backdrop-blur-[2px]">
       <div className="fade-up flex max-h-full w-full max-w-[760px] flex-col overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_18px_50px_rgba(12,25,24,0.3)]">
         <header className="flex items-start justify-between border-b border-line px-3 py-2">
           <div>
@@ -6341,6 +6510,25 @@ export default function App() {
   const showBlueprintPanel = !!activeBlueprint;
   const compare = panelTab === 'analysis';
 
+  // One right panel at a time, and only when there is something real to
+  // show in it, an empty analysis panel reserving screen width for
+  // nothing is exactly the clutter this tool has spent this session
+  // removing. A blueprint takes priority since choosing one is a
+  // deliberate act; otherwise the panel follows whichever left tab is
+  // open and has something to say.
+  const rightPanelMode: 'blueprint' | 'place' | 'analysis' | null =
+    showBlueprintPanel
+      ? 'blueprint'
+      : panelTab === 'place' && selectedId
+        ? 'place'
+        : panelTab === 'analysis'
+          ? 'analysis'
+          : null;
+  const rightPanelAccent =
+    rightPanelMode === 'blueprint' && activeBlueprint
+      ? BLUEPRINT_ACCENT[activeBlueprint]
+      : ACCENT;
+
   // Several layers can be stacked on the map at once now, but the
   // timeline only ever drives one dataset's year steps. The first
   // checked layer, by catalogue order, is the one it follows.
@@ -6467,12 +6655,6 @@ export default function App() {
               compareB={compareB}
               setCompareA={setCompareA}
               setCompareB={setCompareB}
-              year={year}
-              sc={sc}
-              selectedId={selectedId}
-              setSelectedId={setSelectedId}
-              hoveredSuburb={hoveredSuburb}
-              setHoveredSuburb={setHoveredSuburb}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -6490,7 +6672,8 @@ export default function App() {
         {showInfo && <InfoSheet onClose={() => setShowInfo(false)} />}
       </section>
 
-      {/* Map area */}
+      {/* Map area. Pure data made visible, the map draws what is real or
+          modelled, it does not judge any of it. */}
       <main className="flex min-w-0 flex-1 flex-col">
         <div className="relative min-h-0 flex-1">
           <MapView
@@ -6509,31 +6692,11 @@ export default function App() {
             compare={compare}
             compareA={compareA}
             compareB={compareB}
-            blueprintOpen={showBlueprintPanel}
-            blueprintAccent={
-              activeBlueprint ? BLUEPRINT_ACCENT[activeBlueprint] : ACCENT
-            }
+            rightPanelAccent={rightPanelAccent}
             onZoomChange={setZoom}
             showBuildings={buildingOffTypes.size < ALL_BUILDING_TYPES.size}
             buildingOffTypes={buildingOffTypes}
           />
-
-          {showBlueprintPanel && activeBlueprint && (
-            <BlueprintPanel
-              blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
-              onClose={() => setActiveBlueprint(null)}
-              selectedId={selectedId}
-              setSelectedId={setSelectedId}
-              setHoveredSuburb={setHoveredSuburb}
-              year={year}
-              sc={sc}
-              planMetric={planMetric}
-              setPlanMetric={setPlanMetric}
-              planYear={planYear}
-              setPlanYear={setPlanYear}
-              onOpenQuadrant={() => setShowQuadrant(true)}
-            />
-          )}
 
           {showQuadrant && (
             <PlanningQuadrant
@@ -6554,6 +6717,42 @@ export default function App() {
           datasetLabel={datasetLabel}
         />
       </main>
+
+      {/* Analysis and consequence, the other half of the split: whatever
+          this data means, ranks as, or costs, lives here, never mixed
+          into the data panel on the left. A true layout column, not an
+          overlay floating on the map, so it only ever takes real screen
+          width when it is showing something, and the map reclaims that
+          width the moment it closes. */}
+      {rightPanelMode === 'blueprint' && activeBlueprint && (
+        <BlueprintPanel
+          blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
+          onClose={() => setActiveBlueprint(null)}
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          setHoveredSuburb={setHoveredSuburb}
+          year={year}
+          sc={sc}
+          planMetric={planMetric}
+          setPlanMetric={setPlanMetric}
+          planYear={planYear}
+          setPlanYear={setPlanYear}
+          onOpenQuadrant={() => setShowQuadrant(true)}
+        />
+      )}
+      {rightPanelMode === 'place' && <PlaceAnalysisPanel selectedId={selectedId} />}
+      {rightPanelMode === 'analysis' && (
+        <AnalysisResultsPanel
+          compareA={compareA}
+          compareB={compareB}
+          year={year}
+          sc={sc}
+          selectedId={selectedId}
+          setSelectedId={setSelectedId}
+          hoveredSuburb={hoveredSuburb}
+          setHoveredSuburb={setHoveredSuburb}
+        />
+      )}
     </div>
   );
 }
