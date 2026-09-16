@@ -2851,29 +2851,6 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    /* Critical facilities: not council's to toggle off, they matter
-       regardless of which layer someone is looking at, so they render
-       unconditionally rather than behind the Assets checklist. Currently
-       one confirmed real entry, the LGA's only hospital. A white cross
-       on a solid marker reads as "emergency service", not "building",
-       deliberately distinct from both the teal building dots and the
-       red hazard-preview scatter. */
-    for (const f of CRITICAL_FACILITIES) {
-      push(
-        L.circleMarker([f.lat, f.lng] as LatLngTuple, {
-          radius: 7,
-          color: '#fff',
-          weight: 1.5,
-          fillColor: '#DC2626',
-          fillOpacity: 0.95,
-          interactive: true,
-        }).bindTooltip(
-          `${f.name} — ${CRITICAL_FACILITY_LABEL[f.type]}, state significant`,
-          { direction: 'top', offset: [0, -4] },
-        ),
-      );
-    }
-
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -3639,22 +3616,6 @@ function PlaceTab({
           reason.
         </div>
 
-        {CRITICAL_FACILITIES.filter((f) => f.suburbId === BEVERLEY_ID).map((f) => (
-          <div key={f.id} className="mt-2.5 rounded-[6px] border border-[#F3C6C6] bg-[#FEF2F2] px-2.5 py-2">
-            <div className="flex items-center gap-1.5">
-              <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#DC2626] text-[10px] font-bold text-white">+</span>
-              <span className="text-[12.5px] font-semibold text-ink">{f.name}</span>
-            </div>
-            <div className="mt-1 text-[11px] leading-[1.5] text-ink-2">
-              {CRITICAL_FACILITY_LABEL[f.type]}, state significant, not council owned or maintained.
-              Council's own risk planning depends on it regardless, the
-              "key state services" consequence category in council's
-              consequence framework exists for exactly this case.
-            </div>
-            <div className="num mt-1 text-[10.5px] text-ink-3">{f.address}</div>
-            <div className="mt-1 text-[10px] leading-[1.4] text-ink-3">{f.source}</div>
-          </div>
-        ))}
 
         {(() => {
           const buildings = REAL_BUILDINGS_BY_SUBURB[BEVERLEY_ID] ?? [];
@@ -4110,7 +4071,7 @@ interface ConsequenceLink {
   reason: string;
 }
 
-function consequenceLinksFor(s: Suburb, realBuildingValue: number, hasCriticalFacility: boolean): ConsequenceLink[] {
+function consequenceLinksFor(s: Suburb, realBuildingValue: number): ConsequenceLink[] {
   const links: ConsequenceLink[] = [];
   if (s.heatScore >= 4) {
     links.push({
@@ -4130,12 +4091,6 @@ function consequenceLinksFor(s: Suburb, realBuildingValue: number, hasCriticalFa
       reason: `$${(realBuildingValue / 1e6).toFixed(1)}M in real council buildings insured value sits here.`,
     });
   }
-  if (hasCriticalFacility) {
-    links.push({
-      categoryId: 'key-state-services',
-      reason: 'A state critical facility sits inside this SA2, not council owned, but council response plans depend on it.',
-    });
-  }
   if (s.seifa <= 4) {
     links.push({
       categoryId: 'community-wellbeing',
@@ -4150,7 +4105,6 @@ function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
 
   if (!s) {
     const boundary = selectedId === BEVERLEY_ID ? SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE] : null;
-    const facilities = selectedId ? CRITICAL_FACILITIES.filter((f) => f.suburbId === selectedId) : [];
     const buildingValue = selectedId
       ? (REAL_BUILDINGS_BY_SUBURB[selectedId] ?? []).reduce((n, b) => n + b.insuredValue, 0)
       : 0;
@@ -4162,16 +4116,6 @@ function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
               ? 'Beverley has no sourced hazard score, so there is nothing here to score against council’s consequence categories, only what its real data can support.'
               : 'Select a suburb to see its risk scores and how they connect to council’s consequence categories.'}
           </p>
-          {facilities.length > 0 && (
-            <div className="mt-2 rounded-[5px] border border-line bg-white px-2 py-1.5">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">
-                Key state services
-              </div>
-              {facilities.map((f) => (
-                <div key={f.id} className="mt-1 text-[11.5px] text-ink-2">{f.name} — {CRITICAL_FACILITY_LABEL[f.type]}</div>
-              ))}
-            </div>
-          )}
           {buildingValue > 0 && (
             <div className="mt-2 rounded-[5px] border border-line bg-white px-2 py-1.5">
               <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">Financial</div>
@@ -4190,8 +4134,7 @@ function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
     { id: 'drought', label: 'Drought', score: s.droughtScore },
   ];
   const buildingValue = (REAL_BUILDINGS_BY_SUBURB[s.id] ?? []).reduce((n, b) => n + b.insuredValue, 0);
-  const hasCriticalFacility = CRITICAL_FACILITIES.some((f) => f.suburbId === s.id);
-  const links = consequenceLinksFor(s, buildingValue, hasCriticalFacility);
+  const links = consequenceLinksFor(s, buildingValue);
   const linkedCategoryIds = new Set(links.map((l) => l.categoryId));
 
   return (
@@ -5829,50 +5772,6 @@ for (const b of REAL_BUILDINGS) {
   (REAL_BUILDINGS_BY_SUBURB[suburbId] ??= []).push(b);
 }
 
-/* ------------------------------------------------------------------ *
- * Critical facilities
- *
- * Not council owned or maintained, but council's own risk planning
- * depends on them, the "key state services" consequence category from
- * council's real consequence framework (Value Advisory Partners /
- * The Systems Cooperative, workshop correspondence Sep 2026). A
- * council-owned building failing is a budget and reputation problem;
- * one of these failing during a hazard event is a life-safety and
- * service-continuity problem regardless of who owns it.
- *
- * Charles Sturt's planning team identified, from the state's Hospital
- * and Clinic Locations dataset, that exactly one hospital sits inside
- * the LGA: The Queen Elizabeth Hospital, Woodville South. Its position
- * here is geocoded against that confirmed real name and suburb, and
- * lands inside Beverley by the real boundary, not Woodville-Cheltenham
- * as its address name would suggest, one more reason not to assign
- * places by locality name.
- *
- * Schools, police stations and power infrastructure were named in the
- * same workshop as facilities worth flagging the same way. None are
- * added here. Confirming which specific ones sit inside Charles Sturt
- * needs the same kind of authoritative source the hospital had, not a
- * guess at which school or station is nearby. */
-
-type CriticalFacilityType = 'hospital' | 'school' | 'police' | 'power';
-
-interface CriticalFacility {
-  id: string;
-  name: string;
-  type: CriticalFacilityType;
-  lat: number;
-  lng: number;
-  address: string;
-  suburbId: string;
-  source: string;
-}
-
-const CRITICAL_FACILITY_LABEL: Record<CriticalFacilityType, string> = {
-  hospital: 'Hospital',
-  school: 'School',
-  police: 'Police station',
-  power: 'Power infrastructure',
-};
 
 /* ------------------------------------------------------------------ *
  * Consequence framework
@@ -5961,19 +5860,6 @@ const CONSEQUENCE_CATEGORIES: ConsequenceCategory[] = [
   },
 ];
 
-const CRITICAL_FACILITIES: CriticalFacility[] = [
-  {
-    id: 'qeh',
-    name: 'The Queen Elizabeth Hospital',
-    type: 'hospital',
-    lat: -34.8836476,
-    lng: 138.5341211,
-    address: 'Woodville Road, Woodville South',
-    suburbId: BEVERLEY_ID,
-    source:
-      "Identified from the SA Government's Hospital and Clinic Locations dataset as the only hospital inside Charles Sturt, geocoded from that confirmed name and address via OpenStreetMap.",
-  },
-];
 
 /** One real building, expandable to its full register detail. Shared
  *  between the LGA-wide register list and the per-suburb building lists
