@@ -2423,6 +2423,25 @@ function MapView(props: MapViewProps) {
     const opacityFor = (id: string) =>
       clamp((layerOpacity[id] ?? 1) * overlayOpacity, 0, 1);
 
+    // A thin overlay line drawn straight onto a saturated hazard or
+    // vulnerability fill disappears, especially at high opacity. A pale
+    // casing underneath, wider than the line itself, keeps roads, pipes
+    // and the like readable against whatever colour is under them,
+    // without touching the fill's own opacity or the line's own colour.
+    const haloLine = (
+      latlngs: LatLngTuple[],
+      opts: { color: string; weight: number; opacity: number; dashArray?: string },
+    ) => {
+      push(
+        L.polyline(latlngs, {
+          color: darkBase ? '#1B2A28' : '#FFFFFF',
+          weight: opts.weight + 2.2,
+          opacity: Math.min(1, opts.opacity + 0.35),
+        }),
+      );
+      push(L.polyline(latlngs, opts));
+    };
+
     /* Surfaces. Any number of checked layers stack, each at its own
        opacity slider, so any combination can be read against any other.
        Compare mode is the one fixed case, exactly the two chosen
@@ -2560,32 +2579,28 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('watercourses')) {
       const c = LAYER_BY_ID['watercourses'].hi!;
-      push(
-        L.polyline(
-          [
-            [-34.9, 138.49],
-            [-34.905, 138.53],
-            [-34.93, 138.552],
-            [-34.925, 138.585],
-          ] as LatLngTuple[],
-          { color: c, weight: 2.4, opacity: vecAlpha('watercourses') },
-        ),
+      haloLine(
+        [
+          [-34.9, 138.49],
+          [-34.905, 138.53],
+          [-34.93, 138.552],
+          [-34.925, 138.585],
+        ] as LatLngTuple[],
+        { color: c, weight: 2.4, opacity: vecAlpha('watercourses') },
       );
-      push(
-        L.polyline(
-          [
-            [-34.83, 138.545],
-            [-34.855, 138.555],
-            [-34.872, 138.535],
-            [-34.885, 138.505],
-          ] as LatLngTuple[],
-          {
-            color: c,
-            weight: 1.6,
-            opacity: vecAlpha('watercourses'),
-            dashArray: '4 3',
-          },
-        ),
+      haloLine(
+        [
+          [-34.83, 138.545],
+          [-34.855, 138.555],
+          [-34.872, 138.535],
+          [-34.885, 138.505],
+        ] as LatLngTuple[],
+        {
+          color: c,
+          weight: 1.6,
+          opacity: vecAlpha('watercourses'),
+          dashArray: '4 3',
+        },
       );
     }
 
@@ -2594,23 +2609,19 @@ function MapView(props: MapViewProps) {
       for (const s of SUBURBS) {
         const [lat, lng] = s.centroid;
         const [dLat, dLng] = s.span;
-        push(
-          L.polyline(
-            [
-              [lat, lng - dLng],
-              [lat, lng + dLng],
-            ] as LatLngTuple[],
-            { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
-          ),
+        haloLine(
+          [
+            [lat, lng - dLng],
+            [lat, lng + dLng],
+          ] as LatLngTuple[],
+          { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
         );
-        push(
-          L.polyline(
-            [
-              [lat - dLat, lng],
-              [lat + dLat, lng],
-            ] as LatLngTuple[],
-            { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
-          ),
+        haloLine(
+          [
+            [lat - dLat, lng],
+            [lat + dLat, lng],
+          ] as LatLngTuple[],
+          { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
         );
       }
     }
@@ -2620,20 +2631,18 @@ function MapView(props: MapViewProps) {
       for (const s of SUBURBS) {
         const [lat, lng] = s.centroid;
         const [dLat, dLng] = s.span;
-        push(
-          L.polyline(
-            [
-              [lat - dLat * 0.6, lng - dLng * 0.8],
-              [lat + dLat * 0.2, lng - dLng * 0.1],
-              [lat + dLat * 0.7, lng + dLng * 0.7],
-            ] as LatLngTuple[],
-            {
-              color: c,
-              weight: 1.1,
-              opacity: vecAlpha('sw-pipes') * 0.8,
-              dashArray: '3 2',
-            },
-          ),
+        haloLine(
+          [
+            [lat - dLat * 0.6, lng - dLng * 0.8],
+            [lat + dLat * 0.2, lng - dLng * 0.1],
+            [lat + dLat * 0.7, lng + dLng * 0.7],
+          ] as LatLngTuple[],
+          {
+            color: c,
+            weight: 1.1,
+            opacity: vecAlpha('sw-pipes') * 0.8,
+            dashArray: '3 2',
+          },
         );
       }
     }
@@ -2671,31 +2680,27 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('cycling')) {
       const c = LAYER_BY_ID['cycling'].hi!;
-      push(
-        L.polyline(
-          [
-            [-34.962, 138.503],
-            [-34.928, 138.499],
-            [-34.895, 138.496],
-            [-34.86, 138.492],
-          ] as LatLngTuple[],
-          { color: c, weight: 1.8, opacity: vecAlpha('cycling') },
-        ),
+      haloLine(
+        [
+          [-34.962, 138.503],
+          [-34.928, 138.499],
+          [-34.895, 138.496],
+          [-34.86, 138.492],
+        ] as LatLngTuple[],
+        { color: c, weight: 1.8, opacity: vecAlpha('cycling') },
       );
-      push(
-        L.polyline(
-          [
-            [-34.932, 138.545],
-            [-34.928, 138.565],
-            [-34.92, 138.585],
-          ] as LatLngTuple[],
-          {
-            color: c,
-            weight: 1.4,
-            opacity: vecAlpha('cycling'),
-            dashArray: '5 3',
-          },
-        ),
+      haloLine(
+        [
+          [-34.932, 138.545],
+          [-34.928, 138.565],
+          [-34.92, 138.585],
+        ] as LatLngTuple[],
+        {
+          color: c,
+          weight: 1.4,
+          opacity: vecAlpha('cycling'),
+          dashArray: '5 3',
+        },
       );
     }
 
@@ -2789,7 +2794,8 @@ function MapView(props: MapViewProps) {
           push(
             L.circleMarker([lat, lng] as LatLngTuple, {
               radius: 2,
-              stroke: false,
+              color: darkBase ? '#1B2A28' : '#FFFFFF',
+              weight: 1,
               fillColor: c,
               fillOpacity: vecAlpha('heritage'),
             }),
@@ -4032,6 +4038,12 @@ interface AnalysisTabProps {
   compareB: string;
   setCompareA: (id: string) => void;
   setCompareB: (id: string) => void;
+  year: number;
+  sc: Scenario;
+  selectedId: string | null;
+  setSelectedId: (id: string | null) => void;
+  hoveredSuburb: string | null;
+  setHoveredSuburb: (id: string | null) => void;
 }
 
 function LayerSelect({
@@ -4080,11 +4092,33 @@ function AnalysisTab({
   compareB,
   setCompareA,
   setCompareB,
+  year,
+  sc,
+  selectedId,
+  setSelectedId,
+  hoveredSuburb,
+  setHoveredSuburb,
 }: AnalysisTabProps) {
   const defA = LAYER_BY_ID[compareA];
   const defB = LAYER_BY_ID[compareB];
   const colA = defA.hi ?? ACCENT;
   const colB = defB.hi ?? '#B45309';
+
+  const rows = useMemo(
+    () =>
+      SUBURBS.map((s) => ({
+        s,
+        rawA: rawLayerValue(compareA, s, year, sc),
+        rawB: rawLayerValue(compareB, s, year, sc),
+        normA: normLayerValue(compareA, s, year, sc),
+        normB: normLayerValue(compareB, s, year, sc),
+      })),
+    [compareA, compareB, year, sc],
+  );
+
+  const chartH = 118;
+  const barW = 7;
+  const groupW = 30;
 
   return (
     <div className="px-2.5 py-2.5">
@@ -4103,9 +4137,128 @@ function AnalysisTab({
         />
       </div>
 
-      <div className="mt-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
-        The chart and comparison table for these two layers are in the
-        analysis panel on the right.
+      <p className="mt-2.5 text-[11.5px] leading-[1.5] text-ink-2">
+        Bars are scaled within each measure separately, so heights compare
+        across suburbs but not across the two measures. The map shows A at
+        full opacity with B at 40 percent over it.
+      </p>
+
+      <div className="mt-2 rounded-[6px] border border-line bg-white p-2">
+        <svg width="100%" viewBox={`0 0 ${groupW * (SUBURBS.length + 1) + 8} ${chartH + 30}`} className="overflow-visible">
+          {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+            <line
+              key={g}
+              x1={0}
+              x2={groupW * (SUBURBS.length + 1) + 8}
+              y1={chartH - g * chartH}
+              y2={chartH - g * chartH}
+              stroke="#EDF1F1"
+              strokeWidth={1}
+            />
+          ))}
+          {rows.map((r, i) => {
+            const x = i * groupW + 6;
+            const hA = Math.max(2, r.normA * chartH);
+            const hB = Math.max(2, r.normB * chartH);
+            const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
+            return (
+              <g
+                key={r.s.id}
+                onMouseEnter={() => setHoveredSuburb(r.s.id)}
+                onMouseLeave={() => setHoveredSuburb(null)}
+                onClick={() => setSelectedId(r.s.id)}
+                style={{ cursor: 'pointer' }}
+              >
+                <rect x={x - 5} y={0} width={groupW - 2} height={chartH + 26} fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'} />
+                <rect x={x} y={chartH - hA} width={barW} height={hA} rx={1.5} fill={colA} opacity={active ? 1 : 0.86} />
+                <rect x={x + barW + 2} y={chartH - hB} width={barW} height={hB} rx={1.5} fill={colB} opacity={active ? 1 : 0.86} />
+                <text x={x + barW} y={chartH + 10} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill={active ? '#14201F' : '#7E8D8C'}>
+                  {r.s.name.split('-')[0].slice(0, 8)}
+                </text>
+                <text x={x + barW} y={chartH + 19} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill="#A8B5B4">
+                  {r.s.sa2.slice(-4)}
+                </text>
+              </g>
+            );
+          })}
+          {(() => {
+            const x = SUBURBS.length * groupW + 6;
+            const active = hoveredSuburb === BEVERLEY_ID || selectedId === BEVERLEY_ID;
+            return (
+              <g
+                onMouseEnter={() => setHoveredSuburb(BEVERLEY_ID)}
+                onMouseLeave={() => setHoveredSuburb(null)}
+                onClick={() => setSelectedId(BEVERLEY_ID)}
+                style={{ cursor: 'pointer' }}
+              >
+                <rect x={x - 5} y={0} width={groupW - 2} height={chartH + 26} fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'} />
+                <line x1={x} y1={chartH - 2} x2={x + barW * 2 + 2} y2={chartH - 2} stroke="#C7D2D1" strokeWidth={1.5} strokeDasharray="2 2" />
+                <text x={x + barW} y={chartH + 10} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill={active ? '#14201F' : '#7E8D8C'}>
+                  Beverley
+                </text>
+                <text x={x + barW} y={chartH + 19} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill="#A8B5B4">
+                  no data
+                </text>
+              </g>
+            );
+          })()}
+        </svg>
+      </div>
+      <p className="mt-1 text-[10.5px] leading-[1.4] text-ink-3">
+        Beverley is a real SA2 in the LGA but has no sourced values for
+        these layers, so it has no bar rather than a guessed one.
+      </p>
+
+      <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
+        <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
+          <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Suburb</span>
+          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">A</span>
+          <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">B</span>
+        </div>
+        {rows.map((r) => {
+          const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
+          return (
+            <button
+              key={r.s.id}
+              onMouseEnter={() => setHoveredSuburb(r.s.id)}
+              onMouseLeave={() => setHoveredSuburb(null)}
+              onClick={() => setSelectedId(r.s.id)}
+              className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium text-ink">{r.s.name}</span>
+                <span className="mt-[3px] flex gap-[3px]">
+                  <span className="w-1/2"><MiniBar value={r.normA} color={colA} height={3} /></span>
+                  <span className="w-1/2"><MiniBar value={r.normB} color={colB} height={3} /></span>
+                </span>
+              </span>
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
+                {formatLayerValue(compareA, r.rawA)}
+              </span>
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
+                {formatLayerValue(compareB, r.rawB)}
+              </span>
+            </button>
+          );
+        })}
+        {(() => {
+          const active = hoveredSuburb === BEVERLEY_ID || selectedId === BEVERLEY_ID;
+          return (
+            <button
+              onMouseEnter={() => setHoveredSuburb(BEVERLEY_ID)}
+              onMouseLeave={() => setHoveredSuburb(null)}
+              onClick={() => setSelectedId(BEVERLEY_ID)}
+              className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] font-medium text-ink">Beverley</span>
+                <span className="mt-[3px] block text-[10.5px] text-ink-3">no sourced data</span>
+              </span>
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] text-ink-3">—</span>
+              <span className="num w-[64px] shrink-0 text-right text-[12.5px] text-ink-3">—</span>
+            </button>
+          );
+        })()}
       </div>
 
       <div className="mt-2.5 space-y-1.5">
@@ -4333,146 +4486,6 @@ function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
   );
 }
 
-/* ------------------------------------------------------------------ *
- * Analysis results panel
- *
- * The chart and comparison table moved out of the left Analysis tab,
- * which now only holds the two layer pickers, the config, not the
- * output. Same data, same interaction, just on the side of the screen
- * that is now reserved for what the numbers mean rather than what they
- * are.
- * ------------------------------------------------------------------ */
-
-interface AnalysisResultsPanelProps {
-  compareA: string;
-  compareB: string;
-  year: number;
-  sc: Scenario;
-  selectedId: string | null;
-  setSelectedId: (id: string | null) => void;
-  hoveredSuburb: string | null;
-  setHoveredSuburb: (id: string | null) => void;
-}
-
-function AnalysisResultsPanel({
-  compareA,
-  compareB,
-  year,
-  sc,
-  selectedId,
-  setSelectedId,
-  hoveredSuburb,
-  setHoveredSuburb,
-}: AnalysisResultsPanelProps) {
-  const defA = LAYER_BY_ID[compareA];
-  const defB = LAYER_BY_ID[compareB];
-  const colA = defA.hi ?? ACCENT;
-  const colB = defB.hi ?? '#B45309';
-
-  const rows = useMemo(
-    () =>
-      SUBURBS.map((s) => ({
-        s,
-        rawA: rawLayerValue(compareA, s, year, sc),
-        rawB: rawLayerValue(compareB, s, year, sc),
-        normA: normLayerValue(compareA, s, year, sc),
-        normB: normLayerValue(compareB, s, year, sc),
-      })),
-    [compareA, compareB, year, sc],
-  );
-
-  const chartH = 118;
-  const barW = 7;
-  const groupW = 30;
-
-  return (
-    <RightPanelShell accent={ACCENT} eyebrow="Analysis" title={`${defA.name} vs ${defB.name}`}>
-      <div className="px-2.5 py-2">
-        <p className="mb-2 text-[11.5px] leading-[1.5] text-ink-2">
-          Bars are scaled within each measure separately, so heights compare
-          across suburbs but not across the two measures. The map shows A at
-          full opacity with B at 40 percent over it.
-        </p>
-
-        <div className="rounded-[6px] border border-line bg-white p-2">
-          <svg width="100%" viewBox={`0 0 ${groupW * SUBURBS.length + 8} ${chartH + 30}`} className="overflow-visible">
-            {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-              <line
-                key={g}
-                x1={0}
-                x2={groupW * SUBURBS.length + 8}
-                y1={chartH - g * chartH}
-                y2={chartH - g * chartH}
-                stroke="#EDF1F1"
-                strokeWidth={1}
-              />
-            ))}
-            {rows.map((r, i) => {
-              const x = i * groupW + 6;
-              const hA = Math.max(2, r.normA * chartH);
-              const hB = Math.max(2, r.normB * chartH);
-              const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
-              return (
-                <g
-                  key={r.s.id}
-                  onMouseEnter={() => setHoveredSuburb(r.s.id)}
-                  onMouseLeave={() => setHoveredSuburb(null)}
-                  onClick={() => setSelectedId(r.s.id)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <rect x={x - 5} y={0} width={groupW - 2} height={chartH + 26} fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'} />
-                  <rect x={x} y={chartH - hA} width={barW} height={hA} rx={1.5} fill={colA} opacity={active ? 1 : 0.86} />
-                  <rect x={x + barW + 2} y={chartH - hB} width={barW} height={hB} rx={1.5} fill={colB} opacity={active ? 1 : 0.86} />
-                  <text x={x + barW} y={chartH + 10} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill={active ? '#14201F' : '#7E8D8C'}>
-                    {r.s.name.split('-')[0].slice(0, 8)}
-                  </text>
-                  <text x={x + barW} y={chartH + 19} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill="#A8B5B4">
-                    {r.s.sa2.slice(-4)}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-        </div>
-
-        <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
-          <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
-            <span className="flex-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">Suburb</span>
-            <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">A</span>
-            <span className="num w-[64px] text-right text-[11px] font-semibold text-ink-3">B</span>
-          </div>
-          {rows.map((r) => {
-            const active = hoveredSuburb === r.s.id || selectedId === r.s.id;
-            return (
-              <button
-                key={r.s.id}
-                onMouseEnter={() => setHoveredSuburb(r.s.id)}
-                onMouseLeave={() => setHoveredSuburb(null)}
-                onClick={() => setSelectedId(r.s.id)}
-                className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[12.5px] font-medium text-ink">{r.s.name}</span>
-                  <span className="mt-[3px] flex gap-[3px]">
-                    <span className="w-1/2"><MiniBar value={r.normA} color={colA} height={3} /></span>
-                    <span className="w-1/2"><MiniBar value={r.normB} color={colB} height={3} /></span>
-                  </span>
-                </span>
-                <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
-                  {formatLayerValue(compareA, r.rawA)}
-                </span>
-                <span className="num w-[64px] shrink-0 text-right text-[12.5px] font-semibold text-ink">
-                  {formatLayerValue(compareB, r.rawB)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </RightPanelShell>
-  );
-}
-
 
 
 /* ------------------------------------------------------------------ *
@@ -4499,18 +4512,16 @@ function HelpTab() {
         'Quick start',
         <>
           <p>
-            Turn on a hazard layer in Layers, or load a blueprint to get a
-            curated set in one click. Click a suburb on the map to open its
-            profile in Place.
+            Turn on a layer in the Layers tab, or click a blueprint card for
+            a ready-made set. Click a suburb on the map to see it in Place.
           </p>
           <p className="mt-1.5">
-            The timeline at the bottom steps the year. Steps only appear for
-            datasets that have a time series. Everything else says so rather
-            than interpolating a year it cannot support.
+            The timeline at the bottom changes the year. It only shows years
+            the current layer actually has data for.
           </p>
           <p className="mt-1.5">
-            Hover anything. Layer names, stat tiles and assets all carry a
-            rollover with the definition, the source and the caveat.
+            Hover over layer names, numbers and buildings for a bit more
+            detail and the source.
           </p>
         </>,
       )}
@@ -4519,17 +4530,14 @@ function HelpTab() {
         'Data on the left, analysis on the right',
         <>
           <p>
-            The left panel only ever holds data: layer definitions, a
-            place's population and register entries, an asset's address
-            and condition. Nothing there ranks, scores, or tells you what
-            a number means, it is what was measured or recorded.
+            Layers, Place and Analysis on the left show data only: what a
+            layer measures, a suburb's population and buildings, an asset's
+            address and condition. No scores or rankings there.
           </p>
           <p className="mt-1.5">
-            Judgement lives on the right, in a panel that only opens when
-            there is something to show, a suburb's risk scores and which
-            of council's consequence categories they touch, or a
-            comparison's chart and table. It closes and gives the map
-            that width back the moment there is nothing to analyse.
+            Scores, rankings and the consequence framework open in a panel
+            on the right, only when there's something to show. It closes
+            again once there isn't.
           </p>
         </>,
       )}
@@ -4538,21 +4546,20 @@ function HelpTab() {
         'What each tab does',
         <ul className="space-y-1.5">
           <li>
-            <span className="font-semibold text-ink">Layers.</span> The full
-            hazard, vulnerability and overlay catalogue, plus the real
-            building toggles under Assets. Global opacity at the top,
-            per-layer opacity on hover.
+            <span className="font-semibold text-ink">Layers.</span> Hazard
+            and vulnerability layers, plus building toggles under Assets.
+            Opacity slider at the top, per-layer opacity on hover.
           </li>
           <li>
-            <span className="font-semibold text-ink">Place.</span> One SA2 at
-            a time, its population, demographics and real buildings
-            register. Its risk scores and consequence relevance open on
-            the right once selected.
+            <span className="font-semibold text-ink">Place.</span> One
+            suburb at a time — population, demographics, and its real
+            buildings. Risk scores and consequence links open on the right
+            once you pick one.
           </li>
           <li>
             <span className="font-semibold text-ink">Analysis.</span> Pick
-            two measures here, the comparison chart and table open on the
-            right. Opening this tab also puts the map into compare mode.
+            two layers to compare. The chart and table appear below, and
+            the map switches to compare mode.
           </li>
         </ul>,
       )}
@@ -4561,19 +4568,15 @@ function HelpTab() {
         'SA2 vs SA1 boundaries',
         <>
           <p>
-            SA2 is the suburb scale, eight real ABS areas across the LGA.
-            SA1 is finer and uneven, 257 real areas across those same eight,
-            from 14 up to 46 per SA2 depending on how built-up it is. Both
-            boundary sets are the exact ABS ASGS 2021 shapes, not a
-            simplified stand-in for them.
+            SA2 is the suburb scale — eight real ABS areas in the LGA. SA1
+            is smaller, 257 real areas spread across those same eight,
+            between 14 and 46 per SA2. Both are the real ABS ASGS 2021
+            boundaries, not simplified shapes.
           </p>
           <p className="mt-1.5">
-            SA1 is the scale at which disadvantage and canopy actually vary,
-            an SA2 average can sit well above or below what any one pocket
-            inside it looks like. No hazard or demographic layer in this
-            tool is modelled at SA1 resolution yet, so the SA1 view shows
-            boundaries only, tinted by which SA2 each one belongs to.
-            Nothing about that tint is a measurement.
+            No layer in this tool is modelled down at SA1 level yet, so the
+            SA1 view just shows the boundaries, coloured by which SA2 each
+            one sits in. That colour isn't a measurement of anything.
           </p>
         </>,
       )}
@@ -4582,8 +4585,9 @@ function HelpTab() {
         'Projection bar',
         <>
           <p>
-            The scenario toggle switches between SSP2-4.5 and SSP5-8.5. These
-            are emissions pathways, not forecasts, and both are plausible.
+            The scenario toggle switches between two emissions pathways,
+            SSP2-4.5 and SSP5-8.5. Neither is a forecast — both are
+            considered plausible.
           </p>
           <p className="mt-1.5">
             {SCENARIO_LABEL.ssp245}: {SCENARIO_NOTE.ssp245}
@@ -4591,16 +4595,14 @@ function HelpTab() {
             {SCENARIO_LABEL.ssp585}: {SCENARIO_NOTE.ssp585}
           </p>
           <p className="mt-1.5">
-            Scenario choice moves the 2041 population figure by up to 6 percent
-            across the LGA. It does not change which suburbs rank highest, so
-            if a decision flips on the scenario, the difference is probably
-            inside the noise.
+            Switching scenario moves the 2041 population by a few percent
+            either way, but doesn't change which suburbs come out on top.
           </p>
           <p className="mt-1.5">
-            Year steps differ by dataset. Population and employment step 2021,
-            2031, 2041. Heat vulnerability adds 2036. Flood modelling only has
-            2021 and 2041. Changing the active dataset snaps the year to the
-            nearest step it supports.
+            Year steps depend on the dataset. Population and employment
+            step 2021, 2031, 2041. Heat vulnerability adds 2036. Flood only
+            has 2021 and 2041. The year snaps to the nearest step when you
+            switch layers.
           </p>
         </>,
       )}
@@ -4609,14 +4611,12 @@ function HelpTab() {
         'Consequence framework',
         <>
           <p>
-            Council's own draft framework for what a hazard actually
-            costs, seven categories, shared via project correspondence
-            between Value Advisory Partners and The Systems Cooperative
-            in September 2026. The category names and metrics below are
-            real. The thresholds that would turn a metric into a pass or
-            fail are not, they were still being workshopped when this was
-            shared, so they show here as an open gap rather than a
-            guessed number.
+            Council's own draft framework for what a hazard actually costs
+            — seven categories, from correspondence with Value Advisory
+            Partners and The Systems Cooperative in September 2026. The
+            category names and metrics are real. The thresholds aren't set
+            yet, so they're shown here as an open gap rather than a
+            guess.
           </p>
           <div className="mt-2 space-y-1.5">
             {CONSEQUENCE_CATEGORIES.map((c) => (
@@ -4664,33 +4664,32 @@ function HelpTab() {
         <>
           <DemoDataNote className="mb-2" />
           <p>
-            Every layer carries its source on rollover. The consequence
-            thresholds used in this tool are conventions, and they are visible
-            rather than buried:
+            Every layer shows its source on hover. A few thresholds used
+            elsewhere in the tool:
           </p>
           <ul className="mt-1.5 space-y-1">
             <li>
-              <span className="font-semibold text-ink">Asset renewal.</span> Ten
-              or more reactive interventions in five years flags an asset for
-              renewal assessment against continued maintenance.
+              <span className="font-semibold text-ink">Asset renewal.</span>
+              {' '}10 or more repairs in five years flags an asset for
+              renewal review.
             </li>
             <li>
               <span className="font-semibold text-ink">Capacity gap.</span>
-              {' '}Zoned ceiling minus projected dwellings. Negative means the
-              projection cannot be delivered under the current code.
+              {' '}Zoned ceiling minus projected dwellings. Negative means
+              current zoning can't fit the projection.
             </li>
             <li>
-              <span className="font-semibold text-ink">Risk scores.</span> A 1
-              to 5 scale, relative within this LGA only. Not comparable with
-              another council's scores.
+              <span className="font-semibold text-ink">Risk scores.</span> 1
+              to 5, relative within this LGA only — not comparable to
+              another council.
             </li>
             <li>
               <span className="font-semibold text-ink">SEIFA.</span> National
-              decile. 1 is most disadvantaged, and the ramp darkens toward 1.
+              decile, 1 is most disadvantaged.
             </li>
           </ul>
           <p className="mt-1.5">
-            No analytics are collected. Nothing you click here is recorded.
+            Nothing you click here is tracked or recorded.
           </p>
         </>,
       )}
@@ -5253,7 +5252,7 @@ function BlueprintPanel({
                       No building in the register geocoded to this SA2.
                     </p>
                   ) : (
-                    <div className="space-y-1">
+                    <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
                       {buildings.map((b) => (
                         <BuildingCard
                           key={b.id}
@@ -5337,6 +5336,15 @@ function BlueprintPanel({
                 </button>
               );
             })}
+            <div className="w-full rounded-[4px] px-1.5 py-1 opacity-60">
+              <div className="flex items-baseline gap-1.5">
+                <span className="num w-[13px] shrink-0 text-[11px] text-ink-3">—</span>
+                <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">
+                  Beverley
+                </span>
+                <span className="text-[11px] text-ink-3">not ranked, no data</span>
+              </div>
+            </div>
           </div>
         </div>
         )}
@@ -6556,19 +6564,17 @@ export default function App() {
   const compare = panelTab === 'analysis';
 
   // One right panel at a time, and only when there is something real to
-  // show in it, an empty analysis panel reserving screen width for
-  // nothing is exactly the clutter this tool has spent this session
-  // removing. A blueprint takes priority since choosing one is a
-  // deliberate act; otherwise the panel follows whichever left tab is
-  // open and has something to say.
-  const rightPanelMode: 'blueprint' | 'place' | 'analysis' | null =
-    showBlueprintPanel
-      ? 'blueprint'
-      : panelTab === 'place' && selectedId
-        ? 'place'
-        : panelTab === 'analysis'
-          ? 'analysis'
-          : null;
+  // show in it, an empty panel reserving screen width for nothing is
+  // exactly the clutter this tool has spent this session removing. A
+  // blueprint takes priority since choosing one is a deliberate act.
+  // Analysis has no right panel of its own, its chart and table sit
+  // inline in the left tab, comparing two layers is still just reading
+  // data, not judging it.
+  const rightPanelMode: 'blueprint' | 'place' | null = showBlueprintPanel
+    ? 'blueprint'
+    : panelTab === 'place' && selectedId
+      ? 'place'
+      : null;
   const rightPanelAccent =
     rightPanelMode === 'blueprint' && activeBlueprint
       ? BLUEPRINT_ACCENT[activeBlueprint]
@@ -6595,7 +6601,11 @@ export default function App() {
     setYear((y) => (steps.includes(y) ? y : snapYear(y, steps)));
   }, [steps]);
 
+  // Hand-picking a layer is a deliberate departure from whatever blueprint
+  // was loaded, its curated set no longer describes what's on the map, so
+  // it stops claiming to and the panel goes back to plain Layers.
   const toggleLayer = useCallback((id: string) => {
+    setActiveBlueprint(null);
     setCheckedLayers((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -6700,6 +6710,12 @@ export default function App() {
               compareB={compareB}
               setCompareA={setCompareA}
               setCompareB={setCompareB}
+              year={year}
+              sc={sc}
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
+              hoveredSuburb={hoveredSuburb}
+              setHoveredSuburb={setHoveredSuburb}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -6791,18 +6807,6 @@ export default function App() {
         />
       )}
       {rightPanelMode === 'place' && <PlaceAnalysisPanel selectedId={selectedId} />}
-      {rightPanelMode === 'analysis' && (
-        <AnalysisResultsPanel
-          compareA={compareA}
-          compareB={compareB}
-          year={year}
-          sc={sc}
-          selectedId={selectedId}
-          setSelectedId={setSelectedId}
-          hoveredSuburb={hoveredSuburb}
-          setHoveredSuburb={setHoveredSuburb}
-        />
-      )}
     </div>
   );
 }
