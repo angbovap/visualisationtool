@@ -739,10 +739,13 @@ const BLUEPRINT_BY_ID: Record<string, Blueprint> = Object.fromEntries(
  * the real West Beach SA2 (404031109) sits in West Torrens, a different
  * council, and has been removed along with everything that depended on
  * it. "Beverley" (404011090) is a real Charles Sturt SA2 that had no
- * entry at all. Its boundary is drawn like every other SA2, but it
- * carries no population, hazard or asset data, because none has been
- * sourced for it, and it is excluded from every chart, ranking and
- * profile that the other seven appear in until that changes.
+ * entry at all, and now has one, drawn from the same real boundary as
+ * the other seven. Its population, hazard and dwelling figures are the
+ * same kind of indicative demonstration data already used for the
+ * other seven, not sourced for it any more than theirs is, just no
+ * longer left as a hole in every chart, ranking and profile the other
+ * seven appear in. Its buildings and their insured value are real,
+ * geocoded from the register the same as everywhere else.
  * ------------------------------------------------------------------ */
 
 interface RealBoundary {
@@ -1374,6 +1377,28 @@ const SUBURB_SEED: SuburbSeed[] = [
       },
     ],
   },
+  {
+    // Indicative demo figures, same basis as the seven suburbs above,
+    // not sourced for Beverley any more than theirs are for them. Its
+    // boundary (via sa2 below) and its buildings are real; this block
+    // is not. No named "assets" are invented for it, its real buildings
+    // register entries cover that role instead, see REAL_BUILDINGS_BY_SUBURB.
+    id: BEVERLEY_ID,
+    name: 'Beverley',
+    sa2: BEVERLEY_SA2_CODE,
+    pop2021: 1450,
+    pop2041: { ssp245: 1650, ssp585: 1720 },
+    densityPerKm2: 1200,
+    seifa: 5,
+    heatScore: 4,
+    floodScore: 3,
+    coastalScore: 1,
+    droughtScore: 3,
+    treeCanopy: 11,
+    greenSpace: 6,
+    employmentScore: 3,
+    assets: [],
+  },
 ];
 
 const SUBURBS: Suburb[] = SUBURB_SEED.map((s) => {
@@ -1392,7 +1417,6 @@ const SUBURB_BY_ID: Record<string, Suburb> = Object.fromEntries(
 const SA2_CODE_TO_SUBURB_ID: Record<string, string> = Object.fromEntries(
   SUBURBS.map((s) => [s.sa2, s.id]),
 );
-SA2_CODE_TO_SUBURB_ID[BEVERLEY_SA2_CODE] = BEVERLEY_ID;
 
 /* ------------------------------------------------------------------ *
  * SA1 sub-areas
@@ -1525,6 +1549,18 @@ const PLANNING: Record<string, PlanningRow> = {
     residentialHa: 190,
     zonedGrossDensity: 26,
     zoningLabel: 'General Neighbourhood',
+  },
+  // Dwelling counts and zoning are the same kind of indicative figure as
+  // the other seven, not sourced for Beverley either. totalHa is the one
+  // real number here, the real boundary's own area.
+  [BEVERLEY_ID]: {
+    dwellings2021: 540,
+    dwellings2031: { ssp245: 570, ssp585: 580 },
+    dwellings2041: { ssp245: 610, ssp585: 630 },
+    totalHa: Math.round((SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE]?.areaSqKm ?? 5.4) * 100),
+    residentialHa: 40,
+    zonedGrossDensity: 28,
+    zoningLabel: 'Employment Zone / Local Activity',
   },
 };
 
@@ -2522,29 +2558,6 @@ function MapView(props: MapViewProps) {
             .on('click', () => onSelectSuburb(s.id)),
         );
       }
-
-      // Beverley is a real Charles Sturt SA2 with no attribute data, drawn
-      // from the same ABS boundary as the other seven so the SA2 count and
-      // shape stay correct. It never carries a choropleth fill, there is
-      // nothing sourced to colour it with.
-      const beverley = SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE];
-      if (beverley) {
-        const isSel = selectedId === BEVERLEY_ID;
-        push(
-          L.polygon(beverley.ring, {
-            color: isSel ? ACCENT : darkBase ? '#EAF2F1' : '#40514F',
-            weight: isSel ? 1.8 : boundsMode === 'none' ? 0 : 0.7,
-            opacity: boundsMode === 'none' && !isSel ? 0 : 0.8,
-            fillColor: '#9FB0AE',
-            fillOpacity: overlayOpacity * 0.14,
-            dashArray: isSel ? undefined : '4 3',
-            interactive: true,
-          })
-            .on('mouseover', () => setHoveredSuburb(BEVERLEY_ID))
-            .on('mouseout', () => setHoveredSuburb(null))
-            .on('click', () => onSelectSuburb(BEVERLEY_ID)),
-        );
-      }
     }
 
     /* Every additional checked surface stacks over the first, in compare
@@ -2822,13 +2835,7 @@ function MapView(props: MapViewProps) {
 
     /* Boundary outlines sit above every fill so they stay legible. */
     if (boundsMode === 'sa2') {
-      const outlineRings = [
-        ...SUBURBS.map((s) => s.path),
-        ...(SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE]
-          ? [SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE].ring]
-          : []),
-      ];
-      for (const ring of outlineRings) {
+      for (const ring of SUBURBS.map((s) => s.path)) {
         push(
           L.polygon(ring, {
             fill: false,
@@ -3064,10 +3071,8 @@ function MapView(props: MapViewProps) {
         </div>
       </div>
 
-      {/* Selected suburb pill. Beverley has no Suburb record (no attribute
-          data has been sourced for it), so it gets its own pill straight
-          off the real boundary rather than showing nothing. */}
-      {(selected || selectedId === BEVERLEY_ID) && (
+      {/* Selected suburb pill. */}
+      {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
             className="fade-up flex items-center gap-1.5 rounded-full border px-2.5 py-1 shadow-[0_2px_10px_rgba(20,32,31,0.12)]"
@@ -3081,16 +3086,11 @@ function MapView(props: MapViewProps) {
               style={{ background: rightPanelAccent }}
             />
             <span className="text-[13.5px] font-semibold text-ink">
-              {selected ? selected.name : 'Beverley'}
+              {selected.name}
             </span>
             <span className="num text-[12px] text-ink-3">
-              {selected ? selected.sa2 : BEVERLEY_SA2_CODE}
+              {selected.sa2}
             </span>
-            {!selected && (
-              <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-3">
-                no data sourced
-              </span>
-            )}
           </div>
         </div>
       )}
@@ -3699,77 +3699,7 @@ function PlaceTab({
   }
 
   const s = SUBURB_BY_ID[selectedId];
-
-  // Beverley is a real Charles Sturt SA2, drawn on the map from the same
-  // ABS boundary as the other seven, but nothing here has sourced any
-  // population, hazard or asset data for it. Saying so plainly beats
-  // either hiding the boundary or filling the gap with a guess.
-  if (!s) {
-    const boundary = SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE];
-    return (
-      <div className="px-2.5 py-2.5">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <div className="truncate text-[17px] font-semibold leading-tight text-ink">
-              Beverley
-            </div>
-            <div className="num mt-[2px] text-[12px] text-ink-3">
-              SA2 {BEVERLEY_SA2_CODE} · {boundary?.areaSqKm.toFixed(2)} km2
-            </div>
-          </div>
-          <button
-            onClick={() => setSelectedId(null)}
-            className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[11.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
-          >
-            Clear
-          </button>
-        </div>
-        <div className="rounded-[6px] border border-dashed border-line bg-surface-2 px-2.5 py-3 text-[12.5px] leading-[1.6] text-ink-2">
-          Beverley is a real Charles Sturt SA2, its boundary here is the
-          exact ABS ASGS 2021 shape. No population, hazard score or
-          demographic figure has been sourced for it, so it carries none
-          of the indicative figures shown for the other seven SA2s rather
-          than a guessed one, and it is left out of Analysis for the same
-          reason.
-        </div>
-
-
-        {(() => {
-          const buildings = REAL_BUILDINGS_BY_SUBURB[BEVERLEY_ID] ?? [];
-          if (buildings.length === 0) return null;
-          const value = buildings.reduce((n, b) => n + b.insuredValue, 0);
-          return (
-            <div className="mt-2.5">
-              <PanelHeading
-                right={<span className="num text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M</span>}
-              >
-                Real buildings here, {buildings.length}
-              </PanelHeading>
-              <p className="mb-1.5 text-[11px] leading-[1.5] text-ink-3">
-                Population and hazard data have not been sourced for
-                Beverley, but its real buildings have, geocoded from the
-                register and spatially matched to this exact boundary.
-                Council's Beverley works precinct accounts for most of
-                these.
-              </p>
-              <div className="max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-                {buildings.map((b) => (
-                  <BuildingCard
-                    key={b.id}
-                    b={b}
-                    isOpen={openAsset === b.id}
-                    onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        <DemoDataNote className="mt-2.5" />
-      </div>
-    );
-  }
+  if (!s) return null;
 
   const plan = PLANNING[s.id];
   const pop = popAt(s, year, sc);
@@ -4144,12 +4074,12 @@ function AnalysisTab({
       </p>
 
       <div className="mt-2 rounded-[6px] border border-line bg-white p-2">
-        <svg width="100%" viewBox={`0 0 ${groupW * (SUBURBS.length + 1) + 8} ${chartH + 30}`} className="overflow-visible">
+        <svg width="100%" viewBox={`0 0 ${groupW * SUBURBS.length + 8} ${chartH + 30}`} className="overflow-visible">
           {[0, 0.25, 0.5, 0.75, 1].map((g) => (
             <line
               key={g}
               x1={0}
-              x2={groupW * (SUBURBS.length + 1) + 8}
+              x2={groupW * SUBURBS.length + 8}
               y1={chartH - g * chartH}
               y2={chartH - g * chartH}
               stroke="#EDF1F1"
@@ -4181,33 +4111,8 @@ function AnalysisTab({
               </g>
             );
           })}
-          {(() => {
-            const x = SUBURBS.length * groupW + 6;
-            const active = hoveredSuburb === BEVERLEY_ID || selectedId === BEVERLEY_ID;
-            return (
-              <g
-                onMouseEnter={() => setHoveredSuburb(BEVERLEY_ID)}
-                onMouseLeave={() => setHoveredSuburb(null)}
-                onClick={() => setSelectedId(BEVERLEY_ID)}
-                style={{ cursor: 'pointer' }}
-              >
-                <rect x={x - 5} y={0} width={groupW - 2} height={chartH + 26} fill={active ? 'rgba(0,110,120,0.06)' : 'transparent'} />
-                <line x1={x} y1={chartH - 2} x2={x + barW * 2 + 2} y2={chartH - 2} stroke="#C7D2D1" strokeWidth={1.5} strokeDasharray="2 2" />
-                <text x={x + barW} y={chartH + 10} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill={active ? '#14201F' : '#7E8D8C'}>
-                  Beverley
-                </text>
-                <text x={x + barW} y={chartH + 19} textAnchor="middle" fontSize={12} fontFamily="JetBrains Mono, monospace" fill="#A8B5B4">
-                  no data
-                </text>
-              </g>
-            );
-          })()}
         </svg>
       </div>
-      <p className="mt-1 text-[10.5px] leading-[1.4] text-ink-3">
-        Beverley is a real SA2 in the LGA but has no sourced values for
-        these layers, so it has no bar rather than a guessed one.
-      </p>
 
       <div className="mt-2 overflow-hidden rounded-[6px] border border-line bg-white">
         <div className="flex items-center gap-1.5 border-b border-line bg-surface-2 px-2 py-1">
@@ -4241,24 +4146,6 @@ function AnalysisTab({
             </button>
           );
         })}
-        {(() => {
-          const active = hoveredSuburb === BEVERLEY_ID || selectedId === BEVERLEY_ID;
-          return (
-            <button
-              onMouseEnter={() => setHoveredSuburb(BEVERLEY_ID)}
-              onMouseLeave={() => setHoveredSuburb(null)}
-              onClick={() => setSelectedId(BEVERLEY_ID)}
-              className={`flex w-full items-center gap-1.5 border-b border-line px-2 py-1 text-left last:border-b-0 ${active ? 'bg-accent-soft/40' : 'hover:bg-surface-2'}`}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] font-medium text-ink">Beverley</span>
-                <span className="mt-[3px] block text-[10.5px] text-ink-3">no sourced data</span>
-              </span>
-              <span className="num w-[64px] shrink-0 text-right text-[12.5px] text-ink-3">—</span>
-              <span className="num w-[64px] shrink-0 text-right text-[12.5px] text-ink-3">—</span>
-            </button>
-          );
-        })()}
       </div>
 
       <div className="mt-2.5 space-y-1.5">
@@ -4389,24 +4276,13 @@ function PlaceAnalysisPanel({ selectedId }: { selectedId: string | null }) {
   const s = selectedId ? SUBURB_BY_ID[selectedId] : null;
 
   if (!s) {
-    const boundary = selectedId === BEVERLEY_ID ? SA2_BOUNDARY_BY_CODE[BEVERLEY_SA2_CODE] : null;
-    const buildingValue = selectedId
-      ? (REAL_BUILDINGS_BY_SUBURB[selectedId] ?? []).reduce((n, b) => n + b.insuredValue, 0)
-      : 0;
     return (
       <RightPanelShell accent={ACCENT} eyebrow="Analysis" title="No risk profile">
         <div className="px-2.5 py-2">
           <p className="text-[11.5px] leading-[1.55] text-ink-2">
-            {boundary
-              ? 'Beverley has no sourced hazard score, so there is nothing here to score against council’s consequence categories, only what its real data can support.'
-              : 'Select a suburb to see its risk scores and how they connect to council’s consequence categories.'}
+            Select a suburb to see its risk scores and how they connect to
+            council's consequence categories.
           </p>
-          {buildingValue > 0 && (
-            <div className="mt-2 rounded-[5px] border border-line bg-white px-2 py-1.5">
-              <div className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-ink-3">Financial</div>
-              <div className="mt-1 text-[11.5px] text-ink-2">${(buildingValue / 1e6).toFixed(1)}M in real buildings insured value here.</div>
-            </div>
-          )}
         </div>
       </RightPanelShell>
     );
@@ -5336,15 +5212,6 @@ function BlueprintPanel({
                 </button>
               );
             })}
-            <div className="w-full rounded-[4px] px-1.5 py-1 opacity-60">
-              <div className="flex items-baseline gap-1.5">
-                <span className="num w-[13px] shrink-0 text-[11px] text-ink-3">—</span>
-                <span className="min-w-0 flex-1 truncate text-[12px] text-ink-3">
-                  Beverley
-                </span>
-                <span className="text-[11px] text-ink-3">not ranked, no data</span>
-              </div>
-            </div>
           </div>
         </div>
         )}
@@ -5802,6 +5669,15 @@ function IconRail({
           </React.Fragment>
         );
       })}
+      <div className="mt-auto pb-1">
+        <Tip label="Prepared by" body="Value Advisory Partners" side="right">
+          <img
+            src={vapLogo}
+            alt="Value Advisory Partners"
+            className="h-8 w-8 shrink-0 object-contain"
+          />
+        </Tip>
+      </div>
     </nav>
   );
 }
@@ -5922,12 +5798,10 @@ const BUILDING_LOCATION = ccsBuildingsGeocoded as Record<
 
 /** Real buildings grouped by the SA2 their geocoded point actually falls
  *  inside, a spatial join against the real boundaries rather than a
- *  guess from the register's locality text. Keyed by app suburb id for
- *  the seven with attribute data, and by BEVERLEY_ID for the eighth,
- *  which has real buildings even though it has no demographic data.
- *  Only buildings with a geocoded position can appear here, the 171
- *  without one are real too, they just cannot be placed in a suburb
- *  without inventing where. */
+ *  guess from the register's locality text, keyed by app suburb id for
+ *  all eight, Beverley included. Only buildings with a geocoded
+ *  position can appear here, the 171 without one are real too, they
+ *  just cannot be placed in a suburb without inventing where. */
 const REAL_BUILDINGS_BY_SUBURB: Record<string, RealAsset[]> = {};
 for (const b of REAL_BUILDINGS) {
   const loc = BUILDING_LOCATION[b.id];
@@ -6722,13 +6596,8 @@ export default function App() {
         </div>
 
         <footer className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
-          <span className="flex items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">
-              City of Charles Sturt
-            </span>
-            <Tip label="Prepared by" body="Value Advisory Partners" side="top">
-              <img src={vapLogo} alt="Value Advisory Partners" className="h-[15px] w-[15px] shrink-0 opacity-70" />
-            </Tip>
+          <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">
+            City of Charles Sturt
           </span>
           <span className="num text-[11px] text-ink-3">
             {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
