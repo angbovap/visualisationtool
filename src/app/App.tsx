@@ -411,8 +411,8 @@ const LAYERS: LayerDef[] = [
     name: 'Heat Vulnerability',
     group: 'hazard',
     kind: 'canvas',
-    lo: '#FEF3C7',
-    hi: '#B91C1C',
+    lo: '#FFFBEB',
+    hi: '#F87171',
     unit: 'UHI category 2 (lowest) to 4 (highest)',
     note: 'Real daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series, so the year selector below does not change it. The Blueprint and Ranking views of Heat Vulnerability elsewhere in this tool still use the older indicative per-suburb score, not this grid.',
     source: 'Council GIS export, "UrbanHeatSocialVulnDay2022.shp/.dbf", reprojected from GDA2020 MGA Zone 54 and clipped to the LGA',
@@ -2706,7 +2706,7 @@ function MapView(props: MapViewProps) {
           L.polygon(cell.rings, {
             stroke: false,
             fillColor: lerpHex(def.lo!, def.hi!, t),
-            fillOpacity: alpha * 0.8,
+            fillOpacity: alpha * 0.45,
             interactive: true,
           }).bindTooltip(
             `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
