@@ -2578,7 +2578,15 @@ function MapView(props: MapViewProps) {
     const canvasSurfaces = surfaces.filter(
       (s) => LAYER_BY_ID[s.id]?.kind === 'canvas' && !compare,
     );
-    const polySurfaces = surfaces;
+    // Heat Vulnerability's real grid is now the whole answer to "what does
+    // this layer look like", so it no longer also colours the SA2/SA1
+    // backdrop the way the other canvas layer (tree canopy) still does.
+    // Left in, the backdrop drew at up to 78% opacity from the old
+    // fabricated per-suburb score underneath the grid, which is what kept
+    // reading as a heavy red regardless of how the grid itself was tuned.
+    const polySurfaces = compare
+      ? surfaces
+      : surfaces.filter((s) => s.id !== 'heat-vuln');
 
     for (const cs of canvasSurfaces) {
       // Heat Vulnerability's real grid draws later, after the base fill,
