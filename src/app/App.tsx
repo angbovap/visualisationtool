@@ -3694,17 +3694,17 @@ function LayersTab({
                   {b.title}
                 </span>
                 <span className="num mt-[2px] block text-[11px] text-ink-3">
-                  {b.layers.length} layers, all real
+                  {b.layers.length} layers
                 </span>
               </button>
             );
           })}
         </div>
-        <div className="mt-2.5 rounded-[5px] border border-dashed border-[#C7B8E8] bg-[#F5F1FC] px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#5B3FA3]">
-          <span className="font-semibold">Work in progress.</span> The map
-          layers here are real. The ranking and comparison numbers still
-          come from the older per-suburb placeholder, that part isn't
-          finished yet.
+        <div className="mt-2.5 rounded-[7px] border-2 border-[#C7B8E8] bg-[#F5F1FC] px-3 py-2.5 text-[14px] font-semibold leading-[1.4] text-[#5B3FA3]">
+          <span className="text-[15px] uppercase tracking-[0.04em]">Work in progress.</span>{' '}
+          The map layers here are real. The ranking and comparison
+          numbers still come from the older per-suburb placeholder,
+          that part isn't finished yet.
         </div>
       </div>
     </div>
