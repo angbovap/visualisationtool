@@ -3439,8 +3439,6 @@ interface LayersTabProps {
   setLayerOpacity: (id: string, v: number) => void;
   activeBlueprint: BlueprintId | null;
   applyBlueprint: (id: BlueprintId) => void;
-  buildingOffTypes: Set<string>;
-  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 function LayersTab({
@@ -3452,22 +3450,20 @@ function LayersTab({
   setLayerOpacity,
   activeBlueprint,
   applyBlueprint,
-  buildingOffTypes,
-  setBuildingOffTypes,
 }: LayersTabProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const visibleLayers = LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id));
 
   // Ordered by how often a council user needs it: the hazard itself,
-  // what it threatens (assets), who it threatens, then the supporting
-  // network and policy layers behind those. No group is a generic
-  // 'overlays' catch-all, each one names the actual category it holds.
-  // One sub-tab visible at a time, not six accordions stacked, so
-  // picking a category costs a tap, not a scroll past the other five.
-  type LayersSection = LayerGroup | 'assets';
+  // then the supporting network and policy layers behind it. No group
+  // is a generic 'overlays' catch-all, each one names the actual
+  // category it holds. Asset/building-type toggles moved to Place, next
+  // to the register they actually control, once this tab was scoped
+  // down to the 8 workshop layers. One sub-tab visible at a time, not
+  // several accordions stacked, so picking a category costs a tap, not
+  // a scroll past the others.
+  type LayersSection = LayerGroup;
   const [activeTab, setActiveTab] = useState<LayersSection>('hazard');
-
-  const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
 
   // Dwelling Density has no home in visibleLayers yet, it's the one of
   // the 8 workshop layers still waiting on its own attribute table (see
@@ -3481,13 +3477,6 @@ function LayersTab({
       color: '#DC2626',
       on: visibleLayers.filter((l) => l.group === 'hazard' && checkedLayers.has(l.id)).length,
       total: visibleLayers.filter((l) => l.group === 'hazard').length,
-    },
-    {
-      value: 'assets',
-      label: 'Assets',
-      color: ACCENT,
-      on: assetsOnCount,
-      total: ALL_BUILDING_TYPES.size,
     },
     {
       value: 'vulnerability',
@@ -3652,16 +3641,7 @@ function LayersTab({
         </div>
       </div>
 
-      {activeTab === 'assets' ? (
-        <div className="px-2.5 py-2">
-          <AssetTypeToggles
-            offTypes={buildingOffTypes}
-            setOffTypes={setBuildingOffTypes}
-          />
-        </div>
-      ) : (
-        renderLayerList(activeTab)
-      )}
+      {renderLayerList(activeTab)}
 
       {/* Blueprints. Pinned below the sections rather than one of them,
           it is a quick action, not something to browse. Scoped down to
@@ -3723,7 +3703,7 @@ interface PlaceTabProps {
   hoveredAsset: HoveredAsset | null;
   setHoveredAsset: (h: HoveredAsset | null) => void;
   buildingOffTypes: Set<string>;
-  onManageCategories: () => void;
+  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 /** Top ranked suburb on a metric, used by the LGA overview cards. */
@@ -3750,7 +3730,7 @@ function PlaceTab({
   hoveredAsset,
   setHoveredAsset,
   buildingOffTypes,
-  onManageCategories,
+  setBuildingOffTypes,
 }: PlaceTabProps) {
   const [openAsset, setOpenAsset] = useState<string | null>(null);
   const [showRealBuildings, setShowRealBuildings] = useState(false);
@@ -3881,7 +3861,7 @@ function PlaceTab({
           <div className="px-2.5 py-2.5">
             <RealBuildingsRegister
               offTypes={buildingOffTypes}
-              onManageCategories={onManageCategories}
+              setOffTypes={setBuildingOffTypes}
             />
           </div>
         )}
@@ -6448,26 +6428,27 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
  *  paragraph sitting in the flow, so the panel opens on numbers and
  *  controls, not prose. */
 const BUILDINGS_REGISTER_EXPLAINER =
-  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Categories are turned on and off in Layers, Assets, the same toggle the map markers below use. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
+  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Categories can be turned on and off below, the same toggle the map markers use. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
 
 /* ------------------------------------------------------------------ *
  * Real buildings register
  *
- * A browse and inspect view, not a control surface. It reads whichever
- * categories are switched on in Layers, Assets, it does not carry a
- * second copy of that toggle.
+ * A browse and inspect view with its own building-type toggles built
+ * in, rather than pointing across to Layers for them, since Layers is
+ * now scoped to the 8 workshop layers and has no home for this.
  * ------------------------------------------------------------------ */
 
 interface RealBuildingsRegisterProps {
   offTypes: Set<string>;
-  onManageCategories: () => void;
+  setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 function RealBuildingsRegister({
   offTypes,
-  onManageCategories,
+  setOffTypes,
 }: RealBuildingsRegisterProps) {
   const [showList, setShowList] = useState(false);
+  const [showTypeToggles, setShowTypeToggles] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const visibleTypes = useMemo(
@@ -6537,19 +6518,27 @@ function RealBuildingsRegister({
         <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
       </div>
 
-      {/* No toggle UI here, it lives in Layers so hazard and asset
-          categories sit in one place. This just shows what is currently
-          on and a one-click way to get to it. */}
+      {/* Building-type toggles used to live in Layers, but that tab is
+          now scoped to the 8 workshop layers only, so they live here
+          instead, next to the register they actually control. */}
       <button
-        onClick={onManageCategories}
+        onClick={() => setShowTypeToggles(!showTypeToggles)}
         className="mb-2.5 flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
       >
         <span className="text-[11.5px] text-ink-2">
           <span className="num font-semibold text-ink">{onCount}</span> of{' '}
           {ALL_BUILDING_TYPES.size} building types shown on the map
         </span>
-        <span className="text-[11px] text-accent">Layers → Assets</span>
+        <span className="flex items-center gap-1 text-[11px] text-accent">
+          {showTypeToggles ? 'Hide' : 'Manage'}
+          <IconChevron size={11} className={`transition-transform ${showTypeToggles ? 'rotate-90' : ''}`} />
+        </span>
       </button>
+      {showTypeToggles && (
+        <div className="fade-up mb-2.5">
+          <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
+        </div>
+      )}
 
       {/* The individual list is a deliberate browse area below the fold,
           not the answer to the question above. Closed by default so
@@ -6724,8 +6713,8 @@ export default function App() {
   // that same layer is unchecked; left alone if a different layer gets
   // unchecked while its panel is showing.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
-  // Building types switched off in Layers, Assets. Lifted to root so the
-  // map and Place's buildings register both read the one state. Starts
+  // Building types switched off in Place's buildings register. Lifted to
+  // root so the map and that register both read the one state. Starts
   // with everything off, matching every other overlay in Layers, on the
   // map is opt-in, not a surprise on first load.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
@@ -6870,8 +6859,6 @@ export default function App() {
               setLayerOpacity={setLayerOpacity}
               activeBlueprint={activeBlueprint}
               applyBlueprint={applyBlueprint}
-              buildingOffTypes={buildingOffTypes}
-              setBuildingOffTypes={setBuildingOffTypes}
             />
           )}
           {panelTab === 'place' && (
@@ -6883,7 +6870,7 @@ export default function App() {
               hoveredAsset={hoveredAsset}
               setHoveredAsset={setHoveredAsset}
               buildingOffTypes={buildingOffTypes}
-              onManageCategories={() => setPanelTab('layers')}
+              setBuildingOffTypes={setBuildingOffTypes}
             />
           )}
           {panelTab === 'analysis' && (
