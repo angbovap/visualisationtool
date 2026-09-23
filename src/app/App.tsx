@@ -53,6 +53,16 @@ import watercoursesData from '@/data/watercourses.json';
 import waterbodiesData from '@/data/waterbodies.json';
 import obstetricHospitalsData from '@/data/obstetricHospitals.json';
 
+// UrbanHeatSocialVulnDay2022.shp + .dbf: a real, fine-grained grid (not
+// modelled at SA1 or SA2 resolution, individual cells run well under a
+// hectare), each cell carrying a real Urban Heat Island category (2 to
+// 4) and Social Vulnerability Index from council's GIS export. Reads
+// as a proper replacement for the Heat Vulnerability layer's old
+// synthetic grain, which never carried a real value at all. Reprojected
+// from GDA2020 MGA Zone 54 and clipped to the LGA the same way as the
+// other real layers above.
+import heatVulnerabilityData from '@/data/heatVulnerability.json';
+
 // Approximate positions for real buildings, geocoded from the register's
 // own address field via OpenStreetMap Nominatim (free, no key, one-time
 // batch at their 1 request/second limit). Not part of the source export.
@@ -403,9 +413,9 @@ const LAYERS: LayerDef[] = [
     kind: 'canvas',
     lo: '#FEF3C7',
     hi: '#B91C1C',
-    unit: 'index 0 to 100',
-    note: 'Surface temperature combined with canopy deficit and residents over 75. Exposure and sensitivity together, not temperature alone.',
-    source: 'Thermal imagery, canopy audit, census age structure',
+    unit: 'UHI category 2 (lowest) to 4 (highest)',
+    note: 'Real daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series, so the year selector below does not change it. The Blueprint and Ranking views of Heat Vulnerability elsewhere in this tool still use the older indicative per-suburb score, not this grid.',
+    source: 'Council GIS export, "UrbanHeatSocialVulnDay2022.shp/.dbf", reprojected from GDA2020 MGA Zone 54 and clipped to the LGA',
     steps: [2021, 2031, 2036, 2041],
   },
   {
@@ -813,6 +823,31 @@ const TRAIN_STATIONS = trainStationsData as LatLngTuple[];
 const WATERCOURSES = watercoursesData as LatLngTuple[][];
 const WATERBODIES = waterbodiesData as LatLngTuple[][][];
 const OBSTETRIC_HOSPITALS = obstetricHospitalsData as LatLngTuple[];
+
+interface HeatVulnCell {
+  rings: LatLngTuple[][];
+  uhiCat: number;
+  svi: number;
+}
+const HEAT_VULNERABILITY = heatVulnerabilityData as HeatVulnCell[];
+
+// The layers actually sourced from council's GIS export, now backed by
+// real geometry and, where relevant (Heat Vulnerability), a real
+// attribute value rather than the fabricated per-suburb figures the
+// rest of the tool (Blueprints, Ranking, Analysis, Place's risk
+// scores) still runs on unchanged. Two jobs: scopes what the Layers
+// tab shows and lets a person check (everything else in LAYERS still
+// exists and still renders if checkedLayers somehow contains it,
+// hiding, not deleting), and flags which layer is real for the
+// Layers-tab info panel, unrelated to a layer's `kind`.
+const WORKSHOP_LAYER_IDS = new Set([
+  'watercourses',
+  'waterbodies',
+  'railways',
+  'train-stations',
+  'obstetric-hospitals',
+  'heat-vuln',
+]);
 
 const SA2_BOUNDARY_BY_CODE: Record<string, RealBoundary> = Object.fromEntries(
   SA2_BOUNDARIES.map((b) => [b.code, b]),
@@ -2543,6 +2578,27 @@ function MapView(props: MapViewProps) {
     const polySurfaces = surfaces;
 
     for (const cs of canvasSurfaces) {
+      if (cs.id === 'heat-vuln') {
+        // Real grid, replaces the old synthetic grain entirely: each
+        // cell is coloured by its own real UHI category rather than an
+        // interpolated per-suburb value.
+        const def = LAYER_BY_ID['heat-vuln'];
+        for (const cell of HEAT_VULNERABILITY) {
+          const t = (cell.uhiCat - 2) / 2;
+          push(
+            L.polygon(cell.rings, {
+              stroke: false,
+              fillColor: lerpHex(def.lo!, def.hi!, t),
+              fillOpacity: opacityFor('heat-vuln') * cs.alpha * 0.75,
+              interactive: true,
+            }).bindTooltip(
+              `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
+              { direction: 'top', offset: [0, -3] },
+            ),
+          );
+        }
+        continue;
+      }
       const layer = makeCanvasLayer(
         LAYER_BY_ID[cs.id],
         opacityFor(cs.id) * cs.alpha * 0.55,
@@ -3368,22 +3424,6 @@ interface LayersTabProps {
   buildingOffTypes: Set<string>;
   setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
-
-// Scoped down for the workshop build to the layers actually sourced from
-// council's own GIS export, plus Heat Vulnerability (still indicative
-// pending its own real attribute table, see LAYERS above). Everything
-// else in LAYERS still exists and still renders if checkedLayers somehow
-// contains it (Blueprints, Ranking, Analysis and Place's risk scores
-// still read the full fabricated catalogue), this only narrows what
-// Layers itself shows and lets a person check. Hiding, not deleting.
-const WORKSHOP_LAYER_IDS = new Set([
-  'watercourses',
-  'waterbodies',
-  'railways',
-  'train-stations',
-  'obstetric-hospitals',
-  'heat-vuln',
-]);
 
 function LayersTab({
   checkedLayers,
@@ -4362,7 +4402,7 @@ function LayerInfoPanel({
   layer: LayerDef;
   onClose: () => void;
 }) {
-  const stillIndicative = layer.kind === 'choropleth' || layer.kind === 'canvas';
+  const stillIndicative = !WORKSHOP_LAYER_IDS.has(layer.id);
   return (
     <RightPanelShell accent={layer.hi ?? ACCENT} eyebrow="Layer" title={layer.name} onClose={onClose}>
       <div className="px-2.5 py-2">
