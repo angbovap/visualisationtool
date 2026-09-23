@@ -42,6 +42,17 @@ import sa1BoundaryData from '@/data/sa1Boundaries.json';
 // those still draw individually for the suburb divisions inside it.
 import lgaBoundaryData from '@/data/lgaBoundary.json';
 
+// Real geometry from the same batch of council QGIS shapefiles, clipped
+// from statewide layers to the LGA (with a small buffer) during import,
+// or matched to the real LGA boundary where a point either sits inside
+// it or does not. See "Real vector layers from QGIS" below for how each
+// was reprojected and clipped.
+import railwaysData from '@/data/railways.json';
+import trainStationsData from '@/data/trainStations.json';
+import watercoursesData from '@/data/watercourses.json';
+import waterbodiesData from '@/data/waterbodies.json';
+import obstetricHospitalsData from '@/data/obstetricHospitals.json';
+
 // Approximate positions for real buildings, geocoded from the register's
 // own address field via OpenStreetMap Nominatim (free, no key, one-time
 // batch at their 1 request/second limit). Not part of the source export.
@@ -426,7 +437,17 @@ const LAYERS: LayerDef[] = [
     hi: '#0EA5E9',
     unit: 'line features',
     note: 'Creeks, drains and the Port River edge. The receiving system for everything upstream.',
-    source: 'Hydrology line network',
+    source: 'Council GIS export, TOPO_Watercourses_GDA2020.shp, clipped to the LGA from the statewide layer',
+  },
+  {
+    id: 'waterbodies',
+    name: 'Waterbodies',
+    group: 'hazard',
+    kind: 'vector',
+    hi: '#0369A1',
+    unit: 'polygon features',
+    note: 'Lakes, basins and other standing water, including West Lakes. Storage capacity and a flood risk if it overtops.',
+    source: 'Council GIS export, TOPO_Waterbodies_GDA2020.shp, clipped to the LGA from the statewide layer',
   },
   {
     id: 'coastal-erosion',
@@ -519,6 +540,16 @@ const LAYERS: LayerDef[] = [
     source: 'Stormwater asset register',
   },
   {
+    id: 'obstetric-hospitals',
+    name: 'Obstetric Hospitals',
+    group: 'infrastructure',
+    kind: 'vector',
+    hi: '#DB2777',
+    unit: 'facilities',
+    note: 'Not a council asset, but a real state health facility inside the LGA, of the four in the statewide dataset only one point actually falls inside the boundary once checked against the real LGA shape rather than a loose bounding box.',
+    source: 'Council GIS export, "Obstetric_Hospitals_2014.shp" (statewide, GDA2020 SA Lambert), reprojected and matched to the real LGA boundary',
+  },
+  {
     id: 'roads',
     name: 'Roads',
     group: 'transport',
@@ -545,8 +576,18 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#334155',
     unit: 'rail corridor',
-    note: 'Passenger rail corridors and level crossings.',
-    source: 'Rail network',
+    note: 'Passenger rail corridors, from the statewide rail network layer clipped to the LGA.',
+    source: 'Project GIS drive export, Railways_GDA2020.shp (Adelaide-wide), clipped to the LGA',
+  },
+  {
+    id: 'train-stations',
+    name: 'Train Stations',
+    group: 'transport',
+    kind: 'vector',
+    hi: '#334155',
+    unit: 'stations',
+    note: 'Real train station locations inside the LGA, from the same rail network export as the Railways layer.',
+    source: 'Council GIS export, "Train Stations.shp"',
   },
   {
     id: 'pt-freq',
@@ -770,6 +811,29 @@ const SA1_BOUNDARIES = sa1BoundaryData as RealBoundary[];
  *  rather than ABS statistical geography. Used as the outer edge of the
  *  map; the 8 SA2 shapes still draw individually inside it. */
 const LGA_BOUNDARY = lgaBoundaryData as { name: string; areaSqKm: number; ring: LatLngTuple[] };
+
+/* ------------------------------------------------------------------ *
+ * Real vector layers from QGIS
+ *
+ * Railways, Train Stations, Watercourses and Waterbodies came as
+ * statewide shapefiles (Railways and the two TOPO_ layers), already in
+ * WGS84 lat/lng; each was clipped down to lines and polygons touching
+ * the LGA plus a 2km buffer, without simplifying or redrawing anything
+ * kept. Obstetric Hospitals came in GDA2020 SA Lambert (EPSG:8058, a
+ * statewide grid with a 1,000,000/2,000,000 false easting/northing,
+ * identified from its bounding box and confirmed by reprojecting it
+ * into South Australia's real extent) and was reprojected, then tested
+ * against the real LGA ring rather than a bounding box: of 4 statewide
+ * points nearby, only 1 actually falls inside the boundary. None of the
+ * four shapefiles came with an attribute table (.dbf), so there are no
+ * names or classifications to show, only real position and shape.
+ * ------------------------------------------------------------------ */
+
+const RAILWAYS = railwaysData as LatLngTuple[][];
+const TRAIN_STATIONS = trainStationsData as LatLngTuple[];
+const WATERCOURSES = watercoursesData as LatLngTuple[][];
+const WATERBODIES = waterbodiesData as LatLngTuple[][][];
+const OBSTETRIC_HOSPITALS = obstetricHospitalsData as LatLngTuple[];
 
 const SA2_BOUNDARY_BY_CODE: Record<string, RealBoundary> = Object.fromEntries(
   SA2_BOUNDARIES.map((b) => [b.code, b]),
@@ -2604,29 +2668,24 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('watercourses')) {
       const c = LAYER_BY_ID['watercourses'].hi!;
-      haloLine(
-        [
-          [-34.9, 138.49],
-          [-34.905, 138.53],
-          [-34.93, 138.552],
-          [-34.925, 138.585],
-        ] as LatLngTuple[],
-        { color: c, weight: 2.4, opacity: vecAlpha('watercourses') },
-      );
-      haloLine(
-        [
-          [-34.83, 138.545],
-          [-34.855, 138.555],
-          [-34.872, 138.535],
-          [-34.885, 138.505],
-        ] as LatLngTuple[],
-        {
-          color: c,
-          weight: 1.6,
-          opacity: vecAlpha('watercourses'),
-          dashArray: '4 3',
-        },
-      );
+      for (const line of WATERCOURSES) {
+        haloLine(line, { color: c, weight: 1.6, opacity: vecAlpha('watercourses') });
+      }
+    }
+
+    if (checkedLayers.has('waterbodies')) {
+      const c = LAYER_BY_ID['waterbodies'].hi!;
+      for (const rings of WATERBODIES) {
+        push(
+          L.polygon(rings, {
+            color: c,
+            weight: 1,
+            fillColor: c,
+            fillOpacity: vecAlpha('waterbodies') * 0.55,
+            opacity: vecAlpha('waterbodies'),
+          }),
+        );
+      }
     }
 
     if (checkedLayers.has('roads')) {
@@ -2674,33 +2733,47 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('railways')) {
       const c = LAYER_BY_ID['railways'].hi!;
-      push(
-        L.polyline(
-          [
-            [-34.913, 138.573],
-            [-34.888, 138.55],
-            [-34.855, 138.535],
-            [-34.83, 138.52],
-          ] as LatLngTuple[],
-          { color: c, weight: 2.2, opacity: vecAlpha('railways') },
-        ),
-      );
-      push(
-        L.polyline(
-          [
-            [-34.913, 138.573],
-            [-34.888, 138.55],
-            [-34.855, 138.535],
-            [-34.83, 138.52],
-          ] as LatLngTuple[],
-          {
+      for (const line of RAILWAYS) {
+        push(L.polyline(line, { color: c, weight: 2.2, opacity: vecAlpha('railways') }));
+        push(
+          L.polyline(line, {
             color: '#fff',
             weight: 1,
             opacity: vecAlpha('railways'),
             dashArray: '2 5',
-          },
-        ),
-      );
+          }),
+        );
+      }
+    }
+
+    if (checkedLayers.has('train-stations')) {
+      const c = LAYER_BY_ID['train-stations'].hi!;
+      for (const [lat, lng] of TRAIN_STATIONS) {
+        push(
+          L.circleMarker([lat, lng] as LatLngTuple, {
+            radius: 4,
+            color: '#fff',
+            weight: 1.4,
+            fillColor: c,
+            fillOpacity: vecAlpha('train-stations'),
+          }).bindTooltip('Train station', { direction: 'top', offset: [0, -3] }),
+        );
+      }
+    }
+
+    if (checkedLayers.has('obstetric-hospitals')) {
+      const c = LAYER_BY_ID['obstetric-hospitals'].hi!;
+      for (const [lat, lng] of OBSTETRIC_HOSPITALS) {
+        push(
+          L.circleMarker([lat, lng] as LatLngTuple, {
+            radius: 6,
+            color: '#fff',
+            weight: 1.8,
+            fillColor: c,
+            fillOpacity: vecAlpha('obstetric-hospitals'),
+          }).bindTooltip('Obstetric hospital (state facility, not council)', { direction: 'top', offset: [0, -3] }),
+        );
+      }
     }
 
     if (checkedLayers.has('cycling')) {
