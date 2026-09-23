@@ -151,16 +151,6 @@ interface Suburb {
   assets: Asset[];
 }
 
-type RegionFamily =
-  | 'amber'
-  | 'blue'
-  | 'cyan'
-  | 'teal'
-  | 'emerald'
-  | 'rose'
-  | 'violet'
-  | 'indigo';
-
 // SA1Area is declared further down, next to the real boundary data it is
 // built from (see "SA1 sub-areas").
 
@@ -233,17 +223,6 @@ const BLUEPRINT_ACCENT: Record<BlueprintId, string> = {
 };
 
 /** Fill families for SA1 sub-areas, one per parent SA2. */
-const FAMILY_COLOR: Record<RegionFamily, string> = {
-  amber: '#F59E0B',
-  blue: '#3B82F6',
-  cyan: '#06B6D4',
-  teal: '#14B8A6',
-  emerald: '#10B981',
-  rose: '#F43F5E',
-  violet: '#8B5CF6',
-  indigo: '#6366F1',
-};
-
 const CATEGORY_LABEL: Record<AssetCategory, string> = {
   road: 'Road',
   stormwater: 'Stormwater',
@@ -1519,20 +1498,7 @@ interface SA1Area {
   parentId: string;
   path: LatLngTuple[];
   centroid: LatLngTuple;
-  family: RegionFamily;
 }
-
-/** One tint per real SA2, purely to tell adjoining SA1s apart on the map. */
-const SA1_FAMILY: Record<string, RegionFamily> = {
-  'woodville-cheltenham': 'amber',
-  'west-lakes': 'blue',
-  'seaton-grange': 'cyan',
-  'henley-beach': 'teal',
-  [BEVERLEY_ID]: 'emerald',
-  'royal-park-hendon': 'rose',
-  'hindmarsh-brompton': 'violet',
-  'flinders-park': 'indigo',
-};
 
 const SA1S: SA1Area[] = SA1_BOUNDARIES.map((b) => {
   const parentId = SA2_CODE_TO_SUBURB_ID[b.sa2Code ?? ''];
@@ -1545,7 +1511,6 @@ const SA1S: SA1Area[] = SA1_BOUNDARIES.map((b) => {
     parentId,
     path: b.ring,
     centroid,
-    family: SA1_FAMILY[parentId],
   };
 });
 
@@ -2567,11 +2532,13 @@ function MapView(props: MapViewProps) {
 
     // A canvas layer (heat vulnerability, tree canopy) still colours the
     // SA2 polygon underneath it at the same value, the per-cell texture is
-    // extra grain drawn on top, not a replacement for a visible fill.
-    // Compare mode keeps both measures on plain polygons only, a canvas
-    // grid cannot stay legible underneath a second surface at 40 percent.
+    // extra grain drawn on top, not a replacement for a visible fill. The
+    // grid is built from each real SA2's own shape, so it draws the same
+    // way whether SA1 or SA2 boundaries sit on top of it. Compare mode
+    // keeps both measures on plain polygons only, a canvas grid cannot
+    // stay legible underneath a second surface at 40 percent.
     const canvasSurfaces = surfaces.filter(
-      (s) => LAYER_BY_ID[s.id]?.kind === 'canvas' && !sa1Mode && !compare,
+      (s) => LAYER_BY_ID[s.id]?.kind === 'canvas' && !compare,
     );
     const polySurfaces = surfaces;
 
@@ -2592,19 +2559,25 @@ function MapView(props: MapViewProps) {
     const additionalSurfaces = polySurfaces.slice(1);
 
     if (sa1Mode) {
-      // No layer is modelled at SA1 resolution, so SA1 fill never varies by
-      // the active layer, only by which real SA2 the polygon sits inside.
-      // Saying nothing here would look like an oversight; the legend below
-      // states this plainly instead.
+      // No layer is modelled independently at SA1 resolution, so each SA1
+      // takes the same value, and the same fill, as the real SA2 it sits
+      // inside, rather than an unrelated tint that has nothing to do with
+      // whatever layer is actually checked. The legend below says so.
       for (const a of SA1S) {
         const isSel = selectedId === a.parentId;
+        const parent = SUBURB_BY_ID[a.parentId];
+        const norm = primary && parent ? normLayerValue(primary.id, parent, year, sc) : null;
         push(
           L.polygon(a.path, {
             color: isSel ? ACCENT : darkBase ? '#EAF2F1' : '#40514F',
             weight: isSel ? 1.6 : 0.5,
             opacity: 0.85,
-            fillColor: FAMILY_COLOR[a.family],
-            fillOpacity: overlayOpacity * 0.42,
+            fillColor:
+              norm !== null ? choroplethColor(primary.id, norm) : '#9FB0AE',
+            fillOpacity:
+              norm !== null
+                ? opacityFor(primary.id) * primary.alpha * 0.78
+                : overlayOpacity * 0.14,
             interactive: true,
           })
             .on('mouseover', () => setHoveredSuburb(a.parentId))
@@ -2640,9 +2613,24 @@ function MapView(props: MapViewProps) {
        mode that's exactly the second measure at 40 percent, otherwise it
        is however many other layers are checked, each at its own slider,
        so any combination of hazard, vulnerability or other layers reads
-       against any other rather than only the first one checked winning. */
-    if (!sa1Mode) {
-      for (const extra of additionalSurfaces) {
+       against any other rather than only the first one checked winning.
+       Same rule in SA1 mode: each SA1 stacks its parent SA2's value. */
+    for (const extra of additionalSurfaces) {
+      if (sa1Mode) {
+        for (const a of SA1S) {
+          const parent = SUBURB_BY_ID[a.parentId];
+          if (!parent) continue;
+          const norm = normLayerValue(extra.id, parent, year, sc);
+          push(
+            L.polygon(a.path, {
+              stroke: false,
+              fillColor: choroplethColor(extra.id, norm),
+              fillOpacity: opacityFor(extra.id) * extra.alpha * (compare ? 1 : 0.65),
+              interactive: false,
+            }),
+          );
+        }
+      } else {
         for (const s of SUBURBS) {
           const norm = normLayerValue(extra.id, s, year, sc);
           push(
@@ -3262,28 +3250,35 @@ function MapView(props: MapViewProps) {
         </div>
       )}
 
-      {/* SA1 mode never carries a choropleth, no layer is modelled at that
-          resolution, so it gets its own legend rather than a ramp that
-          would misstate what the fill actually shows. */}
-      {sa1Mode && !hovered && (
+      {/* SA1 fallback when nothing is checked: no layer is modelled
+          independently at SA1 resolution, so say that plainly instead of
+          showing an empty ramp. Once a layer is checked, the ramp legend
+          below applies exactly as it does at SA2, each SA1 is just
+          showing its parent SA2's value. */}
+      {sa1Mode && legendLayers.length === 0 && !hovered && (
         <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[230px]">
           <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
             <div className="text-[12px] font-semibold text-ink">
               Real SA1 boundaries
             </div>
             <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
-              257 ABS ASGS 2021 areas, tinted by which SA2 they sit inside.
-              No layer is modelled at SA1 resolution, so fill colour carries
-              no other value here.
+              257 ABS ASGS 2021 areas. Check a layer to colour them, each
+              SA1 shows its parent SA2's value, no layer is modelled
+              independently at SA1 resolution.
             </div>
           </div>
         </div>
       )}
 
-      {/* Ramp legend for whatever surface is painted, SA2 view only. */}
-      {legendLayers.length > 0 && !hovered && !sa1Mode && (
+      {/* Ramp legend for whatever surface is painted, same at SA1 and SA2. */}
+      {legendLayers.length > 0 && !hovered && (
         <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[220px]">
           <div className="rounded-[6px] border border-line bg-white/95 p-2 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
+            {sa1Mode && (
+              <div className="mb-1.5 text-[10.5px] leading-[1.4] text-ink-3">
+                Each SA1 shown at its parent SA2's value.
+              </div>
+            )}
             {legendLayers.map((id, i) => {
               const def = LAYER_BY_ID[id];
               const [lo, hi] = layerExtent(id, year, sc);
@@ -4344,6 +4339,36 @@ function RightPanelShell({
 }
 
 /* ------------------------------------------------------------------ *
+ * Layer info panel
+ *
+ * Checking a layer is a deliberate act, same as loading a blueprint,
+ * so it gets the same right-panel treatment rather than only a hover
+ * tooltip easy to miss on a live demo: what the layer is, where it
+ * came from, and whether it's real or still indicative.
+ * ------------------------------------------------------------------ */
+
+function LayerInfoPanel({
+  layer,
+  onClose,
+}: {
+  layer: LayerDef;
+  onClose: () => void;
+}) {
+  const stillIndicative = layer.kind === 'choropleth' || layer.kind === 'canvas';
+  return (
+    <RightPanelShell accent={layer.hi ?? ACCENT} eyebrow="Layer" title={layer.name} onClose={onClose}>
+      <div className="px-2.5 py-2">
+        <p className="text-[12.5px] leading-[1.55] text-ink-2">{layer.note}</p>
+        <div className="num mt-2 text-[11px] text-ink-3">
+          Unit: {layer.unit} · {layer.source}
+        </div>
+        {stillIndicative && <DemoDataNote className="mt-2.5" />}
+      </div>
+    </RightPanelShell>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Place analysis panel
  *
  * Risk scores, moved out of the left panel because a score is a
@@ -4573,9 +4598,11 @@ function HelpTab() {
             edges.
           </p>
           <p className="mt-1.5">
-            No layer in this tool is modelled down at SA1 level yet, so the
-            SA1 view just shows the boundaries, coloured by which SA2 each
-            one sits in. That colour isn't a measurement of anything.
+            No layer in this tool is modelled down at SA1 level yet, so
+            each SA1 shows the same value, and the same colour, as the
+            real SA2 it sits inside, once a layer is checked. It's not a
+            finer measurement, just the honest resolution of what's
+            actually there.
           </p>
         </>,
       )}
@@ -6549,6 +6576,12 @@ export default function App() {
   const [planYear, setPlanYear] = useState(2041);
   const [showQuadrant, setShowQuadrant] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  // Checking a layer on opens its description on the right, the same
+  // way choosing a blueprint does, so a hover tooltip isn't the only
+  // way to find out what a layer actually is mid-demo. Cleared when
+  // that same layer is unchecked; left alone if a different layer gets
+  // unchecked while its panel is showing.
+  const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
   // Building types switched off in Layers, Assets. Lifted to root so the
   // map and Place's buildings register both read the one state. Starts
   // with everything off, matching every other overlay in Layers, on the
@@ -6567,11 +6600,13 @@ export default function App() {
   // Analysis has no right panel of its own, its chart and table sit
   // inline in the left tab, comparing two layers is still just reading
   // data, not judging it.
-  const rightPanelMode: 'blueprint' | 'place' | null = showBlueprintPanel
+  const rightPanelMode: 'blueprint' | 'place' | 'layer' | null = showBlueprintPanel
     ? 'blueprint'
     : panelTab === 'place' && selectedId
       ? 'place'
-      : null;
+      : panelTab === 'layers' && layerInfoId
+        ? 'layer'
+        : null;
   const rightPanelAccent =
     rightPanelMode === 'blueprint' && activeBlueprint
       ? BLUEPRINT_ACCENT[activeBlueprint]
@@ -6600,16 +6635,24 @@ export default function App() {
 
   // Hand-picking a layer is a deliberate departure from whatever blueprint
   // was loaded, its curated set no longer describes what's on the map, so
-  // it stops claiming to and the panel goes back to plain Layers.
+  // it stops claiming to and the panel goes back to plain Layers. Turning
+  // a layer on also opens its description on the right; turning the same
+  // one back off closes it again.
   const toggleLayer = useCallback((id: string) => {
     setActiveBlueprint(null);
+    const isOn = checkedLayers.has(id);
     setCheckedLayers((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
+    if (isOn) {
+      setLayerInfoId((cur) => (cur === id ? null : cur));
+    } else {
+      setLayerInfoId(id);
+    }
+  }, [checkedLayers]);
 
   const setLayerOpacity = useCallback((id: string, v: number) => {
     setLayerOpacityState((prev) => ({ ...prev, [id]: v }));
@@ -6799,6 +6842,12 @@ export default function App() {
         />
       )}
       {rightPanelMode === 'place' && <PlaceAnalysisPanel selectedId={selectedId} />}
+      {rightPanelMode === 'layer' && layerInfoId && (
+        <LayerInfoPanel
+          layer={LAYER_BY_ID[layerInfoId]}
+          onClose={() => setLayerInfoId(null)}
+        />
+      )}
     </div>
   );
 }
