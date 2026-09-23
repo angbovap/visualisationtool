@@ -2578,27 +2578,10 @@ function MapView(props: MapViewProps) {
     const polySurfaces = surfaces;
 
     for (const cs of canvasSurfaces) {
-      if (cs.id === 'heat-vuln') {
-        // Real grid, replaces the old synthetic grain entirely: each
-        // cell is coloured by its own real UHI category rather than an
-        // interpolated per-suburb value.
-        const def = LAYER_BY_ID['heat-vuln'];
-        for (const cell of HEAT_VULNERABILITY) {
-          const t = (cell.uhiCat - 2) / 2;
-          push(
-            L.polygon(cell.rings, {
-              stroke: false,
-              fillColor: lerpHex(def.lo!, def.hi!, t),
-              fillOpacity: opacityFor('heat-vuln') * cs.alpha * 0.75,
-              interactive: true,
-            }).bindTooltip(
-              `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
-              { direction: 'top', offset: [0, -3] },
-            ),
-          );
-        }
-        continue;
-      }
+      // Heat Vulnerability's real grid draws later, after the base fill,
+      // see below: this loop runs before that fill and anything pushed
+      // here would just get painted over by it.
+      if (cs.id === 'heat-vuln') continue;
       const layer = makeCanvasLayer(
         LAYER_BY_ID[cs.id],
         opacityFor(cs.id) * cs.alpha * 0.55,
@@ -2703,6 +2686,30 @@ function MapView(props: MapViewProps) {
             }),
           );
         }
+      }
+    }
+
+    /* Heat Vulnerability's real grid, drawn after the base fill above so
+       it actually sits on top rather than getting painted over by it.
+       Each cell is coloured by its own real UHI category, not an
+       interpolated per-suburb value; the fake canvas grain this used to
+       draw is skipped entirely, see canvasSurfaces above. */
+    if (checkedLayers.has('heat-vuln') && !compare) {
+      const def = LAYER_BY_ID['heat-vuln'];
+      const alpha = opacityFor('heat-vuln');
+      for (const cell of HEAT_VULNERABILITY) {
+        const t = (cell.uhiCat - 2) / 2;
+        push(
+          L.polygon(cell.rings, {
+            stroke: false,
+            fillColor: lerpHex(def.lo!, def.hi!, t),
+            fillOpacity: alpha * 0.8,
+            interactive: true,
+          }).bindTooltip(
+            `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
+            { direction: 'top', offset: [0, -3] },
+          ),
+        );
       }
     }
 
