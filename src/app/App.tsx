@@ -652,6 +652,25 @@ const GROUP_LABEL: Record<LayerGroup, string> = {
   planning: 'Planning & Land Use',
 };
 
+// The layers actually sourced from council's GIS export, now backed by
+// real geometry and, where relevant (Heat Vulnerability), a real
+// attribute value rather than the fabricated per-suburb figures the
+// rest of the tool (Blueprints, Ranking, Analysis, Place's risk
+// scores) still runs on unchanged. Three jobs: scopes what the Layers
+// tab shows and lets a person check (everything else in LAYERS still
+// exists and still renders if checkedLayers somehow contains it,
+// hiding, not deleting), flags which layer is real for the Layers-tab
+// info panel (unrelated to a layer's `kind`), and is the Heat
+// Vulnerability blueprint's own layer set below.
+const WORKSHOP_LAYER_IDS = new Set([
+  'watercourses',
+  'waterbodies',
+  'railways',
+  'train-stations',
+  'obstetric-hospitals',
+  'heat-vuln',
+]);
+
 /* ------------------------------------------------------------------ *
  * Blueprints
  *
@@ -683,7 +702,9 @@ const BLUEPRINTS: Blueprint[] = [
     accent: BLUEPRINT_ACCENT['heat-vuln'],
     description:
       'Surface heat against canopy deficit, age structure and disadvantage. This is a sensitivity picture, not a temperature map. Two places can be equally hot and not equally at risk.',
-    layers: ['heat-vuln', 'tree-canopy', 'seifa', 'pt-stops'],
+    // Turns on every real layer from council's GIS export, not just the
+    // heat grid, since this is the one blueprint tied to real data.
+    layers: [...WORKSHOP_LAYER_IDS],
     rank: 'heatScore',
     steps: [2021, 2031, 2036, 2041],
     watch: [
@@ -830,24 +851,6 @@ interface HeatVulnCell {
   svi: number;
 }
 const HEAT_VULNERABILITY = heatVulnerabilityData as HeatVulnCell[];
-
-// The layers actually sourced from council's GIS export, now backed by
-// real geometry and, where relevant (Heat Vulnerability), a real
-// attribute value rather than the fabricated per-suburb figures the
-// rest of the tool (Blueprints, Ranking, Analysis, Place's risk
-// scores) still runs on unchanged. Two jobs: scopes what the Layers
-// tab shows and lets a person check (everything else in LAYERS still
-// exists and still renders if checkedLayers somehow contains it,
-// hiding, not deleting), and flags which layer is real for the
-// Layers-tab info panel, unrelated to a layer's `kind`.
-const WORKSHOP_LAYER_IDS = new Set([
-  'watercourses',
-  'waterbodies',
-  'railways',
-  'train-stations',
-  'obstetric-hospitals',
-  'heat-vuln',
-]);
 
 const SA2_BOUNDARY_BY_CODE: Record<string, RealBoundary> = Object.fromEntries(
   SA2_BOUNDARIES.map((b) => [b.code, b]),
@@ -3530,7 +3533,12 @@ function LayersTab({
             >
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() => toggleLayer(l.id)}
+                  onClick={() =>
+                    // Heat Vulnerability opens the fuller Blueprint view
+                    // instead of the plain layer-info panel, it's the one
+                    // blueprint doing real work right now.
+                    l.id === 'heat-vuln' ? applyBlueprint('heat-vuln') : toggleLayer(l.id)
+                  }
                   className="flex flex-1 items-center gap-1.5 text-left"
                 >
                   <Check on={checked} />
@@ -3648,11 +3656,14 @@ function LayersTab({
       )}
 
       {/* Blueprints. Pinned below the sections rather than one of them,
-          it is a quick action, not something to browse. */}
+          it is a quick action, not something to browse. Scoped down to
+          Heat Vulnerability for the workshop build, the one blueprint
+          tied to real data now; the other 5 still exist and still work
+          if activated some other way, just hidden here for now. */}
       <div className="border-t border-line px-2.5 py-2.5">
         <PanelHeading>Blueprints</PanelHeading>
-        <div className="grid grid-cols-2 gap-1.5">
-          {BLUEPRINTS.map((b) => {
+        <div className="grid grid-cols-1 gap-1.5">
+          {BLUEPRINTS.filter((b) => b.id === 'heat-vuln').map((b) => {
             const on = activeBlueprint === b.id;
             return (
               <button
@@ -3675,13 +3686,18 @@ function LayersTab({
                   {b.title}
                 </span>
                 <span className="num mt-[2px] block text-[11px] text-ink-3">
-                  {b.layers.length} layers
+                  {b.layers.length} layers, all real
                 </span>
               </button>
             );
           })}
         </div>
-        <DemoDataNote className="mt-2.5" />
+        <div className="mt-2.5 rounded-[5px] border border-dashed border-[#C7B8E8] bg-[#F5F1FC] px-2 py-1.5 text-[11.5px] leading-[1.5] text-[#5B3FA3]">
+          <span className="font-semibold">Work in progress.</span> The map
+          layers here are real. The ranking and comparison numbers still
+          come from the older per-suburb placeholder, that part isn't
+          finished yet.
+        </div>
       </div>
     </div>
   );
@@ -5059,8 +5075,25 @@ function BlueprintPanel({
 }: BlueprintPanelProps) {
   const bp = blueprint;
   const isPop = bp.id === 'population';
+  const isHeatVuln = bp.id === 'heat-vuln';
   const selected = selectedId ? SUBURB_BY_ID[selectedId] : null;
   const glance = useMemo(() => glanceFor(bp, year, sc), [bp, year, sc]);
+
+  // Real summary of the real grid, shown ahead of the fabricated "LGA at
+  // a glance" stats below so the one thing that's actually real about
+  // this blueprint reads first, not buried under placeholder numbers.
+  const heatSummary = useMemo(() => {
+    if (!isHeatVuln) return null;
+    const byCat: Record<number, number> = {};
+    let sviMin = Infinity;
+    let sviMax = -Infinity;
+    for (const cell of HEAT_VULNERABILITY) {
+      byCat[cell.uhiCat] = (byCat[cell.uhiCat] ?? 0) + 1;
+      if (cell.svi < sviMin) sviMin = cell.svi;
+      if (cell.svi > sviMax) sviMax = cell.svi;
+    }
+    return { total: HEAT_VULNERABILITY.length, byCat, sviMin, sviMax };
+  }, [isHeatVuln]);
 
   // The population blueprint reranks on whichever metric the toggle is set
   // to, since the four metrics answer genuinely different questions.
@@ -5133,6 +5166,46 @@ function BlueprintPanel({
               {bp.description}
             </p>
 
+            {heatSummary && (
+              <div className="border-b border-line px-2.5 py-2">
+                <PanelHeading
+                  right={
+                    <span className="num text-[11px] text-ink-3">
+                      {heatSummary.total} cells
+                    </span>
+                  }
+                >
+                  Real Urban Heat Island grid
+                </PanelHeading>
+                <p className="text-[11.5px] leading-[1.5] text-ink-2">
+                  Each cell is under a hectare, well finer than SA1. Category
+                  runs 2 (lowest, present here) to 4 (highest); every cell
+                  also carries a real Social Vulnerability Index, from{' '}
+                  {heatSummary.sviMin.toFixed(2)} to {heatSummary.sviMax.toFixed(2)}{' '}
+                  across the LGA, shown on hover on the map.
+                </p>
+                <div className="mt-1.5 flex gap-1.5">
+                  {[2, 3, 4].map((cat) => (
+                    <div
+                      key={cat}
+                      className="flex-1 rounded-[5px] border border-line px-1.5 py-1"
+                    >
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="h-[9px] w-[9px] shrink-0 rounded-[2px]"
+                          style={{ background: lerpHex(LAYER_BY_ID['heat-vuln'].lo!, LAYER_BY_ID['heat-vuln'].hi!, (cat - 2) / 2) }}
+                        />
+                        <span className="text-[11px] text-ink-3">Cat {cat}</span>
+                      </div>
+                      <span className="num mt-[2px] block text-[13px] font-semibold text-ink">
+                        {heatSummary.byCat[cat] ?? 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {isPop && (
               <div className="border-b border-line px-2.5 py-2">
                 <PanelHeading>Metric</PanelHeading>
@@ -5167,6 +5240,12 @@ function BlueprintPanel({
 
             <div className="px-2.5 py-2">
               <PanelHeading>LGA at a glance</PanelHeading>
+              {isHeatVuln && (
+                <p className="mb-1.5 text-[10.5px] leading-[1.4] text-ink-3">
+                  Older per-suburb placeholder, not the real grid above.
+                  Still being worked into the rest of this view.
+                </p>
+              )}
               <div className="space-y-1">
                 {glance.map((g) => (
                   <div
