@@ -2751,15 +2751,23 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('obstetric-hospitals')) {
       const c = LAYER_BY_ID['obstetric-hospitals'].hi!;
+      // A plain dot reads as just another point on a map full of them.
+      // The standard white-badge-with-a-cross hospital sign reads as
+      // "hospital" on sight, which is the point of a critical facility.
+      const hospitalIcon = L.divIcon({
+        html: `<div style="width:20px;height:20px;background:#fff;border:2px solid ${c};border-radius:4px;box-shadow:0 1px 4px rgba(20,32,31,0.35);display:flex;align-items:center;justify-content:center;">
+          <svg width="11" height="11" viewBox="0 0 11 11"><rect x="4.3" y="0" width="2.4" height="11" fill="${c}"/><rect x="0" y="4.3" width="11" height="2.4" fill="${c}"/></svg>
+        </div>`,
+        className: '',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
       for (const [lat, lng] of OBSTETRIC_HOSPITALS) {
         push(
-          L.circleMarker([lat, lng] as LatLngTuple, {
-            radius: 6,
-            color: '#fff',
-            weight: 1.8,
-            fillColor: c,
-            fillOpacity: vecAlpha('obstetric-hospitals'),
-          }).bindTooltip('Obstetric hospital (state facility, not council)', { direction: 'top', offset: [0, -3] }),
+          L.marker([lat, lng] as LatLngTuple, {
+            icon: hospitalIcon,
+            opacity: vecAlpha('obstetric-hospitals'),
+          }).bindTooltip('Obstetric hospital (state facility, not council)', { direction: 'top', offset: [0, -10] }),
         );
       }
     }
