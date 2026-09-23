@@ -24,6 +24,9 @@ alone with no emit.
   - `sa2Boundaries.json`, `sa1Boundaries.json` — exact ABS ASGS 2021
     boundaries for Charles Sturt's 8 SA2s and 257 SA1s, fetched from
     `geo.abs.gov.au`, not drawn.
+  - `lgaBoundary.json` — the actual Council LGA boundary, from council's
+    own GIS export (a QGIS shapefile), not an ABS statistical
+    approximation. Draws as the map's bold outer edge.
   - `ccsBuildings.json` — 434 real council buildings, extracted and
     collapsed from council's own asset register export (`CCS_Buildings.xlsx`).
   - `ccsBuildingsGeocoded.json` — approximate map positions for 263 of
@@ -40,9 +43,10 @@ alone with no emit.
 
 This tool mixes two kinds of data, and every panel says which is which:
 
-- **Real, sourced data**: the SA1/SA2 boundaries, the buildings register,
-  the geocoded map positions, and the consequence framework's category and
-  metric names (from project correspondence with council's planning team).
+- **Real, sourced data**: the SA1/SA2 boundaries, the Council LGA
+  boundary, the buildings register, the geocoded map positions, and the
+  consequence framework's category and metric names (from project
+  correspondence with council's planning team).
 - **Indicative demonstration data**: population, hazard scores (heat,
   flood, coastal, drought), SEIFA, and the other suburb-level figures used
   to shape the map and demonstrate the mechanism. None of these come from

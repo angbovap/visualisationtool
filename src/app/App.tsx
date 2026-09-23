@@ -35,6 +35,13 @@ import ccsBuildingsRaw from '@/data/ccsBuildings.json';
 import sa2BoundaryData from '@/data/sa2Boundaries.json';
 import sa1BoundaryData from '@/data/sa1Boundaries.json';
 
+// The actual Council LGA boundary, not an ABS statistical approximation
+// of it. Supplied as a QGIS shapefile (geometry only, WGS84 lat/lng
+// confirmed against its own bounding box), parsed to a single ring. It
+// replaces the 8 SA2 shapes as the outer edge of the LGA on the map;
+// those still draw individually for the suburb divisions inside it.
+import lgaBoundaryData from '@/data/lgaBoundary.json';
+
 // Approximate positions for real buildings, geocoded from the register's
 // own address field via OpenStreetMap Nominatim (free, no key, one-time
 // batch at their 1 request/second limit). Not part of the source export.
@@ -758,6 +765,11 @@ interface RealBoundary {
 
 const SA2_BOUNDARIES = sa2BoundaryData as RealBoundary[];
 const SA1_BOUNDARIES = sa1BoundaryData as RealBoundary[];
+
+/** The real Council LGA boundary, one ring, from council's own GIS export
+ *  rather than ABS statistical geography. Used as the outer edge of the
+ *  map; the 8 SA2 shapes still draw individually inside it. */
+const LGA_BOUNDARY = lgaBoundaryData as { name: string; areaSqKm: number; ring: LatLngTuple[] };
 
 const SA2_BOUNDARY_BY_CODE: Record<string, RealBoundary> = Object.fromEntries(
   SA2_BOUNDARIES.map((b) => [b.code, b]),
@@ -2833,19 +2845,31 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    /* Boundary outlines sit above every fill so they stay legible. */
+    /* Boundary outlines sit above every fill so they stay legible. The
+       real council LGA shape (from council's own GIS, not an ABS
+       statistical approximation) draws as the bold outer edge; the 8
+       SA2 shapes draw lighter, inside it, for the suburb divisions. */
     if (boundsMode === 'sa2') {
       for (const ring of SUBURBS.map((s) => s.path)) {
         push(
           L.polygon(ring, {
             fill: false,
             color: darkBase ? '#F2F7F6' : '#2B3C3A',
-            weight: 0.9,
-            opacity: darkBase ? 0.75 : 0.55,
+            weight: 0.7,
+            opacity: darkBase ? 0.55 : 0.4,
             interactive: false,
           }),
         );
       }
+      push(
+        L.polygon(LGA_BOUNDARY.ring, {
+          fill: false,
+          color: darkBase ? '#F2F7F6' : '#14201F',
+          weight: 1.8,
+          opacity: darkBase ? 0.9 : 0.8,
+          interactive: false,
+        }),
+      );
     }
 
     /* Real buildings, on top of everything else, since the point of
@@ -4448,6 +4472,12 @@ function HelpTab() {
             is smaller, 257 real areas spread across those same eight,
             between 14 and 46 per SA2. Both are the real ABS ASGS 2021
             boundaries, not simplified shapes.
+          </p>
+          <p className="mt-1.5">
+            The bold outer edge is a different source again: council's own
+            LGA boundary, not the ABS's statistical approximation of it,
+            which is why it doesn't sit exactly on top of the outer SA2
+            edges.
           </p>
           <p className="mt-1.5">
             No layer in this tool is modelled down at SA1 level yet, so the
