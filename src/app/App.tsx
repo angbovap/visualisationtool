@@ -3366,6 +3366,22 @@ interface LayersTabProps {
   setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
+// Scoped down for the workshop build to the layers actually sourced from
+// council's own GIS export, plus Heat Vulnerability (still indicative
+// pending its own real attribute table, see LAYERS above). Everything
+// else in LAYERS still exists and still renders if checkedLayers somehow
+// contains it (Blueprints, Ranking, Analysis and Place's risk scores
+// still read the full fabricated catalogue), this only narrows what
+// Layers itself shows and lets a person check. Hiding, not deleting.
+const WORKSHOP_LAYER_IDS = new Set([
+  'watercourses',
+  'waterbodies',
+  'railways',
+  'train-stations',
+  'obstetric-hospitals',
+  'heat-vuln',
+]);
+
 function LayersTab({
   checkedLayers,
   toggleLayer,
@@ -3379,6 +3395,7 @@ function LayersTab({
   setBuildingOffTypes,
 }: LayersTabProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
+  const visibleLayers = LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id));
 
   // Ordered by how often a council user needs it: the hazard itself,
   // what it threatens (assets), who it threatens, then the supporting
@@ -3389,22 +3406,20 @@ function LayersTab({
   type LayersSection = LayerGroup | 'assets';
   const [activeTab, setActiveTab] = useState<LayersSection>('hazard');
 
-  const groups: LayerGroup[] = [
-    'hazard',
-    'vulnerability',
-    'transport',
-    'infrastructure',
-    'planning',
-  ];
   const assetsOnCount = ALL_BUILDING_TYPES.size - buildingOffTypes.size;
 
-  const categories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
+  // Dwelling Density has no home in visibleLayers yet, it's the one of
+  // the 8 workshop layers still waiting on its own attribute table (see
+  // CoCS_DwellingDensity2021.shp in the project notes), so Vulnerability
+  // stays in the list with a fixed count of 1 to hold its place rather
+  // than disappearing as if it were never promised.
+  const allCategories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
     {
       value: 'hazard',
       label: GROUP_LABEL.hazard,
       color: '#DC2626',
-      on: LAYERS.filter((l) => l.group === 'hazard' && checkedLayers.has(l.id)).length,
-      total: LAYERS.filter((l) => l.group === 'hazard').length,
+      on: visibleLayers.filter((l) => l.group === 'hazard' && checkedLayers.has(l.id)).length,
+      total: visibleLayers.filter((l) => l.group === 'hazard').length,
     },
     {
       value: 'assets',
@@ -3417,34 +3432,39 @@ function LayersTab({
       value: 'vulnerability',
       label: GROUP_LABEL.vulnerability,
       color: '#7C3AED',
-      on: LAYERS.filter((l) => l.group === 'vulnerability' && checkedLayers.has(l.id)).length,
-      total: LAYERS.filter((l) => l.group === 'vulnerability').length,
+      on: 0,
+      total: 1,
     },
     {
       value: 'transport',
       label: GROUP_LABEL.transport,
       color: '#0891B2',
-      on: LAYERS.filter((l) => l.group === 'transport' && checkedLayers.has(l.id)).length,
-      total: LAYERS.filter((l) => l.group === 'transport').length,
+      on: visibleLayers.filter((l) => l.group === 'transport' && checkedLayers.has(l.id)).length,
+      total: visibleLayers.filter((l) => l.group === 'transport').length,
     },
     {
       value: 'infrastructure',
       label: GROUP_LABEL.infrastructure,
       color: '#2563EB',
-      on: LAYERS.filter((l) => l.group === 'infrastructure' && checkedLayers.has(l.id)).length,
-      total: LAYERS.filter((l) => l.group === 'infrastructure').length,
-    },
-    {
-      value: 'planning',
-      label: GROUP_LABEL.planning,
-      color: '#059669',
-      on: LAYERS.filter((l) => l.group === 'planning' && checkedLayers.has(l.id)).length,
-      total: LAYERS.filter((l) => l.group === 'planning').length,
+      on: visibleLayers.filter((l) => l.group === 'infrastructure' && checkedLayers.has(l.id)).length,
+      total: visibleLayers.filter((l) => l.group === 'infrastructure').length,
     },
   ];
+  const categories = allCategories.filter((c) => c.total > 0);
 
   const renderLayerList = (g: LayerGroup) => {
-    const layers = LAYERS.filter((l) => l.group === g);
+    if (g === 'vulnerability') {
+      return (
+        <div className="px-2.5 py-[5px]">
+          <div className="flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
+            <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#D8CFF0]" />
+            <span className="flex-1 truncate text-[12px] text-ink-3">Dwelling Density</span>
+            <span className="text-[10.5px] text-ink-3">needs attribute data</span>
+          </div>
+        </div>
+      );
+    }
+    const layers = visibleLayers.filter((l) => l.group === g);
     return (
       <div className="pb-1.5">
         {layers.map((l) => {
