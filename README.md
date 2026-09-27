@@ -12,7 +12,11 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:8080. `npm run build` produces a production
+Then open http://localhost:8080. This is a Vite + React app, not Eleventy
+or any other static site generator — `npx eleventy` will not run it (that
+package name is a dead placeholder that errors immediately and produces
+nothing, which is exactly why the page comes up blank). `npm run dev` is
+the only command that starts it. `npm run build` produces a production
 bundle (also runs a typecheck first), `npm run typecheck` runs TypeScript
 alone with no emit.
 

@@ -3439,6 +3439,7 @@ interface LayersTabProps {
   setLayerOpacity: (id: string, v: number) => void;
   activeBlueprint: BlueprintId | null;
   applyBlueprint: (id: BlueprintId) => void;
+  clearAllLayers: () => void;
 }
 
 function LayersTab({
@@ -3450,6 +3451,7 @@ function LayersTab({
   setLayerOpacity,
   activeBlueprint,
   applyBlueprint,
+  clearAllLayers,
 }: LayersTabProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const visibleLayers = LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id));
@@ -3553,6 +3555,11 @@ function LayersTab({
                   >
                     {l.name}
                   </span>
+                  {l.id === 'heat-vuln' && (
+                    <span className="shrink-0 rounded-[3px] bg-accent-soft px-1 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-accent">
+                      Blueprint
+                    </span>
+                  )}
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
                   <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
@@ -3586,6 +3593,23 @@ function LayersTab({
 
   return (
     <div>
+      {/* One-click way back to nothing turned on, only shown once there
+          is actually something to clear. No other control here undoes
+          what the others switched on. */}
+      {(checkedLayers.size > 0 || activeBlueprint) && (
+        <div className="flex items-center justify-between border-b border-line bg-surface-2 px-2.5 py-1.5">
+          <span className="text-[11px] text-ink-3">
+            {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on
+          </span>
+          <button
+            onClick={clearAllLayers}
+            className="text-[11px] font-medium text-accent underline decoration-dotted hover:text-ink"
+          >
+            Clear all
+          </button>
+        </div>
+      )}
+
       {/* Global opacity sits above everything it governs, the one
           control that applies regardless of which section is open. */}
       <div className="border-b border-line px-2.5 py-2">
@@ -6789,9 +6813,28 @@ export default function App() {
     setLayerOpacityState((prev) => ({ ...prev, [id]: v }));
   }, []);
 
+  // One-click way back to a blank map, the exit every other control in
+  // Layers was missing: no single checkbox or blueprint undoes what the
+  // others turned on, so there was no way to just start over.
+  const clearAllLayers = useCallback(() => {
+    setCheckedLayers(new Set());
+    setActiveBlueprint(null);
+    setLayerInfoId(null);
+  }, []);
+
   const applyBlueprint = useCallback(
     (id: BlueprintId) => {
       if (activeBlueprint === id) {
+        // Turning a blueprint back off releases exactly the layers it
+        // turned on, so "off" actually means off, not "panel closed,
+        // map unchanged". Anything the person separately hand-picked
+        // stays, only the blueprint's own set clears.
+        const bp = BLUEPRINT_BY_ID[id];
+        setCheckedLayers((prev) => {
+          const next = new Set(prev);
+          for (const l of bp.layers) next.delete(l);
+          return next;
+        });
         setActiveBlueprint(null);
         return;
       }
@@ -6859,6 +6902,7 @@ export default function App() {
               setLayerOpacity={setLayerOpacity}
               activeBlueprint={activeBlueprint}
               applyBlueprint={applyBlueprint}
+              clearAllLayers={clearAllLayers}
             />
           )}
           {panelTab === 'place' && (
@@ -6957,7 +7001,7 @@ export default function App() {
       {rightPanelMode === 'blueprint' && activeBlueprint && (
         <BlueprintPanel
           blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
-          onClose={() => setActiveBlueprint(null)}
+          onClose={() => applyBlueprint(activeBlueprint)}
           selectedId={selectedId}
           setSelectedId={setSelectedId}
           setHoveredSuburb={setHoveredSuburb}
