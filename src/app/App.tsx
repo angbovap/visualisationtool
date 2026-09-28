@@ -5947,7 +5947,6 @@ interface AssetTypeTogglesProps {
  *  new one natively (a plain white background underneath means that
  *  crossfade reads as a whiteout, without drawing one by hand). Falls
  *  back to an instant, un-animated swap wherever the API isn't there
- *  (Firefox, older Safari), never breaks, just skips the transition.
  *  flushSync forces React to commit inside the callback synchronously,
  *  which the browser needs to capture the "after" state correctly. */
 function withViewTransition(update: () => void) {
@@ -6304,7 +6303,14 @@ function RealBuildingsRegister({
             <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
               {visibleBuildings.length === 0 && (
                 <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
-                  No building types selected.
+                  No building types selected, every type starts off so the
+                  map isn't a surprise on load.
+                  <button
+                    onClick={() => setOffTypes(() => new Set())}
+                    className="mt-1.5 block w-full text-[11px] font-medium text-accent underline decoration-dotted hover:text-ink"
+                  >
+                    Show all {ALL_BUILDING_TYPES.size} types
+                  </button>
                 </div>
               )}
               {visibleBuildings.map((b) => (
