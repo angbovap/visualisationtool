@@ -5767,6 +5767,20 @@ function buildUseTree(rows: RealAsset[]): UseNode[] {
 }
 
 const REAL_USE_TREE = buildUseTree(REAL_BUILDINGS);
+
+/** The register's own Ward field, with buildings that have none kept as
+ *  their own visible group rather than dropped or assigned a guess. */
+const NO_WARD = '(no ward recorded)';
+const REAL_WARDS = (() => {
+  const counts = new Map<string, number>();
+  for (const b of REAL_BUILDINGS) {
+    const k = b.ward ?? NO_WARD;
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => Number(a[0] === NO_WARD) - Number(b[0] === NO_WARD) || b[1] - a[1])
+    .map(([key, count]) => ({ key, count }));
+})();
 const ALL_BUILDING_TYPES = new Set(
   REAL_BUILDINGS.map((b) => b.buildingType ?? UNCLASSIFIED),
 );
@@ -6282,11 +6296,34 @@ function RealBuildingsRegister({
   const [listScope, setListScope] = useState<string | null>(null);
   const selectListScope = (v: string | null) => withViewTransition(() => setListScope(v));
 
-  const totalInsured = REAL_BUILDINGS.reduce((n, b) => n + b.insuredValue, 0);
-  const preciseCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
-  const approxCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'street').length;
+  // Ward scope: null is the whole LGA. Re-scopes the headline figures and
+  // the list below; the map's building-type toggles are unaffected.
+  const [ward, setWard] = useState<string | null>(null);
+  const scoped = useMemo(
+    () => (ward === null ? REAL_BUILDINGS : REAL_BUILDINGS.filter((b) => (b.ward ?? NO_WARD) === ward)),
+    [ward],
+  );
+  const scopedTree = useMemo(() => buildUseTree(scoped), [scoped]);
+  const scopeLabel = ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward recorded' : `${ward} ward`;
+
+  const totalInsured = scoped.reduce((n, b) => n + b.insuredValue, 0);
+  const preciseCount = scoped.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
+  const approxCount = scoped.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'street').length;
   const mappedCount = preciseCount + approxCount;
   const onCount = ALL_BUILDING_TYPES.size - offTypes.size;
+  const typeCount = new Set(scoped.map((b) => b.buildingType ?? UNCLASSIFIED)).size;
+
+  // The register's own condition ratings, in the order the data already
+  // implies (best to worst), plus an explicit not-rated row so the
+  // counts always add up to the buildings in scope.
+  const conditionRows = [
+    ...Object.keys(CONDITION_COLOR).map((label) => ({
+      label,
+      color: CONDITION_COLOR[label],
+      n: scoped.filter((b) => b.condition === label).length,
+    })),
+    { label: 'Not rated', color: NEUTRAL_TONE, n: scoped.filter((b) => !b.condition).length },
+  ].filter((r) => r.n > 0);
 
   return (
     <div className="mb-4 border-b border-line pb-4">
@@ -6296,33 +6333,42 @@ function RealBuildingsRegister({
         building rather than per fitout or meter.
       </p>
 
-      {/* At a glance: what the register contains, purely read-only. The
-          tab's own header already says what this is, so no second
-          "Buildings register" heading repeating it here. */}
-      <PanelHeading
-        right={
-          <Tip
-            label="Map coverage"
-            body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
-            side="left"
-          >
-            <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
-              {mappedCount} of {REAL_BUILDINGS.length} on map
-            </span>
-          </Tip>
-        }
-      >
-        At a glance
-      </PanelHeading>
+      {/* Level 1, whose buildings: the register's own Ward field, so
+          someone asking about their ward starts there, not in a list. */}
+      <PanelHeading>Show</PanelHeading>
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        {[{ key: null as string | null, count: REAL_BUILDINGS.length }, ...REAL_WARDS].map((w) => {
+          const on = ward === w.key;
+          return (
+            <button
+              key={w.key ?? 'all'}
+              onClick={() => {
+                setWard(w.key);
+                setListScope(null);
+                setOpenId(null);
+              }}
+              aria-pressed={on}
+              className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[12px] transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
+            >
+              {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
+              <span className="num text-[11px] text-ink-3">{w.count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Level 1, the headline: what the register says about the scope
+          above, purely read-only. */}
+      <PanelHeading>{scopeLabel}</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
           <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
             Buildings
           </div>
           <div className="num mt-1 text-[26px] font-semibold leading-none text-ink">
-            {REAL_BUILDINGS.length}
+            {scoped.length}
           </div>
-          <div className="mt-1 text-[12px] text-ink-3">{ALL_BUILDING_TYPES.size} types</div>
+          <div className="mt-1 text-[12px] text-ink-3">{typeCount} types</div>
         </div>
         <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
           <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
@@ -6332,21 +6378,29 @@ function RealBuildingsRegister({
             ${(totalInsured / 1e6).toFixed(1)}M
           </div>
           <div className="mt-1 text-[12px] text-ink-3">
-            {REAL_BUILDINGS.filter((b) => b.insuredValue > 0).length} valued
+            {scoped.filter((b) => b.insuredValue > 0).length} valued
           </div>
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-[11.5px] text-ink-3">
-        <span className="flex items-center gap-1.5">
-          <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
-          {preciseCount} precise
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-[10px] w-[10px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
-          {approxCount} street-level only
-        </span>
-        <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
+      <div className="mb-4 rounded-[6px] border border-line bg-white px-3 py-2.5">
+        <div className="mb-1.5 text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+          Condition, as rated in the register
+        </div>
+        <div className="space-y-1.5">
+          {conditionRows.map((r) => (
+            <div key={r.label} className="flex items-center gap-2">
+              <span className="w-[116px] shrink-0 truncate text-[11.5px] text-ink-2">{r.label}</span>
+              <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                <span
+                  className="block h-full rounded-[3px]"
+                  style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
+                />
+              </span>
+              <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">{r.n}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Browse and manage: the two things you can actually do here,
@@ -6392,10 +6446,10 @@ function RealBuildingsRegister({
             >
               <span>
                 <span className="block text-[13px] font-medium text-ink">
-                  List all {REAL_BUILDINGS.length} buildings
+                  List {ward === null ? 'all ' : ''}{scoped.length} buildings
                 </span>
                 <span className="mt-[2px] block text-[11.5px] text-ink-3">
-                  Every real building, by category or all at once
+                  {ward === null ? 'Every real building' : `In ${scopeLabel}`}, by category or all at once
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-1 text-[12px] text-accent">
@@ -6437,14 +6491,14 @@ function RealBuildingsRegister({
                     className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                   >
                     <span className="text-[11.5px] font-medium text-ink">
-                      All {REAL_BUILDINGS.length} buildings
+                      All {scoped.length} buildings
                     </span>
                     <span className="num text-[10.5px] text-ink-3">
                       ${(totalInsured / 1e6).toFixed(1)}M
                     </span>
                   </button>
                   <div className="flex flex-wrap gap-1 pt-0.5">
-                    {REAL_USE_TREE.map((use) => {
+                    {scopedTree.map((use) => {
                       const isUnclassified = use.key === UNCLASSIFIED;
                       return (
                         <button
@@ -6464,13 +6518,13 @@ function RealBuildingsRegister({
               )}
 
               {listScope !== null && (() => {
-                const use = listScope === 'all' ? null : REAL_USE_TREE.find((u) => u.key === listScope);
+                const use = listScope === 'all' ? null : scopedTree.find((u) => u.key === listScope);
                 // Match on the real buildingUse field directly, the same
                 // grouping buildUseTree used, not on buildingType alone:
                 // the same type name can recur under a different use.
                 const buildings = use
-                  ? REAL_BUILDINGS.filter((b) => (b.buildingUse ?? UNCLASSIFIED) === use.key)
-                  : REAL_BUILDINGS;
+                  ? scoped.filter((b) => (b.buildingUse ?? UNCLASSIFIED) === use.key)
+                  : scoped;
                 const label = use ? (use.key === UNCLASSIFIED ? 'Not yet classified' : use.label) : 'All buildings';
                 const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
                 return (
@@ -6506,6 +6560,38 @@ function RealBuildingsRegister({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Level 3, provenance: how far the map dots can be trusted. Last
+          because it qualifies the figures above rather than answering
+          a question of its own. */}
+      <div className="mt-4">
+        <PanelHeading
+          right={
+            <Tip
+              label="Map coverage"
+              body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${scoped.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+              side="left"
+            >
+              <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+                {mappedCount} of {scoped.length} on map
+              </span>
+            </Tip>
+          }
+        >
+          Map coverage
+        </PanelHeading>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-[11.5px] text-ink-3">
+          <span className="flex items-center gap-1.5">
+            <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
+            {preciseCount} precise
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-[10px] w-[10px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
+            {approxCount} street-level only
+          </span>
+          <span>{scoped.length - mappedCount} not mapped</span>
+        </div>
       </div>
     </div>
   );
