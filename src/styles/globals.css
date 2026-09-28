@@ -76,3 +76,9 @@ input[type='range']::-moz-range-thumb {
 
 @keyframes fadeUp { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 .fade-up { animation: fadeUp 140ms ease-out; }
+
+/* A pure cross-fade for swapping whole tab panels, no vertical motion,
+   so switching Overview/Demographics/Register (and similar sub-tab
+   strips) reads as a soft dissolve rather than a hard content jump-cut. */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fadeIn 180ms ease-out; }

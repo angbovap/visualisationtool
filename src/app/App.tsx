@@ -3613,7 +3613,7 @@ function PlaceTab({
           onChange={setLgaTab}
         />
         {lgaTab === 'overview' ? (
-          <div className="px-2.5 py-2.5">
+          <div className="fade-in px-2.5 py-2.5">
             <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
               No suburb selected. Pick one below, or click it on the map.
             </p>
@@ -3635,7 +3635,7 @@ function PlaceTab({
             </div>
           </div>
         ) : (
-          <div className="px-2.5 py-2.5">
+          <div className="fade-in px-2.5 py-2.5">
             <RealBuildingsRegister
               offTypes={buildingOffTypes}
               setOffTypes={setBuildingOffTypes}
@@ -3659,21 +3659,20 @@ function PlaceTab({
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-2 px-2.5 pt-2.5">
-        <div className="min-w-0">
-          <div className="truncate text-[17px] font-semibold leading-tight text-ink">
-            {s.name}
-          </div>
-          <div className="num mt-[2px] text-[12px] text-ink-3">
-            SA2 {s.sa2} · {plan.totalHa} ha
-          </div>
-        </div>
+      <div className="px-2.5 pt-2.5">
         <button
           onClick={() => setSelectedId(null)}
-          className="shrink-0 rounded-[4px] border border-line px-1.5 py-[2px] text-[11.5px] text-ink-3 transition-colors hover:border-accent hover:text-accent"
+          className="mb-1 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
         >
-          Clear
+          <IconChevron size={13} className="rotate-180" />
+          All suburbs
         </button>
+        <div className="truncate text-[17px] font-semibold leading-tight text-ink">
+          {s.name}
+        </div>
+        <div className="num mt-[2px] text-[12px] text-ink-3">
+          SA2 {s.sa2} · {plan.totalHa} ha
+        </div>
       </div>
 
       <div className="mt-2">
@@ -3689,7 +3688,7 @@ function PlaceTab({
       </div>
 
       {placeTab === 'overview' && (
-        <div className="px-2.5 py-2.5">
+        <div className="fade-in px-2.5 py-2.5">
           {/* Population and the projection it is heading toward. */}
           <div className="rounded-[6px] border border-line bg-white p-2">
             <div className="flex items-end justify-between">
@@ -3728,7 +3727,7 @@ function PlaceTab({
       )}
 
       {placeTab === 'demographics' && (
-        <div className="px-2.5 py-2.5">
+        <div className="fade-in px-2.5 py-2.5">
           <div className="grid grid-cols-2 gap-1.5">
             <Stat
               label="SEIFA"
@@ -3761,7 +3760,7 @@ function PlaceTab({
       )}
 
       {placeTab === 'register' && (
-        <div className="px-2.5 py-2.5">
+        <div className="fade-in px-2.5 py-2.5">
           {realBuildings.length > 0 ? (
             <div>
               <PanelHeading
@@ -4944,18 +4943,14 @@ function BlueprintPanel({
           </div>
         ) : (
           <div className="px-2.5 py-2">
-            <PanelHeading
-              right={
-                <button
-                  onClick={() => setSelectedId(null)}
-                  className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
-                >
-                  clear
-                </button>
-              }
+            <PanelHeading>Spotlight</PanelHeading>
+            <button
+              onClick={() => setSelectedId(null)}
+              className="mb-1 flex items-center gap-[3px] text-[11px] text-ink-3 transition-colors hover:text-accent"
             >
-              Spotlight
-            </PanelHeading>
+              <IconChevron size={12} className="rotate-180" />
+              All suburbs
+            </button>
             <div className="text-[14px] font-semibold text-ink">
               {selected.name}
             </div>
