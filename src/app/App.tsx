@@ -6127,41 +6127,60 @@ function RealBuildingsRegister({
   const onCount = ALL_BUILDING_TYPES.size - offTypes.size;
 
   return (
-    <div className="mb-3 border-b border-line pb-3">
+    <div className="mb-4 border-b border-line pb-4">
+      <p className="mb-4 text-[12.5px] leading-[1.6] text-ink-2">
+        Every real building from council's own asset register
+        (<span className="num">{`CCS_Buildings.xlsx`}</span>), one row per
+        building rather than per fitout or meter.
+      </p>
+
       {/* At a glance: what the register contains, purely read-only. The
           tab's own header already says what this is, so no second
           "Buildings register" heading repeating it here. */}
-      <PanelHeading
-        right={
-          <Tip
-            label="Map coverage"
-            body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
-            side="left"
-          >
-            <span className="num cursor-help text-[11px] text-ink-3 underline decoration-dotted">
-              {mappedCount} of {REAL_BUILDINGS.length} on map
-            </span>
-          </Tip>
-        }
-      >
-        At a glance
-      </PanelHeading>
-      <div className="mb-2 grid grid-cols-2 gap-1.5">
-        <Stat label="Buildings" value={`${REAL_BUILDINGS.length}`} sub={`${ALL_BUILDING_TYPES.size} types`} />
-        <Stat
-          label="Insured value"
-          value={`$${(totalInsured / 1e6).toFixed(1)}M`}
-          sub={`${REAL_BUILDINGS.filter((b) => b.insuredValue > 0).length} valued`}
-        />
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+          At a glance
+        </span>
+        <Tip
+          label="Map coverage"
+          body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+          side="left"
+        >
+          <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+            {mappedCount} of {REAL_BUILDINGS.length} on map
+          </span>
+        </Tip>
+      </div>
+      <div className="mb-3 grid grid-cols-2 gap-2.5">
+        <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
+          <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+            Buildings
+          </div>
+          <div className="num mt-1 text-[26px] font-semibold leading-none text-ink">
+            {REAL_BUILDINGS.length}
+          </div>
+          <div className="mt-1 text-[12px] text-ink-3">{ALL_BUILDING_TYPES.size} types</div>
+        </div>
+        <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
+          <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+            Insured value
+          </div>
+          <div className="num mt-1 text-[26px] font-semibold leading-none text-ink">
+            ${(totalInsured / 1e6).toFixed(1)}M
+          </div>
+          <div className="mt-1 text-[12px] text-ink-3">
+            {REAL_BUILDINGS.filter((b) => b.insuredValue > 0).length} valued
+          </div>
+        </div>
       </div>
 
-      <div className="mb-3 flex items-center gap-3 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[10.5px] text-ink-3">
-        <span className="flex items-center gap-1">
-          <span className="h-[9px] w-[9px] rounded-full border border-white" style={{ background: ACCENT }} />
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-[11.5px] text-ink-3">
+        <span className="flex items-center gap-1.5">
+          <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
           {preciseCount} precise
         </span>
-        <span className="flex items-center gap-1">
-          <span className="h-[9px] w-[9px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
+        <span className="flex items-center gap-1.5">
+          <span className="h-[10px] w-[10px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
           {approxCount} street-level only
         </span>
         <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
@@ -6172,45 +6191,52 @@ function RealBuildingsRegister({
           more stats. One of two destinations at a time, not two
           independent accordions that can both be open and push each
           other down. */}
-      <PanelHeading
-        right={
-          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
-            <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
-              how read
-            </span>
-          </Tip>
-        }
-      >
-        Browse the register
-      </PanelHeading>
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+          Browse the register
+        </span>
+        <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
+          <span className="cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+            how read
+          </span>
+        </Tip>
+      </div>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <button
               onClick={() => selectView('types')}
-              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
             >
-              <span className="text-[11.5px] text-ink-2">
-                <span className="num font-semibold text-ink">{onCount}</span> of{' '}
-                {ALL_BUILDING_TYPES.size} building types shown on the map
+              <span>
+                <span className="block text-[13px] font-medium text-ink">
+                  Manage building types
+                </span>
+                <span className="mt-[2px] block text-[11.5px] text-ink-3">
+                  <span className="num font-semibold text-ink-2">{onCount}</span> of{' '}
+                  {ALL_BUILDING_TYPES.size} types shown on the map
+                </span>
               </span>
-              <span className="flex items-center gap-1 text-[11px] text-accent">
+              <span className="flex shrink-0 items-center gap-1 text-[12px] text-accent">
                 Manage
-                <IconChevron size={11} />
+                <IconChevron size={13} />
               </span>
             </button>
             <button
               onClick={() => selectView('list')}
-              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
             >
-              <span className="flex items-center gap-1.5">
-                <span className="text-[11.5px] font-medium text-ink">
+              <span>
+                <span className="block text-[13px] font-medium text-ink">
                   List all {REAL_BUILDINGS.length} buildings
                 </span>
+                <span className="mt-[2px] block text-[11.5px] text-ink-3">
+                  Every real building, by category or all at once
+                </span>
               </span>
-              <span className="flex items-center gap-1 text-[11px] text-accent">
-                <span className="num">${(totalInsured / 1e6).toFixed(1)}M · {mappedCount} mapped</span>
-                <IconChevron size={11} />
+              <span className="flex shrink-0 items-center gap-1 text-[12px] text-accent">
+                <span className="num">${(totalInsured / 1e6).toFixed(1)}M</span>
+                <IconChevron size={13} />
               </span>
             </button>
           </div>
