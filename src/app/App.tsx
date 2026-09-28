@@ -6128,29 +6128,24 @@ function RealBuildingsRegister({
 
   return (
     <div className="mb-3 border-b border-line pb-3">
-      {/* Header: the headline numbers, always in view, no prose above them. */}
-      <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[13px] font-semibold text-ink">
-            Buildings register
-          </span>
-          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="right">
-            <span className="flex h-[15px] w-[15px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
-              i
+      {/* At a glance: what the register contains, purely read-only. The
+          tab's own header already says what this is, so no second
+          "Buildings register" heading repeating it here. */}
+      <PanelHeading
+        right={
+          <Tip
+            label="Map coverage"
+            body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+            side="left"
+          >
+            <span className="num cursor-help text-[11px] text-ink-3 underline decoration-dotted">
+              {mappedCount} of {REAL_BUILDINGS.length} on map
             </span>
           </Tip>
-        </div>
-        <Tip
-          label="Map coverage"
-          body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
-          side="left"
-        >
-          <span className="num cursor-help text-[11px] text-ink-3 underline decoration-dotted">
-            {mappedCount} of {REAL_BUILDINGS.length} on map
-          </span>
-        </Tip>
-      </div>
-
+        }
+      >
+        At a glance
+      </PanelHeading>
       <div className="mb-2 grid grid-cols-2 gap-1.5">
         <Stat label="Buildings" value={`${REAL_BUILDINGS.length}`} sub={`${ALL_BUILDING_TYPES.size} types`} />
         <Stat
@@ -6160,7 +6155,7 @@ function RealBuildingsRegister({
         />
       </div>
 
-      <div className="mb-2 flex items-center gap-3 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[10.5px] text-ink-3">
+      <div className="mb-3 flex items-center gap-3 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[10.5px] text-ink-3">
         <span className="flex items-center gap-1">
           <span className="h-[9px] w-[9px] rounded-full border border-white" style={{ background: ACCENT }} />
           {preciseCount} precise
@@ -6172,9 +6167,22 @@ function RealBuildingsRegister({
         <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
       </div>
 
-      {/* One of two destinations at a time, not two independent
-          accordions: choosing one replaces this whole area with it,
-          rather than opening a panel that pushes the other down. */}
+      {/* Browse and manage: the two things you can actually do here,
+          grouped under their own heading so they read as actions, not
+          more stats. One of two destinations at a time, not two
+          independent accordions that can both be open and push each
+          other down. */}
+      <PanelHeading
+        right={
+          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
+            <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
+              how read
+            </span>
+          </Tip>
+        }
+      >
+        Browse the register
+      </PanelHeading>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
           <div className="space-y-1.5">
