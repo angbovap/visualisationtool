@@ -236,21 +236,6 @@ const BLUEPRINT_ACCENT: Record<BlueprintId, string> = {
 };
 
 /** Fill families for SA1 sub-areas, one per parent SA2. */
-const CATEGORY_LABEL: Record<AssetCategory, string> = {
-  road: 'Road',
-  stormwater: 'Stormwater',
-  'open-space': 'Open space',
-  building: 'Building',
-  service: 'Community service',
-  coastal: 'Coastal structure',
-};
-
-const SIGNIFICANCE_LABEL: Record<Significance, string> = {
-  local: 'Local',
-  district: 'District',
-  state: 'State',
-};
-
 const SCENARIO_LABEL: Record<Scenario, string> = {
   ssp245: 'SSP2-4.5',
   ssp585: 'SSP5-8.5',
@@ -1958,46 +1943,6 @@ const IconMinus = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
-const IconHeat = ({ size = 14, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
-  </svg>
-);
-
-const IconFlood = ({ size = 14, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <path d="M12 3s5 5.6 5 9a5 5 0 0 1-10 0c0-3.4 5-9 5-9Z" />
-  </svg>
-);
-
-const IconCoastal = ({ size = 14, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <path d="M2 8.5c2.5-2 4.5 2 7 0s4.5-2 7 0 4.5 2 6 0" />
-    <path d="M2 14c2.5-2 4.5 2 7 0s4.5-2 7 0 4.5 2 6 0" />
-    <path d="M2 19.5c2.5-2 4.5 2 7 0s4.5-2 7 0 4.5 2 6 0" />
-  </svg>
-);
-
-const IconDrought = ({ size = 14, className }: IconProps) => (
-  <svg {...svgBase(size)} className={className}>
-    <path d="M12 21V9" />
-    <path d="M12 13 7.5 9.5" />
-    <path d="M12 15.5 16.5 12" />
-    <path d="M8.5 5.5a3.5 3.5 0 0 1 7 0" />
-  </svg>
-);
-
-const HAZARD_ICON: Record<
-  HazardId,
-  (p: IconProps) => React.ReactElement
-> = {
-  heat: IconHeat,
-  flooding: IconFlood,
-  coastal: IconCoastal,
-  drought: IconDrought,
-};
-
 /* ------------------------------------------------------------------ *
  * UI atoms
  * ------------------------------------------------------------------ */
@@ -2114,20 +2059,6 @@ function MiniBar({
         style={{ width: `${clamp(value, 0, 1) * 100}%`, background: color }}
       />
     </div>
-  );
-}
-
-function HazardChip({ hazard, small }: { hazard: HazardId; small?: boolean }) {
-  const Icon = HAZARD_ICON[hazard];
-  const c = HAZARD_COLOR[hazard];
-  return (
-    <span
-      className={`inline-flex items-center gap-[3px] rounded-[3px] px-1 ${small ? 'py-0' : 'py-[1px]'} text-[11.5px] font-medium`}
-      style={{ background: withAlpha(c, 0.1), color: c }}
-    >
-      <Icon size={12} />
-      {HAZARD_LABEL[hazard]}
-    </span>
   );
 }
 
@@ -2321,11 +2252,6 @@ function DemoDataNote({ className = '' }: { className?: string }) {
  * must not trigger a rebuild.
  * ------------------------------------------------------------------ */
 
-interface HoveredAsset {
-  asset: Asset;
-  suburbId: string;
-}
-
 interface MapViewProps {
   checkedLayers: Set<string>;
   overlayOpacity: number;
@@ -2338,7 +2264,6 @@ interface MapViewProps {
   onSelectSuburb: (id: string) => void;
   hoveredSuburb: string | null;
   setHoveredSuburb: (id: string | null) => void;
-  hoveredAsset: HoveredAsset | null;
   compare: boolean;
   compareA: string;
   compareB: string;
@@ -2385,7 +2310,6 @@ function MapView(props: MapViewProps) {
     onSelectSuburb,
     hoveredSuburb,
     setHoveredSuburb,
-    hoveredAsset,
     compare,
     compareA,
     compareB,
@@ -3114,7 +3038,7 @@ function MapView(props: MapViewProps) {
     if (!ready || !L || !map) return;
     const added: LeafletLayer[] = [];
 
-    if (hoveredSuburb && !hoveredAsset) {
+    if (hoveredSuburb) {
       const s = SUBURB_BY_ID[hoveredSuburb];
       if (s) {
         added.push(
@@ -3129,63 +3053,6 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    if (hoveredAsset) {
-      const { asset, suburbId } = hoveredAsset;
-      const s = SUBURB_BY_ID[suburbId];
-      const tone = HAZARD_COLOR[asset.hazards[0] ?? 'heat'];
-
-      // A 120m circle on the asset itself. The SA2 polygon would be the
-      // wrong answer here, the question is where the thing actually is.
-      added.push(
-        L.circle([asset.position.lat, asset.position.lng] as LatLngTuple, {
-          radius: 120,
-          color: tone,
-          weight: 2,
-          fillColor: tone,
-          fillOpacity: 0.18,
-          interactive: false,
-        }).addTo(map),
-      );
-      added.push(
-        L.circleMarker([asset.position.lat, asset.position.lng] as LatLngTuple, {
-          radius: 3,
-          color: '#fff',
-          weight: 1.4,
-          fillColor: tone,
-          fillOpacity: 1,
-          interactive: false,
-        }).addTo(map),
-      );
-
-      // Heat assets also get a coarse exposure preview across the SA2, on a
-      // 300m grid. It is a preview, not the modelled surface.
-      if (asset.hazards.includes('heat') && s) {
-        const dLat = 300 / 111320;
-        const dLng = 300 / (111320 * Math.cos((s.centroid[0] * Math.PI) / 180));
-        for (
-          let lat = s.centroid[0] - s.span[0];
-          lat <= s.centroid[0] + s.span[0];
-          lat += dLat
-        ) {
-          for (
-            let lng = s.centroid[1] - s.span[1];
-            lng <= s.centroid[1] + s.span[1];
-            lng += dLng
-          ) {
-            added.push(
-              L.circleMarker([lat, lng] as LatLngTuple, {
-                radius: 4,
-                stroke: false,
-                fillColor: '#DC2626',
-                fillOpacity: 0.42,
-                interactive: false,
-              }).addTo(map),
-            );
-          }
-        }
-      }
-    }
-
     hoverRef.current = added;
     return () => {
       for (const l of added) {
@@ -3193,7 +3060,7 @@ function MapView(props: MapViewProps) {
       }
       hoverRef.current = [];
     };
-  }, [ready, hoveredSuburb, hoveredAsset]);
+  }, [ready, hoveredSuburb]);
 
   const selected = selectedId ? SUBURB_BY_ID[selectedId] : null;
   const hovered = hoveredSuburb ? SUBURB_BY_ID[hoveredSuburb] : null;
@@ -3717,113 +3584,24 @@ interface PlaceTabProps {
   setSelectedId: (id: string | null) => void;
   year: number;
   sc: Scenario;
-  hoveredAsset: HoveredAsset | null;
-  setHoveredAsset: (h: HoveredAsset | null) => void;
   buildingOffTypes: Set<string>;
   setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
 /** Top ranked suburb on a metric, used by the LGA overview cards. */
-function topBy(
-  fn: (s: Suburb) => number,
-): { suburb: Suburb; value: number } {
-  let best = SUBURBS[0];
-  let bestV = fn(SUBURBS[0]);
-  for (const s of SUBURBS) {
-    const v = fn(s);
-    if (v > bestV) {
-      best = s;
-      bestV = v;
-    }
-  }
-  return { suburb: best, value: bestV };
-}
-
 function PlaceTab({
   selectedId,
   setSelectedId,
   year,
   sc,
-  hoveredAsset,
-  setHoveredAsset,
   buildingOffTypes,
   setBuildingOffTypes,
 }: PlaceTabProps) {
   const [openAsset, setOpenAsset] = useState<string | null>(null);
-  const [showRealBuildings, setShowRealBuildings] = useState(false);
   const [lgaTab, setLgaTab] = useState<'overview' | 'register'>('overview');
   const [placeTab, setPlaceTab] = useState<'overview' | 'demographics' | 'register'>('overview');
 
   if (!selectedId) {
-    const cards = [
-      {
-        key: 'heat',
-        label: 'Highest heat vulnerability',
-        ...topBy((s) => rawLayerValue('heat-vuln', s, year, sc)),
-        fmt: (v: number) => v.toFixed(0),
-        unit: 'index',
-        color: HAZARD_COLOR.heat,
-      },
-      {
-        key: 'flood',
-        label: 'Largest modelled flood extent',
-        ...topBy((s) => s.floodScore),
-        fmt: (v: number) => `${(v * 5.5).toFixed(1)}%`,
-        unit: 'of area, 1:100yr',
-        color: HAZARD_COLOR.flooding,
-      },
-      {
-        key: 'coastal',
-        label: 'Greatest coastal exposure',
-        ...topBy((s) => s.coastalScore),
-        fmt: (v: number) => `${v}/5`,
-        unit: 'relative score',
-        color: HAZARD_COLOR.coastal,
-      },
-      {
-        key: 'growth',
-        label: 'Fastest projected growth',
-        ...topBy((s) => growthPct(s, sc)),
-        fmt: (v: number) => fmtSigned(v, 0),
-        unit: 'to 2041',
-        color: ACCENT,
-      },
-      {
-        key: 'seifa',
-        label: 'Most disadvantaged',
-        ...topBy((s) => 10 - s.seifa),
-        fmt: (v: number) => `${10 - v}/10`,
-        unit: 'SEIFA decile',
-        color: '#9F1239',
-      },
-      {
-        key: 'canopy',
-        label: 'Lowest tree canopy',
-        ...topBy((s) => 40 - s.treeCanopy),
-        fmt: (v: number) => `${40 - v}%`,
-        unit: 'canopy cover',
-        color: '#166534',
-      },
-      {
-        key: 'assets',
-        label: 'Most exposed assets',
-        ...topBy((s) => s.assets.filter((a) => a.hazards.length > 1).length),
-        fmt: (v: number) => `${v}`,
-        unit: 'multi-hazard assets',
-        color: '#7C3AED',
-      },
-      {
-        key: 'repairs',
-        label: 'Most reactive repairs',
-        ...topBy((s) =>
-          s.assets.reduce((n, a) => Math.max(n, a.repairs5yr), 0),
-        ),
-        fmt: (v: number) => `${v}`,
-        unit: 'in 5 years, worst asset',
-        color: '#B45309',
-      },
-    ];
-
     return (
       <div>
         <SubTabStrip
@@ -3837,42 +3615,24 @@ function PlaceTab({
         {lgaTab === 'overview' ? (
           <div className="px-2.5 py-2.5">
             <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
-              No suburb selected. The cards below name the leading SA2 on each
-              measure. Selecting one, here or on the map, opens its full profile.
-              Leading is not the same as most urgent, the measures are not weighted
-              against each other.
+              No suburb selected. Pick one below, or click it on the map.
             </p>
-            <div className="space-y-1">
-              {cards.map((c) => (
+            <div className="grid grid-cols-2 gap-1.5">
+              {SUBURBS.map((s) => (
                 <button
-                  key={c.key}
-                  onClick={() => setSelectedId(c.suburb.id)}
-                  className="flex w-full items-center gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                  key={s.id}
+                  onClick={() => setSelectedId(s.id)}
+                  className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                 >
-                  <span
-                    className="h-6 w-[2.5px] shrink-0 rounded-full"
-                    style={{ background: c.color }}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                      {c.label}
-                    </span>
-                    <span className="block truncate text-[13.5px] font-semibold text-ink">
-                      {c.suburb.name}
-                    </span>
+                  <span className="block truncate text-[12.5px] font-medium text-ink">
+                    {s.name}
                   </span>
-                  <span className="shrink-0 text-right">
-                    <span className="num block text-[16px] font-semibold leading-none text-ink">
-                      {c.fmt(c.value)}
-                    </span>
-                    <span className="mt-[2px] block text-[11px] text-ink-3">
-                      {c.unit}
-                    </span>
+                  <span className="num mt-[2px] block text-[11px] text-ink-3">
+                    SA2 {s.sa2}
                   </span>
                 </button>
               ))}
             </div>
-            <DemoDataNote className="mt-2.5" />
           </div>
         ) : (
           <div className="px-2.5 py-2.5">
@@ -3921,7 +3681,7 @@ function PlaceTab({
           tabs={[
             { value: 'overview', label: 'Overview' },
             { value: 'demographics', label: 'Demographics' },
-            { value: 'register', label: 'Register', count: `${realBuildings.length + s.assets.length}` },
+            { value: 'register', label: 'Register', count: `${realBuildings.length}` },
           ]}
           value={placeTab}
           onChange={setPlaceTab}
@@ -3962,7 +3722,7 @@ function PlaceTab({
 
           <div className="mt-2.5 rounded-[5px] border border-dashed border-line bg-surface-2 px-2 py-1.5 text-[11px] leading-[1.5] text-ink-3">
             Risk scores and how this place maps onto council's consequence
-            framework are in the analysis panel on the right.
+            framework are open on the right.
           </div>
         </div>
       )}
@@ -4002,129 +3762,33 @@ function PlaceTab({
 
       {placeTab === 'register' && (
         <div className="px-2.5 py-2.5">
-          {realBuildings.length > 0 && (
-            <div className="mb-2.5">
-              <button
-                onClick={() => setShowRealBuildings(!showRealBuildings)}
-                className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-              >
-                <span className="flex items-center gap-1.5">
-                  <IconChevron size={13} className={`text-ink-3 transition-transform ${showRealBuildings ? 'rotate-90' : ''}`} />
-                  <span className="text-[12.5px] font-medium text-ink">
-                    Real buildings here, {realBuildings.length}
+          {realBuildings.length > 0 ? (
+            <div>
+              <PanelHeading
+                right={
+                  <span className="num text-[11px] text-ink-3">
+                    ${(realBuildingsValue / 1e6).toFixed(1)}M
                   </span>
-                </span>
-                <span className="num text-[11px] text-ink-3">${(realBuildingsValue / 1e6).toFixed(1)}M</span>
-              </button>
-              {showRealBuildings && (
-                <div className="fade-up mt-1 max-h-[280px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-                  {realBuildings.map((b) => (
-                    <BuildingCard
-                      key={b.id}
-                      b={b}
-                      isOpen={openAsset === b.id}
-                      onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
-                    />
-                  ))}
-                </div>
-              )}
+                }
+              >
+                Real buildings here, {realBuildings.length}
+              </PanelHeading>
+              <div className="space-y-1">
+                {realBuildings.map((b) => (
+                  <BuildingCard
+                    key={b.id}
+                    b={b}
+                    isOpen={openAsset === b.id}
+                    onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                  />
+                ))}
+              </div>
             </div>
+          ) : (
+            <p className="text-[11.5px] leading-[1.5] text-ink-3">
+              No building in the register geocoded to this SA2.
+            </p>
           )}
-
-          <PanelHeading
-            right={
-              <span className="num text-[11px] text-ink-3">
-                {s.assets.length} listed
-              </span>
-            }
-          >
-            Illustrative key assets (demo)
-          </PanelHeading>
-          <div className="space-y-1">
-            {s.assets.map((a) => {
-              const isOpen = openAsset === a.name;
-              const flagged = a.repairs5yr >= 10;
-              return (
-                <div
-                  key={a.name}
-                  onMouseEnter={() => setHoveredAsset({ asset: a, suburbId: s.id })}
-                  onMouseLeave={() => setHoveredAsset(null)}
-                  className={`rounded-[5px] border bg-white transition-colors ${
-                    hoveredAsset?.asset.name === a.name
-                      ? 'border-accent'
-                      : 'border-line'
-                  }`}
-                >
-                  <button
-                    onClick={() => setOpenAsset(isOpen ? null : a.name)}
-                    className="flex w-full items-start gap-1.5 px-2 py-1.5 text-left"
-                  >
-                    <IconChevron
-                      size={13}
-                      className={`mt-[3px] shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`}
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[13.5px] font-semibold leading-tight text-ink">
-                        {a.name}
-                      </span>
-                      <span className="mt-[3px] flex flex-wrap items-center gap-1">
-                        <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
-                          {CATEGORY_LABEL[a.category]}
-                        </span>
-                        <span className="rounded-[3px] bg-surface-2 px-1 text-[11px] text-ink-2">
-                          {SIGNIFICANCE_LABEL[a.significance]}
-                        </span>
-                        {a.hazards.map((h) => (
-                          <HazardChip key={h} hazard={h} small />
-                        ))}
-                      </span>
-                    </span>
-                    {a.value && (
-                      <span className="num shrink-0 text-[12.5px] font-semibold text-ink-2">
-                        {a.value}
-                      </span>
-                    )}
-                  </button>
-                  {isOpen && (
-                    <div className="fade-up border-t border-line px-2 py-1.5">
-                      <DetailRow label="Purpose" value={a.purpose} />
-                      <DetailRow label="Who uses it" value={a.users} />
-                      <div className="mt-1.5 flex items-center justify-between rounded-[4px] bg-surface-2 px-1.5 py-1">
-                        <span className="text-[11.5px] text-ink-2">
-                          Reactive repairs, 5 years
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className="num text-[14.5px] font-semibold"
-                            style={{ color: flagged ? '#B45309' : '#14201F' }}
-                          >
-                            {a.repairs5yr}
-                          </span>
-                          {flagged && (
-                            <span className="rounded-[3px] bg-[#FEF3C7] px-1 text-[11px] font-medium text-[#92400E]">
-                              over threshold
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                      <div className="num mt-1 text-[11px] leading-tight text-ink-3">
-                        Threshold applied here is 10 interventions in 5 years, the
-                        point at which renewal is usually assessed against
-                        continued maintenance. The threshold is a convention, not a
-                        rule.
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-2 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[11.5px] leading-[1.5] text-ink-2">
-            Hovering an asset draws a 120m radius at its actual location. Heat
-            exposed assets also show a coarse 300m grid preview across the SA2.
-          </div>
-          <DemoDataNote className="mt-2" />
         </div>
       )}
     </div>
@@ -6717,7 +6381,6 @@ export default function App() {
     {},
   );
   const [hoveredSuburb, setHoveredSuburb] = useState<string | null>(null);
-  const [hoveredAsset, setHoveredAsset] = useState<HoveredAsset | null>(null);
   const [activeBlueprint, setActiveBlueprint] = useState<BlueprintId | null>(
     null,
   );
@@ -6906,8 +6569,6 @@ export default function App() {
               setSelectedId={setSelectedId}
               year={year}
               sc={sc}
-              hoveredAsset={hoveredAsset}
-              setHoveredAsset={setHoveredAsset}
               buildingOffTypes={buildingOffTypes}
               setBuildingOffTypes={setBuildingOffTypes}
             />
@@ -6957,7 +6618,6 @@ export default function App() {
             onSelectSuburb={handleSelectSuburb}
             hoveredSuburb={hoveredSuburb}
             setHoveredSuburb={setHoveredSuburb}
-            hoveredAsset={hoveredAsset}
             compare={compare}
             compareA={compareA}
             compareB={compareB}
