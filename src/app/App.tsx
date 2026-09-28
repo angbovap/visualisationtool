@@ -5252,38 +5252,34 @@ function BlueprintPanel({
               </div>
             )}
 
-            <div className="px-2.5 py-2">
-              <PanelHeading>LGA at a glance</PanelHeading>
-              {isHeatVuln && (
-                <p className="mb-1.5 text-[10.5px] leading-[1.4] text-ink-3">
-                  Older per-suburb placeholder, not the real grid above.
-                  Still being worked into the rest of this view.
-                </p>
-              )}
-              <div className="space-y-1">
-                {glance.map((g) => (
-                  <div
-                    key={g.label}
-                    className="flex items-start justify-between gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                        {g.label}
-                      </span>
-                      <span className="mt-[2px] block text-[11px] leading-tight text-ink-3">
-                        {g.sub}
-                      </span>
-                    </span>
-                    <span
-                      className="num shrink-0 text-[17px] font-semibold leading-none"
-                      style={{ color: bp.accent }}
+            {!isHeatVuln && (
+              <div className="px-2.5 py-2">
+                <PanelHeading>LGA at a glance</PanelHeading>
+                <div className="space-y-1">
+                  {glance.map((g) => (
+                    <div
+                      key={g.label}
+                      className="flex items-start justify-between gap-2 rounded-[5px] border border-line bg-white px-2 py-1.5"
                     >
-                      {g.value}
-                    </span>
-                  </div>
-                ))}
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
+                          {g.label}
+                        </span>
+                        <span className="mt-[2px] block text-[11px] leading-tight text-ink-3">
+                          {g.sub}
+                        </span>
+                      </span>
+                      <span
+                        className="num shrink-0 text-[17px] font-semibold leading-none"
+                        style={{ color: bp.accent }}
+                      >
+                        {g.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
 
