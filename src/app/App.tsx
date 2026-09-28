@@ -5959,12 +5959,11 @@ function withViewTransition(update: () => void) {
 }
 
 function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
-  // A drill-down, not a selector-plus-panel: picking a category replaces
-  // the whole category grid with that category's types, one screen at a
-  // time, rather than showing both stacked at once.
-  const [openUse, setOpenUse] = useState<string | null>(null);
+  // Plain settings, not something to explore: every type listed at once,
+  // grouped under its category as a static heading (not a drill-down),
+  // since this only exists to declutter the map, browsing the register
+  // by category is a different job and lives in List buildings instead.
   const [showOther, setShowOther] = useState(false);
-  const selectUse = (key: string | null) => withViewTransition(() => setOpenUse(key));
 
   const toggleType = useCallback(
     (key: string) => {
@@ -6014,101 +6013,56 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           show all
         </button>
       </div>
-      <div style={{ viewTransitionName: 'asset-type-step' } as React.CSSProperties}>
-      {(() => {
-        const activeUse = openUse ? REAL_USE_TREE.find((u) => u.key === openUse) : undefined;
 
-        if (!activeUse) {
+      <div className="space-y-1.5">
+        {REAL_USE_TREE.map((use) => {
+          const isUnclassified = use.key === UNCLASSIFIED;
           return (
-            <div className="flex flex-wrap gap-1">
-              {REAL_USE_TREE.map((use) => {
-                const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
-                const allOff = offCount === use.types.length;
-                const isUnclassified = use.key === UNCLASSIFIED;
-                const chip = (
-                  <button
-                    onClick={() => selectUse(use.key)}
-                    className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
-                    style={
-                      allOff
-                        ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
-                        : { borderColor: '#E2E7E7', background: '#fff' }
-                    }
-                  >
-                    <span
-                      className="h-[7px] w-[7px] shrink-0 rounded-full"
-                      style={{ background: allOff ? '#C9D3D2' : ACCENT }}
-                    />
-                    <span className="text-[11.5px] font-medium text-ink">
-                      {isUnclassified ? 'Not yet classified' : use.label}
-                    </span>
-                    <span className="num text-[10.5px] text-ink-3">{use.count}</span>
-                  </button>
-                );
-                return (
-                  <span key={use.key}>
-                    {isUnclassified ? (
-                      <Tip
-                        label="Not yet classified"
-                        body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
-                        side="top"
-                      >
-                        {chip}
-                      </Tip>
-                    ) : (
-                      chip
-                    )}
-                  </span>
-                );
-              })}
+            <div key={use.key} className="rounded-[5px] border border-line bg-white p-1.5">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="flex items-center gap-1 text-[11px] font-semibold text-ink-2">
+                  {isUnclassified ? 'Not yet classified' : use.label}
+                  {isUnclassified && (
+                    <Tip
+                      label="Not yet classified"
+                      body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
+                      side="top"
+                    >
+                      <span className="cursor-help text-ink-3">(i)</span>
+                    </Tip>
+                  )}
+                </span>
+                <button
+                  onClick={() => toggleUse(use)}
+                  className="text-[10.5px] text-accent hover:underline"
+                >
+                  toggle all
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {use.types.map((t) => {
+                  const on = !offTypes.has(t.key);
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => toggleType(t.key)}
+                      className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
+                      style={
+                        on
+                          ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
+                          : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
+                      }
+                    >
+                      <Check on={on} />
+                      {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                      <span className="num text-[10px] opacity-70">{t.count}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           );
-        }
-
-        return (
-          <div className="rounded-[6px] border border-line bg-surface-2 p-1.5">
-            <button
-              onClick={() => selectUse(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-[11px] text-ink-3 transition-colors hover:text-accent"
-            >
-              <IconChevron size={12} className="rotate-180" />
-              All categories
-            </button>
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[11px] font-semibold text-ink-2">
-                {activeUse.label}
-              </span>
-              <button
-                onClick={() => toggleUse(activeUse)}
-                className="text-[10.5px] text-accent hover:underline"
-              >
-                toggle all
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {activeUse.types.map((t) => {
-                const on = !offTypes.has(t.key);
-                return (
-                  <button
-                    key={t.key}
-                    onClick={() => toggleType(t.key)}
-                    className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
-                    style={
-                      on
-                        ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
-                        : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
-                    }
-                  >
-                    <Check on={on} />
-                    {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                    <span className="num text-[10px] opacity-70">{t.count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+        })}
       </div>
 
       <button
@@ -6166,6 +6120,12 @@ function RealBuildingsRegister({
   const [view, setView] = useState<'types' | 'list' | null>(null);
   const selectView = (v: 'types' | 'list' | null) => withViewTransition(() => setView(v));
   const [openId, setOpenId] = useState<string | null>(null);
+  // Browsing by category lives here, not in Manage types: that's a map
+  // declutter control, this is exploring the register itself. null means
+  // "haven't picked a scope yet", 'all' means every building, otherwise
+  // a REAL_USE_TREE key.
+  const [listScope, setListScope] = useState<string | null>(null);
+  const selectListScope = (v: string | null) => withViewTransition(() => setListScope(v));
 
   const totalInsured = REAL_BUILDINGS.reduce((n, b) => n + b.insuredValue, 0);
   const preciseCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
@@ -6277,28 +6237,81 @@ function RealBuildingsRegister({
               <IconChevron size={13} className="rotate-180" />
               Back
             </button>
-            <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-[11.5px] font-medium text-ink">
-                All {REAL_BUILDINGS.length} buildings
-              </span>
-              <span className="num text-[10.5px] text-ink-3">
-                ${(totalInsured / 1e6).toFixed(1)}M · {mappedCount} mapped
-              </span>
-            </div>
-            <p className="mb-1.5 text-[10.5px] leading-[1.4] text-ink-3">
-              Every real building, regardless of which types show on the
-              map. Manage types there is a map declutter, not a filter
-              on this list.
-            </p>
-            <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-              {REAL_BUILDINGS.map((b) => (
-                <BuildingCard
-                  key={b.id}
-                  b={b}
-                  isOpen={openId === b.id}
-                  onToggle={() => setOpenId(openId === b.id ? null : b.id)}
-                />
-              ))}
+
+            <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
+              {listScope === null && (
+                <div className="space-y-1">
+                  <button
+                    onClick={() => selectListScope('all')}
+                    className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                  >
+                    <span className="text-[11.5px] font-medium text-ink">
+                      All {REAL_BUILDINGS.length} buildings
+                    </span>
+                    <span className="num text-[10.5px] text-ink-3">
+                      ${(totalInsured / 1e6).toFixed(1)}M
+                    </span>
+                  </button>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {REAL_USE_TREE.map((use) => {
+                      const isUnclassified = use.key === UNCLASSIFIED;
+                      return (
+                        <button
+                          key={use.key}
+                          onClick={() => selectListScope(use.key)}
+                          className="flex items-center gap-1 rounded-[5px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
+                        >
+                          <span className="text-[11.5px] font-medium text-ink">
+                            {isUnclassified ? 'Not yet classified' : use.label}
+                          </span>
+                          <span className="num text-[10.5px] text-ink-3">{use.count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {listScope !== null && (() => {
+                const use = listScope === 'all' ? null : REAL_USE_TREE.find((u) => u.key === listScope);
+                // Match on the real buildingUse field directly, the same
+                // grouping buildUseTree used, not on buildingType alone:
+                // the same type name can recur under a different use.
+                const buildings = use
+                  ? REAL_BUILDINGS.filter((b) => (b.buildingUse ?? UNCLASSIFIED) === use.key)
+                  : REAL_BUILDINGS;
+                const label = use ? (use.key === UNCLASSIFIED ? 'Not yet classified' : use.label) : 'All buildings';
+                const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
+                return (
+                  <div>
+                    <button
+                      onClick={() => selectListScope(null)}
+                      className="mb-1.5 flex items-center gap-[3px] text-[11px] text-ink-3 transition-colors hover:text-accent"
+                    >
+                      <IconChevron size={12} className="rotate-180" />
+                      All categories
+                    </button>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-[11.5px] font-medium text-ink">
+                        {label}, {buildings.length}
+                      </span>
+                      <span className="num text-[10.5px] text-ink-3">
+                        ${(insured / 1e6).toFixed(1)}M
+                      </span>
+                    </div>
+                    <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                      {buildings.map((b) => (
+                        <BuildingCard
+                          key={b.id}
+                          b={b}
+                          isOpen={openId === b.id}
+                          onToggle={() => setOpenId(openId === b.id ? null : b.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
