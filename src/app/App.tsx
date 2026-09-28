@@ -6167,25 +6167,10 @@ function RealBuildingsRegister({
   const selectView = (v: 'types' | 'list' | null) => withViewTransition(() => setView(v));
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const visibleTypes = useMemo(
-    () => new Set([...ALL_BUILDING_TYPES].filter((t) => !offTypes.has(t))),
-    [offTypes],
-  );
-
-  const visibleBuildings = useMemo(
-    () =>
-      REAL_BUILDINGS.filter((b) =>
-        visibleTypes.has(b.buildingType ?? UNCLASSIFIED),
-      ),
-    [visibleTypes],
-  );
-
   const totalInsured = REAL_BUILDINGS.reduce((n, b) => n + b.insuredValue, 0);
-  const visibleInsured = visibleBuildings.reduce((n, b) => n + b.insuredValue, 0);
   const preciseCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
   const approxCount = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'street').length;
   const mappedCount = preciseCount + approxCount;
-  const visibleMapped = visibleBuildings.filter((b) => BUILDING_LOCATION[b.id]).length;
   const onCount = ALL_BUILDING_TYPES.size - offTypes.size;
 
   return (
@@ -6259,11 +6244,11 @@ function RealBuildingsRegister({
             >
               <span className="flex items-center gap-1.5">
                 <span className="text-[11.5px] font-medium text-ink">
-                  List {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
+                  List all {REAL_BUILDINGS.length} buildings
                 </span>
               </span>
               <span className="flex items-center gap-1 text-[11px] text-accent">
-                <span className="num">${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped</span>
+                <span className="num">${(totalInsured / 1e6).toFixed(1)}M · {mappedCount} mapped</span>
                 <IconChevron size={11} />
               </span>
             </button>
@@ -6294,27 +6279,19 @@ function RealBuildingsRegister({
             </button>
             <div className="mb-1.5 flex items-center justify-between">
               <span className="text-[11.5px] font-medium text-ink">
-                {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
+                All {REAL_BUILDINGS.length} buildings
               </span>
               <span className="num text-[10.5px] text-ink-3">
-                ${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped
+                ${(totalInsured / 1e6).toFixed(1)}M · {mappedCount} mapped
               </span>
             </div>
+            <p className="mb-1.5 text-[10.5px] leading-[1.4] text-ink-3">
+              Every real building, regardless of which types show on the
+              map. Manage types there is a map declutter, not a filter
+              on this list.
+            </p>
             <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-              {visibleBuildings.length === 0 && (
-                <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
-                  No building types selected. Every type starts on by
-                  default, so this means they were switched off in Manage
-                  types.
-                  <button
-                    onClick={() => setOffTypes(() => new Set())}
-                    className="mt-1.5 block w-full text-[11px] font-medium text-accent underline decoration-dotted hover:text-ink"
-                  >
-                    Show all {ALL_BUILDING_TYPES.size} types
-                  </button>
-                </div>
-              )}
-              {visibleBuildings.map((b) => (
+              {REAL_BUILDINGS.map((b) => (
                 <BuildingCard
                   key={b.id}
                   b={b}
@@ -6463,14 +6440,15 @@ export default function App() {
   // that same layer is unchecked; left alone if a different layer gets
   // unchecked while its panel is showing.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
-  // Building types switched off in Place's buildings register. Lifted to
-  // root so the map and that register both read the one state. Starts
-  // with everything on: buildings are the actual asset this register is
-  // for, not an optional overlay layer, so they show by default on the
-  // map and in the list both. "Manage types" still narrows it down, it's
-  // just no longer a required first step to see anything at all.
+  // Building types switched off on the MAP. Lifted to root so the map and
+  // Place's buildings register both read the one state. Starts with
+  // everything off there, opt-in, so the map isn't a surprise on load.
+  // The register's own list is a separate concern (see RealBuildingsRegister
+  // below): it always shows every real building regardless of this, since
+  // browsing the register and decluttering the map are different needs
+  // and conflating them made the list an accidental dead end.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
-    () => new Set(),
+    () => new Set(ALL_BUILDING_TYPES),
   );
 
   const showBlueprintPanel = !!activeBlueprint;
