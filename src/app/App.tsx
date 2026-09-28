@@ -6303,8 +6303,9 @@ function RealBuildingsRegister({
             <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
               {visibleBuildings.length === 0 && (
                 <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
-                  No building types selected, every type starts off so the
-                  map isn't a surprise on load.
+                  No building types selected. Every type starts on by
+                  default, so this means they were switched off in Manage
+                  types.
                   <button
                     onClick={() => setOffTypes(() => new Set())}
                     className="mt-1.5 block w-full text-[11px] font-medium text-accent underline decoration-dotted hover:text-ink"
@@ -6464,10 +6465,12 @@ export default function App() {
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
   // Building types switched off in Place's buildings register. Lifted to
   // root so the map and that register both read the one state. Starts
-  // with everything off, matching every other overlay in Layers, on the
-  // map is opt-in, not a surprise on first load.
+  // with everything on: buildings are the actual asset this register is
+  // for, not an optional overlay layer, so they show by default on the
+  // map and in the list both. "Manage types" still narrows it down, it's
+  // just no longer a required first step to see anything at all.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
-    () => new Set(ALL_BUILDING_TYPES),
+    () => new Set(),
   );
 
   const showBlueprintPanel = !!activeBlueprint;
