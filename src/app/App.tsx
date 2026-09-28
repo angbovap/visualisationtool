@@ -2222,6 +2222,11 @@ function Segmented<T extends string | number>({
 }
 
 /** Small all-caps heading used inside panels. */
+/** The one section-heading style, used everywhere a panel needs to say
+ *  what a block of content is before showing it. Bumped up from 11.5px
+ *  once too many stacked sections started reading as one undifferentiated
+ *  block, changing it here fixes hierarchy everywhere it's used at once,
+ *  rather than one-off font sizes creeping back in per call site. */
 function PanelHeading({
   children,
   right,
@@ -2230,8 +2235,8 @@ function PanelHeading({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-1.5 flex items-center justify-between">
-      <span className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-ink-3">
+    <div className="mb-2 flex items-center justify-between">
+      <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
         {children}
       </span>
       {right}
@@ -2285,6 +2290,8 @@ interface MapViewProps {
   onZoomChange: (z: number) => void;
   showBuildings: boolean;
   buildingOffTypes: Set<string>;
+  selectedBuildingKey: string | null;
+  onSelectBuildingPoint: (key: string, ids: string[]) => void;
 }
 
 /** Deterministic value in 0 to 1 from a pair of integers, for canvas texture. */
@@ -2327,6 +2334,8 @@ function MapView(props: MapViewProps) {
     onZoomChange,
     showBuildings,
     buildingOffTypes,
+    selectedBuildingKey,
+    onSelectBuildingPoint,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -2977,7 +2986,7 @@ function MapView(props: MapViewProps) {
     if (showBuildings) {
       const byPoint = new Map<
         string,
-        { lat: number; lng: number; precision: 'site' | 'street'; names: string[] }
+        { lat: number; lng: number; precision: 'site' | 'street'; names: string[]; ids: string[] }
       >();
       for (const b of REAL_BUILDINGS) {
         const loc = BUILDING_LOCATION[b.id];
@@ -2986,10 +2995,14 @@ function MapView(props: MapViewProps) {
         if (buildingOffTypes.has(typeKey)) continue;
         const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
         const bucket = byPoint.get(key);
-        if (bucket) bucket.names.push(b.name);
-        else byPoint.set(key, { lat: loc.lat, lng: loc.lng, precision: loc.precision, names: [b.name] });
+        if (bucket) {
+          bucket.names.push(b.name);
+          bucket.ids.push(b.id);
+        } else {
+          byPoint.set(key, { lat: loc.lat, lng: loc.lng, precision: loc.precision, names: [b.name], ids: [b.id] });
+        }
       }
-      for (const { lat, lng, precision, names } of byPoint.values()) {
+      for (const [key, { lat, lng, precision, names, ids }] of byPoint) {
         const siteLevel = precision === 'site';
         const count = names.length;
         // Radius grows with count so a 29-building cluster reads as
@@ -2999,6 +3012,23 @@ function MapView(props: MapViewProps) {
           count === 1
             ? `${names[0]}${siteLevel ? '' : ' — street-level estimate, not the building'}`
             : `${count} buildings here${siteLevel ? '' : ', street-level estimate'}: ${names.slice(0, 4).join(', ')}${count > 4 ? `, +${count - 4} more` : ''}`;
+        const isSelected = key === selectedBuildingKey;
+        // A click opens the same real register detail on the right that
+        // the Assets tab shows, so a dot is never a dead end, just
+        // hovering for a name was the only way to read one before this.
+        // The ring underneath, not the dot itself, carries the selected
+        // state so the dot's own site/street encoding stays legible.
+        if (isSelected) {
+          push(
+            L.circleMarker([lat, lng] as LatLngTuple, {
+              radius: radius + 4,
+              color: ACCENT,
+              weight: 2,
+              fill: false,
+              interactive: false,
+            }),
+          );
+        }
         push(
           L.circleMarker([lat, lng] as LatLngTuple, {
             radius,
@@ -3007,7 +3037,9 @@ function MapView(props: MapViewProps) {
             fillColor: siteLevel ? ACCENT : '#fff',
             fillOpacity: siteLevel ? 0.95 : 0.5,
             interactive: true,
-          }).bindTooltip(label, { direction: 'top', offset: [0, -3] }),
+          })
+            .bindTooltip(label, { direction: 'top', offset: [0, -3] })
+            .on('click', () => onSelectBuildingPoint(key, ids)),
         );
       }
     }
@@ -3039,6 +3071,8 @@ function MapView(props: MapViewProps) {
     darkBase,
     showBuildings,
     buildingOffTypes,
+    selectedBuildingKey,
+    onSelectBuildingPoint,
   ]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
@@ -3385,10 +3419,18 @@ function LayersTab({
   const categories = allCategories.filter((c) => c.total > 0);
 
   const renderLayerList = (g: LayerGroup) => {
+    // A heading here, not just the category card above, so which group
+    // is showing stays clear once you've scrolled past the card grid.
+    const heading = (
+      <div className="px-2.5 pt-2">
+        <PanelHeading>{GROUP_LABEL[g]}</PanelHeading>
+      </div>
+    );
     if (g === 'vulnerability') {
       return (
-        <div className="px-2.5 py-[5px]">
-          <div className="flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
+        <div className="pb-1.5">
+          {heading}
+          <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
             <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#D8CFF0]" />
             <span className="flex-1 truncate text-[12px] text-ink-3">Dwelling Density</span>
             <span className="text-[10.5px] text-ink-3">needs attribute data</span>
@@ -3399,6 +3441,7 @@ function LayersTab({
     const layers = visibleLayers.filter((l) => l.group === g);
     return (
       <div className="pb-1.5">
+        {heading}
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const showSlider = checked || hoverId === l.id;
@@ -3482,22 +3525,23 @@ function LayersTab({
 
       {/* Global opacity sits above everything it governs, the one
           control that applies regardless of which section is open. */}
-      <div className="border-b border-line px-2.5 py-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[12px] font-semibold uppercase tracking-[0.07em] text-ink-3">
-            Global opacity
-          </span>
-          <span className="num text-[12.5px] font-semibold text-accent">
-            {Math.round(overlayOpacity * 100)}%
-          </span>
-        </div>
+      <div className="border-b border-line px-2.5 py-2.5">
+        <PanelHeading
+          right={
+            <span className="num text-[12.5px] font-semibold text-accent">
+              {Math.round(overlayOpacity * 100)}%
+            </span>
+          }
+        >
+          Global opacity
+        </PanelHeading>
         <input
           type="range"
           min={10}
           max={100}
           value={Math.round(overlayOpacity * 100)}
           onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
-          className="mt-1.5 w-full"
+          className="w-full"
         />
       </div>
 
@@ -3505,7 +3549,8 @@ function LayersTab({
           live on/total count read faster than a label alone, and the
           grid matches the Blueprint cards below rather than introducing
           a third visual language in the same panel. */}
-      <div className="border-b border-line px-2.5 py-2">
+      <div className="border-b border-line px-2.5 py-2.5">
+        <PanelHeading>Layer categories</PanelHeading>
         <div className="grid grid-cols-2 gap-1.5">
           {categories.map((c) => {
             const on = activeTab === c.value;
@@ -5648,6 +5693,7 @@ interface RealAsset {
 
 const REAL_ASSETS = ccsBuildingsRaw as RealAsset[];
 const REAL_BUILDINGS = REAL_ASSETS.filter((a) => a.assetClass === 'building');
+const REAL_BUILDINGS_BY_ID = new Map(REAL_BUILDINGS.map((b) => [b.id, b]));
 
 const ASSET_CLASS_LABEL: Record<AssetClass, string> = {
   building: 'Buildings',
@@ -5920,6 +5966,122 @@ function BuildingCard({
 }
 
 /* ------------------------------------------------------------------ *
+ * Map point panel
+ *
+ * Clicking a building dot is as deliberate an act as loading a
+ * blueprint or opening a suburb, so it gets the same right-panel
+ * treatment instead of a hover tooltip being the only way to read one.
+ * One point can hold several buildings that geocoded to the same spot,
+ * so this shows every real building filed there plus the small amount
+ * of aggregate reading the register itself supports (count, insured
+ * value, condition and risk mix), nothing modelled or invented.
+ * ------------------------------------------------------------------ */
+
+function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => void }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const buildings = ids
+    .map((id) => REAL_BUILDINGS_BY_ID.get(id))
+    .filter((b): b is RealAsset => !!b);
+
+  if (buildings.length === 0) {
+    return (
+      <RightPanelShell accent={ACCENT} eyebrow="Map selection" title="No detail" onClose={onClose}>
+        <div className="px-2.5 py-2">
+          <p className="text-[11.5px] leading-[1.55] text-ink-2">
+            No register detail found for this point.
+          </p>
+        </div>
+      </RightPanelShell>
+    );
+  }
+
+  const single = buildings.length === 1;
+  const totalInsured = buildings.reduce((n, b) => n + b.insuredValue, 0);
+  const conditionCounts = new Map<string, number>();
+  const riskCounts = new Map<string, number>();
+  for (const b of buildings) {
+    if (b.condition) conditionCounts.set(b.condition, (conditionCounts.get(b.condition) ?? 0) + 1);
+    if (b.inherentRisk) riskCounts.set(b.inherentRisk, (riskCounts.get(b.inherentRisk) ?? 0) + 1);
+  }
+
+  return (
+    <RightPanelShell
+      accent={ACCENT}
+      eyebrow="Map selection"
+      title={single ? buildings[0].name : `${buildings.length} buildings here`}
+      onClose={onClose}
+    >
+      <div className="px-2.5 py-2">
+        {!single && (
+          <>
+            <PanelHeading>At this point</PanelHeading>
+            <div className="mb-3 grid grid-cols-2 gap-1.5">
+              <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
+                <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">Buildings</div>
+                <div className="num text-[16px] font-semibold text-ink">{buildings.length}</div>
+              </div>
+              <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
+                <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">Insured value</div>
+                <div className="num text-[16px] font-semibold text-ink">
+                  ${(totalInsured / 1e6).toFixed(1)}M
+                </div>
+              </div>
+            </div>
+            {(conditionCounts.size > 0 || riskCounts.size > 0) && (
+              <div className="mb-3 space-y-1">
+                {conditionCounts.size > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {[...conditionCounts.entries()].map(([label, n]) => {
+                      const c = CONDITION_COLOR[label] ?? NEUTRAL_TONE;
+                      return (
+                        <span
+                          key={label}
+                          className="rounded-[3px] px-1 text-[10.5px] font-medium"
+                          style={{ background: withAlpha(c, 0.12), color: c }}
+                        >
+                          {n} {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+                {riskCounts.size > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {[...riskCounts.entries()].map(([label, n]) => {
+                      const c = RISK_COLOR[label] ?? NEUTRAL_TONE;
+                      return (
+                        <span
+                          key={label}
+                          className="rounded-[3px] px-1 text-[10.5px] font-medium"
+                          style={{ background: withAlpha(c, 0.12), color: c }}
+                        >
+                          {n} {label}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        <PanelHeading>{single ? 'Register detail' : 'Each building'}</PanelHeading>
+        <div className="space-y-1.5">
+          {buildings.map((b) => (
+            <BuildingCard
+              key={b.id}
+              b={b}
+              isOpen={single || openId === b.id}
+              onToggle={() => setOpenId((cur) => (cur === b.id ? null : b.id))}
+            />
+          ))}
+        </div>
+      </div>
+    </RightPanelShell>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Asset category toggles
  *
  * One control surface for "what real buildings show, on the map and in
@@ -6137,20 +6299,21 @@ function RealBuildingsRegister({
       {/* At a glance: what the register contains, purely read-only. The
           tab's own header already says what this is, so no second
           "Buildings register" heading repeating it here. */}
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
-          At a glance
-        </span>
-        <Tip
-          label="Map coverage"
-          body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
-          side="left"
-        >
-          <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
-            {mappedCount} of {REAL_BUILDINGS.length} on map
-          </span>
-        </Tip>
-      </div>
+      <PanelHeading
+        right={
+          <Tip
+            label="Map coverage"
+            body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${REAL_BUILDINGS.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+            side="left"
+          >
+            <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+              {mappedCount} of {REAL_BUILDINGS.length} on map
+            </span>
+          </Tip>
+        }
+      >
+        At a glance
+      </PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
           <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
@@ -6191,16 +6354,17 @@ function RealBuildingsRegister({
           more stats. One of two destinations at a time, not two
           independent accordions that can both be open and push each
           other down. */}
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
-          Browse the register
-        </span>
-        <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
-          <span className="cursor-help text-[12px] text-ink-3 underline decoration-dotted">
-            how read
-          </span>
-        </Tip>
-      </div>
+      <PanelHeading
+        right={
+          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
+            <span className="cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+              how read
+            </span>
+          </Tip>
+        }
+      >
+        Browse the register
+      </PanelHeading>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
           <div className="space-y-2">
@@ -6490,6 +6654,15 @@ export default function App() {
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
     () => new Set(ALL_BUILDING_TYPES),
   );
+  // Which map point (a lat/lng key, possibly several buildings stacked on
+  // it) is open on the right. Clicking the same dot again closes it, the
+  // same toggle-off behaviour a checkbox gives.
+  const [selectedBuildingKey, setSelectedBuildingKey] = useState<string | null>(null);
+  const [selectedBuildingIds, setSelectedBuildingIds] = useState<string[]>([]);
+  const handleSelectBuildingPoint = useCallback((key: string, ids: string[]) => {
+    setSelectedBuildingKey((cur) => (cur === key ? null : key));
+    setSelectedBuildingIds(ids);
+  }, []);
 
   const showBlueprintPanel = !!activeBlueprint;
   const compare = panelTab === 'analysis';
@@ -6501,13 +6674,15 @@ export default function App() {
   // Analysis has no right panel of its own, its chart and table sit
   // inline in the left tab, comparing two layers is still just reading
   // data, not judging it.
-  const rightPanelMode: 'blueprint' | 'place' | 'layer' | null = showBlueprintPanel
+  const rightPanelMode: 'blueprint' | 'building' | 'place' | 'layer' | null = showBlueprintPanel
     ? 'blueprint'
-    : panelTab === 'place' && selectedId
-      ? 'place'
-      : panelTab === 'layers' && layerInfoId
-        ? 'layer'
-        : null;
+    : selectedBuildingKey
+      ? 'building'
+      : panelTab === 'place' && selectedId
+        ? 'place'
+        : panelTab === 'layers' && layerInfoId
+          ? 'layer'
+          : null;
   const rightPanelAccent =
     rightPanelMode === 'blueprint' && activeBlueprint
       ? BLUEPRINT_ACCENT[activeBlueprint]
@@ -6719,6 +6894,8 @@ export default function App() {
             onZoomChange={setZoom}
             showBuildings={buildingOffTypes.size < ALL_BUILDING_TYPES.size}
             buildingOffTypes={buildingOffTypes}
+            selectedBuildingKey={selectedBuildingKey}
+            onSelectBuildingPoint={handleSelectBuildingPoint}
           />
 
           {showQuadrant && (
@@ -6761,6 +6938,12 @@ export default function App() {
           planYear={planYear}
           setPlanYear={setPlanYear}
           onOpenQuadrant={() => setShowQuadrant(true)}
+        />
+      )}
+      {rightPanelMode === 'building' && (
+        <BuildingPointPanel
+          ids={selectedBuildingIds}
+          onClose={() => setSelectedBuildingKey(null)}
         />
       )}
       {rightPanelMode === 'place' && <PlaceAnalysisPanel selectedId={selectedId} />}
