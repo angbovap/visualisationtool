@@ -69,6 +69,7 @@ import heatVulnerabilityData from '@/data/heatVulnerability.json';
 // batch at their 1 request/second limit). Not part of the source export.
 // See BUILDING_LOCATION below for why most of these are street-level.
 import ccsBuildingsGeocoded from '@/data/ccsBuildingsGeocoded.json';
+import ccsRegisterDates from '@/data/ccsRegisterDates.json';
 import vapLogo from '@/assets/vaplogo.png';
 
 /* ------------------------------------------------------------------ *
@@ -190,6 +191,9 @@ interface LayerDef {
   source: string;
   /** Time-series steps, when the dataset has any. */
   steps?: number[];
+  /** Year the source file itself states (from its filename), for a fixed
+   *  snapshot with no time series. Left unset when the source gives none. */
+  vintage?: number;
 }
 
 interface Blueprint {
@@ -403,9 +407,9 @@ const LAYERS: LayerDef[] = [
     lo: '#FFFBEB',
     hi: '#EF4444',
     unit: 'UHI category 2 (lowest) to 4 (highest)',
-    note: 'Real daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series, so the year selector below does not change it. The Blueprint and Ranking views of Heat Vulnerability elsewhere in this tool still use the older indicative per-suburb score, not this grid.',
+    note: 'Real daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series. The Blueprint and Ranking views of Heat Vulnerability elsewhere in this tool still use the older indicative per-suburb score, not this grid.',
     source: 'Council GIS export, "UrbanHeatSocialVulnDay2022.shp/.dbf", reprojected from GDA2020 MGA Zone 54 and clipped to the LGA',
-    steps: [2021, 2031, 2036, 2041],
+    vintage: 2022,
   },
   {
     id: 'watercourses',
@@ -526,6 +530,7 @@ const LAYERS: LayerDef[] = [
     unit: 'facilities',
     note: 'Not a council asset, but a real state health facility inside the LGA, of the four in the statewide dataset only one point actually falls inside the boundary once checked against the real LGA shape rather than a loose bounding box.',
     source: 'Council GIS export, "Obstetric_Hospitals_2014.shp" (statewide, GDA2020 SA Lambert), reprojected and matched to the real LGA boundary',
+    vintage: 2014,
   },
   {
     id: 'roads',
@@ -5497,6 +5502,7 @@ function TimelineBar({
   setYear,
   steps,
   datasetLabel,
+  snapshot,
 }: {
   sc: Scenario;
   setSc: (s: Scenario) => void;
@@ -5504,11 +5510,13 @@ function TimelineBar({
   setYear: (y: number) => void;
   steps: number[];
   datasetLabel: string;
+  snapshot: string | null;
 }) {
+  const modelled = steps.length > 0;
   return (
     <div className="flex h-[62px] shrink-0 items-center justify-between border-t border-line bg-white px-3">
-      <div className="flex items-center gap-2.5">
-        <div>
+      <div className={`flex items-center gap-2.5 transition-opacity ${modelled ? '' : 'opacity-40'}`}>
+        <div className={modelled ? '' : 'pointer-events-none'}>
           <div className="text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
             Scenario
           </div>
@@ -5524,7 +5532,9 @@ function TimelineBar({
           </div>
         </div>
         <div className="hidden max-w-[280px] border-l border-line pl-2.5 text-[11.5px] leading-[1.45] text-ink-3 lg:block">
-          {SCENARIO_NOTE[sc]} Pathways, not forecasts. Both are plausible.
+          {modelled
+            ? `${SCENARIO_NOTE[sc]} Pathways, not forecasts. Both are plausible.`
+            : 'Scenarios only apply to modelled layers. None of the layers on the map is one.'}
         </div>
       </div>
 
@@ -5564,6 +5574,10 @@ function TimelineBar({
                 </button>
               );
             })}
+          </div>
+        ) : snapshot ? (
+          <div className="rounded-[5px] border border-line bg-surface-2 px-2.5 py-[5px] text-[12px] text-ink-2">
+            Snapshot <span className="num font-semibold text-ink">{snapshot}</span>, not a time series
           </div>
         ) : (
           <div className="rounded-[5px] border border-dashed border-line px-2.5 py-[5px] text-[12px] text-[#A8B5B4]">
@@ -6278,6 +6292,10 @@ interface RealBuildingsRegisterProps {
   setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
+function formatRegisterDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function RealBuildingsRegister({
   offTypes,
   setOffTypes,
@@ -6566,6 +6584,22 @@ function RealBuildingsRegister({
           because it qualifies the figures above rather than answering
           a question of its own. */}
       <div className="mt-4">
+        <PanelHeading>Register dates</PanelHeading>
+        <div className="mb-4 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-[12px] leading-[1.5] text-ink-2">
+          <div>
+            Last modified{' '}
+            <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
+          </div>
+          <div>
+            Condition inspection dates are recorded on only{' '}
+            <span className="num font-semibold text-ink">
+              {ccsRegisterDates.conditionInspection.componentRowsRecorded}
+            </span>{' '}
+            register rows ({formatRegisterDate(ccsRegisterDates.conditionInspection.earliest)} to{' '}
+            {formatRegisterDate(ccsRegisterDates.conditionInspection.latest)}), so most ratings above have no
+            date attached and can't be read as current.
+          </div>
+        </div>
         <PanelHeading
           right={
             <Tip
@@ -6782,6 +6816,20 @@ export default function App() {
     [checkedLayers],
   );
   const surface = activeSurfaces[0] ?? null;
+
+  // Years the checked layers' own source files state, shown in place of a
+  // year picker that would otherwise imply a snapshot changes over time.
+  // Layers whose source states no year contribute nothing here.
+  const snapshot = useMemo(() => {
+    const years = [
+      ...new Set(
+        [...checkedLayers]
+          .map((id) => LAYER_BY_ID[id]?.vintage)
+          .filter((y): y is number => y !== undefined),
+      ),
+    ].sort();
+    return years.length > 0 ? years.join(', ') : null;
+  }, [checkedLayers]);
 
   const steps = useMemo(
     () => yearStepsFor(activeBlueprint, compare ? compareA : surface?.id ?? null),
@@ -7001,6 +7049,7 @@ export default function App() {
           setYear={setYear}
           steps={steps}
           datasetLabel={datasetLabel}
+          snapshot={snapshot}
         />
       </main>
 

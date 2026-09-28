@@ -1,0 +1,5 @@
+{
+  "source": "CCS_Buildings.xlsx, counted directly from the export's component rows (5,682 with a last-modified date). Not per building: one building is many component rows.",
+  "lastModified": "2026-07-03",
+  "conditionInspection": { "componentRowsRecorded": 25, "earliest": "2025-11-18", "latest": "2026-06-18" }
+}
