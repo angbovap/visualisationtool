@@ -3707,7 +3707,7 @@ function LayersTab({
             );
           })}
         </div>
-        <div className="mt-2.5 rounded-[7px] border-2 border-[#C7B8E8] bg-[#F5F1FC] px-3 py-2.5 text-[14px] font-semibold leading-[1.4] text-[#5B3FA3]">
+        <div className="mt-2.5 rounded-[7px] border-2 border-[#D8C9A8] bg-[#FDF9EF] px-3 py-2.5 text-[14px] font-semibold leading-[1.4] text-[#7A6634]">
           <span className="text-[15px] uppercase tracking-[0.04em]">Work in progress.</span>{' '}
           The map layers here are real. The ranking and comparison
           numbers still come from the older per-suburb placeholder,

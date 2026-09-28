@@ -39,6 +39,15 @@ body {
 button { font-family: inherit; color: inherit; }
 input, select { font-family: inherit; }
 
+/* Keyboard focus in the app's own accent, not whatever blue the browser
+   defaults to. :focus-visible so a mouse click never shows a ring, only
+   actual keyboard navigation does. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
 /* Thin scrollbars keep the dense panels from losing width to chrome. */
 .thin-scroll { scrollbar-width: thin; scrollbar-color: #CBD5D4 transparent; }
 .thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
