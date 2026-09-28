@@ -5943,7 +5943,10 @@ interface AssetTypeTogglesProps {
 }
 
 function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
-  const [openUse, setOpenUse] = useState<string | null>(null);
+  // A tab, not an accordion: exactly one category selected at all times,
+  // its types show in the same fixed spot below, content swaps there
+  // rather than a panel expanding and pushing everything after it down.
+  const [openUse, setOpenUse] = useState<string>(REAL_USE_TREE[0]?.key ?? '');
   const [showOther, setShowOther] = useState(false);
 
   const toggleType = useCallback(
@@ -6002,7 +6005,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           const isUnclassified = use.key === UNCLASSIFIED;
           const chip = (
             <button
-              onClick={() => setOpenUse(isOpen ? null : use.key)}
+              onClick={() => setOpenUse(use.key)}
               className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
               style={
                 isOpen
@@ -6040,42 +6043,49 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
         })}
       </div>
 
-      {openUse && (
-        <div className="fade-up mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5">
-          <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-ink-2">
-              {REAL_USE_TREE.find((u) => u.key === openUse)?.label}
-            </span>
-            <button
-              onClick={() => toggleUse(REAL_USE_TREE.find((u) => u.key === openUse)!)}
-              className="text-[10.5px] text-accent hover:underline"
-            >
-              toggle all
-            </button>
+      {(() => {
+        const activeUse = REAL_USE_TREE.find((u) => u.key === openUse);
+        if (!activeUse) return null;
+        return (
+          <div
+            key={openUse}
+            className="fade-in mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5"
+          >
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-ink-2">
+                {activeUse.label}
+              </span>
+              <button
+                onClick={() => toggleUse(activeUse)}
+                className="text-[10.5px] text-accent hover:underline"
+              >
+                toggle all
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {activeUse.types.map((t) => {
+                const on = !offTypes.has(t.key);
+                return (
+                  <button
+                    key={t.key}
+                    onClick={() => toggleType(t.key)}
+                    className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
+                    style={
+                      on
+                        ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
+                        : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
+                    }
+                  >
+                    <Check on={on} />
+                    {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                    <span className="num text-[10px] opacity-70">{t.count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {REAL_USE_TREE.find((u) => u.key === openUse)?.types.map((t) => {
-              const on = !offTypes.has(t.key);
-              return (
-                <button
-                  key={t.key}
-                  onClick={() => toggleType(t.key)}
-                  className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
-                  style={
-                    on
-                      ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
-                      : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
-                  }
-                >
-                  <Check on={on} />
-                  {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                  <span className="num text-[10px] opacity-70">{t.count}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       <button
         onClick={() => setShowOther(!showOther)}
