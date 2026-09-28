@@ -5923,7 +5923,10 @@ function IconRail({
   tab: PanelTab;
   setTab: (t: PanelTab) => void;
 }) {
-  const order: PanelTab[] = ['layers', 'place', 'analysis', 'help'];
+  // Analysis hidden for the workshop build, same as the 5 other
+  // blueprints and the fabricated layers, it only offers to compare
+  // layers that aren't visible or toggleable anywhere else right now.
+  const order: PanelTab[] = ['layers', 'place', 'help'];
   return (
     <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
