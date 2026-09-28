@@ -6160,8 +6160,12 @@ function RealBuildingsRegister({
   offTypes,
   setOffTypes,
 }: RealBuildingsRegisterProps) {
-  const [showList, setShowList] = useState(false);
-  const [showTypeToggles, setShowTypeToggles] = useState(false);
+  // Same step pattern as AssetTypeToggles below it: exactly one of
+  // "manage types" or "browse the list" showing at a time, not two
+  // independent accordions that can both be open and push each other
+  // down the page.
+  const [view, setView] = useState<'types' | 'list' | null>(null);
+  const selectView = (v: 'types' | 'list' | null) => withViewTransition(() => setView(v));
   const [openId, setOpenId] = useState<string | null>(null);
 
   const visibleTypes = useMemo(
@@ -6231,63 +6235,90 @@ function RealBuildingsRegister({
         <span>{REAL_BUILDINGS.length - mappedCount} not mapped</span>
       </div>
 
-      {/* Building-type toggles used to live in Layers, but that tab is
-          now scoped to the 8 workshop layers only, so they live here
-          instead, next to the register they actually control. */}
-      <button
-        onClick={() => setShowTypeToggles(!showTypeToggles)}
-        className="mb-2.5 flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-      >
-        <span className="text-[11.5px] text-ink-2">
-          <span className="num font-semibold text-ink">{onCount}</span> of{' '}
-          {ALL_BUILDING_TYPES.size} building types shown on the map
-        </span>
-        <span className="flex items-center gap-1 text-[11px] text-accent">
-          {showTypeToggles ? 'Hide' : 'Manage'}
-          <IconChevron size={11} className={`transition-transform ${showTypeToggles ? 'rotate-90' : ''}`} />
-        </span>
-      </button>
-      {showTypeToggles && (
-        <div className="fade-up mb-2.5">
-          <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
-        </div>
-      )}
+      {/* One of two destinations at a time, not two independent
+          accordions: choosing one replaces this whole area with it,
+          rather than opening a panel that pushes the other down. */}
+      <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
+        {view === null && (
+          <div className="space-y-1.5">
+            <button
+              onClick={() => selectView('types')}
+              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+            >
+              <span className="text-[11.5px] text-ink-2">
+                <span className="num font-semibold text-ink">{onCount}</span> of{' '}
+                {ALL_BUILDING_TYPES.size} building types shown on the map
+              </span>
+              <span className="flex items-center gap-1 text-[11px] text-accent">
+                Manage
+                <IconChevron size={11} />
+              </span>
+            </button>
+            <button
+              onClick={() => selectView('list')}
+              className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+            >
+              <span className="flex items-center gap-1.5">
+                <span className="text-[11.5px] font-medium text-ink">
+                  List {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
+                </span>
+              </span>
+              <span className="flex items-center gap-1 text-[11px] text-accent">
+                <span className="num">${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped</span>
+                <IconChevron size={11} />
+              </span>
+            </button>
+          </div>
+        )}
 
-      {/* The individual list is a deliberate browse area below the fold,
-          not the answer to the question above. Closed by default so
-          picking categories never has to compete with a long list. */}
-      <button
-        onClick={() => setShowList(!showList)}
-        className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-      >
-        <span className="flex items-center gap-1.5">
-          <IconChevron size={12} className={`text-ink-3 transition-transform ${showList ? 'rotate-90' : ''}`} />
-          <span className="text-[11.5px] font-medium text-ink">
-            List {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
-          </span>
-        </span>
-        <span className="num text-[10.5px] text-ink-3">
-          ${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped
-        </span>
-      </button>
+        {view === 'types' && (
+          <div>
+            <button
+              onClick={() => selectView(null)}
+              className="mb-1.5 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+            >
+              <IconChevron size={13} className="rotate-180" />
+              Back
+            </button>
+            <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
+          </div>
+        )}
 
-      {showList && (
-        <div className="fade-up mt-1.5 max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-          {visibleBuildings.length === 0 && (
-            <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
-              No building types selected.
+        {view === 'list' && (
+          <div>
+            <button
+              onClick={() => selectView(null)}
+              className="mb-1.5 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+            >
+              <IconChevron size={13} className="rotate-180" />
+              Back
+            </button>
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-[11.5px] font-medium text-ink">
+                {visibleBuildings.length} of {REAL_BUILDINGS.length} buildings
+              </span>
+              <span className="num text-[10.5px] text-ink-3">
+                ${(visibleInsured / 1e6).toFixed(1)}M · {visibleMapped} mapped
+              </span>
             </div>
-          )}
-          {visibleBuildings.map((b) => (
-            <BuildingCard
-              key={b.id}
-              b={b}
-              isOpen={openId === b.id}
-              onToggle={() => setOpenId(openId === b.id ? null : b.id)}
-            />
-          ))}
-        </div>
-      )}
+            <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+              {visibleBuildings.length === 0 && (
+                <div className="rounded-[5px] border border-dashed border-line px-2 py-3 text-center text-[11px] text-ink-3">
+                  No building types selected.
+                </div>
+              )}
+              {visibleBuildings.map((b) => (
+                <BuildingCard
+                  key={b.id}
+                  b={b}
+                  isOpen={openId === b.id}
+                  onToggle={() => setOpenId(openId === b.id ? null : b.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
