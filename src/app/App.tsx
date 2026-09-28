@@ -199,7 +199,10 @@ interface Blueprint {
   layers: string[];
   /** Suburb ranking metric driving the panel's bar chart. */
   rank: string;
-  watch: string[];
+  /** Short tappable tag plus the full sentence it stands in for, so the
+   *  panel can show a scannable chip first and the reasoning on demand
+   *  rather than a wall of numbered prose by default. */
+  watch: { tag: string; detail: string }[];
   steps?: number[];
 }
 
@@ -690,10 +693,10 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'floodScore',
     steps: [2021, 2041],
     watch: [
-      'West Lakes and Flinders Park carry the highest modelled extent, but their disadvantage profiles differ sharply.',
-      'The 1:5yr layer is the one that generates repeat service requests. Rank by nuisance as well as by severity.',
-      'Pipe capacity was sized for a catchment with far less hard surface than it has now.',
-      'Dwellings in the residential pipeline are being approved inside the 1:100yr extent in two SA2s.',
+      { tag: 'Highest extent, mixed disadvantage', detail: 'West Lakes and Flinders Park carry the highest modelled extent, but their disadvantage profiles differ sharply.' },
+      { tag: '1:5yr drives repeat calls', detail: 'The 1:5yr layer is the one that generates repeat service requests. Rank by nuisance as well as by severity.' },
+      { tag: 'Pipes undersized for today', detail: 'Pipe capacity was sized for a catchment with far less hard surface than it has now.' },
+      { tag: 'New dwellings in flood extent', detail: 'Dwellings in the residential pipeline are being approved inside the 1:100yr extent in two SA2s.' },
     ],
   },
   {
@@ -708,10 +711,10 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'heatScore',
     steps: [2021, 2031, 2036, 2041],
     watch: [
-      'Woodville - Cheltenham pairs the highest heat score with the third lowest SEIFA decile. Exposure and low response capacity coincide.',
-      'Canopy sits mostly on private land, so council levers reach a minority of the deficit.',
-      'Unshaded stops matter most where car ownership is lowest.',
-      'Hindmarsh - Brompton has the lowest canopy in the LGA and the fastest dwelling growth.',
+      { tag: 'Heat + low SEIFA overlap', detail: 'Woodville - Cheltenham pairs the highest heat score with the third lowest SEIFA decile. Exposure and low response capacity coincide.' },
+      { tag: 'Canopy mostly private land', detail: 'Canopy sits mostly on private land, so council levers reach a minority of the deficit.' },
+      { tag: 'Unshaded stops, low car', detail: 'Unshaded stops matter most where car ownership is lowest.' },
+      { tag: 'Hindmarsh: lowest canopy', detail: 'Hindmarsh - Brompton has the lowest canopy in the LGA and the fastest dwelling growth.' },
     ],
   },
   {
@@ -724,10 +727,10 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'growth',
     steps: [2021, 2031, 2041],
     watch: [
-      'Royal Park - Hendon - Albert Park carries the largest proportional growth on one of the lowest SEIFA deciles in the LGA.',
-      'Capacity gap is zoned ceiling minus projected dwellings. A negative gap means zoning has to change or the projection will not land.',
-      'Density and hazard exposure are being added in the same places, not different ones.',
-      'Scenario choice moves the 2041 figure by up to 6 percent. It does not change the ranking.',
+      { tag: 'Fastest growth, low SEIFA', detail: 'Royal Park - Hendon - Albert Park carries the largest proportional growth on one of the lowest SEIFA deciles in the LGA.' },
+      { tag: 'Negative gap needs rezoning', detail: 'Capacity gap is zoned ceiling minus projected dwellings. A negative gap means zoning has to change or the projection will not land.' },
+      { tag: 'Growth stacking on hazard', detail: 'Density and hazard exposure are being added in the same places, not different ones.' },
+      { tag: 'Scenario: ±6%, same ranking', detail: 'Scenario choice moves the 2041 figure by up to 6 percent. It does not change the ranking.' },
     ],
   },
   {
@@ -739,10 +742,10 @@ const BLUEPRINTS: Blueprint[] = [
     layers: ['sw-pipes', 'roads', 'flood-20'],
     rank: 'assets',
     watch: [
-      'Reactive repair counts are shown per asset. Ten or more interventions in five years is where renewal usually beats maintenance.',
-      'The highest-value exposed assets are not in the highest-hazard suburbs. Value and hazard rank differently.',
-      'State significant assets carry consequences beyond the LGA boundary and beyond council budgets.',
-      'Road purpose changes the consequence of losing it. A commuter spine and a recreational path fail differently.',
+      { tag: '10+ repairs: renewal territory', detail: 'Reactive repair counts are shown per asset. Ten or more interventions in five years is where renewal usually beats maintenance.' },
+      { tag: 'Value, hazard rank differently', detail: 'The highest-value exposed assets are not in the highest-hazard suburbs. Value and hazard rank differently.' },
+      { tag: 'State assets, LGA-wide stakes', detail: 'State significant assets carry consequences beyond the LGA boundary and beyond council budgets.' },
+      { tag: 'Road purpose changes stakes', detail: 'Road purpose changes the consequence of losing it. A commuter spine and a recreational path fail differently.' },
     ],
   },
   {
@@ -754,10 +757,10 @@ const BLUEPRINTS: Blueprint[] = [
     layers: ['zoning', 'industrial', 'heritage', 'flood-100'],
     rank: 'zonedGrossDensity',
     watch: [
-      'Hindmarsh - Brompton is zoned to 55 dwellings per hectare, the highest ceiling in the LGA, on the lowest canopy.',
-      'Industrial land is the largest single contributor of runoff into the drainage network.',
-      'Heritage listing narrows retrofit options on exactly the older stock that performs worst in heat.',
-      'Zoned capacity is a ceiling, not a forecast. Take-up has run well below it.',
+      { tag: 'Highest density, lowest canopy', detail: 'Hindmarsh - Brompton is zoned to 55 dwellings per hectare, the highest ceiling in the LGA, on the lowest canopy.' },
+      { tag: 'Industrial land, most runoff', detail: 'Industrial land is the largest single contributor of runoff into the drainage network.' },
+      { tag: 'Heritage limits heat retrofits', detail: 'Heritage listing narrows retrofit options on exactly the older stock that performs worst in heat.' },
+      { tag: 'Ceiling, not a forecast', detail: 'Zoned capacity is a ceiling, not a forecast. Take-up has run well below it.' },
     ],
   },
   {
@@ -770,10 +773,10 @@ const BLUEPRINTS: Blueprint[] = [
     rank: 'employmentScore',
     steps: [2021, 2031, 2041],
     watch: [
-      'Hindmarsh - Brompton reaches the most jobs in 30 minutes, well ahead of the rest of the LGA.',
-      'Low frequency plus low car ownership is a dependency, and it shows up in evacuation planning.',
-      'The coastal path is recreational, and it is also the only continuous north to south cycling link.',
-      'Level crossings on the rail corridor are pinch points during flood response.',
+      { tag: 'Best job access, by far', detail: 'Hindmarsh - Brompton reaches the most jobs in 30 minutes, well ahead of the rest of the LGA.' },
+      { tag: 'Transit dependency, evacuation risk', detail: 'Low frequency plus low car ownership is a dependency, and it shows up in evacuation planning.' },
+      { tag: 'Only N-S cycling link', detail: 'The coastal path is recreational, and it is also the only continuous north to south cycling link.' },
+      { tag: 'Crossings: flood-response pinch points', detail: 'Level crossings on the rail corridor are pinch points during flood response.' },
     ],
   },
 ];
@@ -5182,20 +5185,19 @@ function BlueprintPanel({
               <div className="border-b border-line px-2.5 py-2">
                 <PanelHeading
                   right={
-                    <span className="num text-[11px] text-ink-3">
-                      {heatSummary.total} cells
-                    </span>
+                    <Tip
+                      label="Real Urban Heat Island grid"
+                      body={`Each cell is under a hectare, well finer than SA1. Category runs 2 (lowest, present here) to 4 (highest); every cell also carries a real Social Vulnerability Index, from ${heatSummary.sviMin.toFixed(2)} to ${heatSummary.sviMax.toFixed(2)} across the LGA, shown on hover on the map.`}
+                      side="left"
+                    >
+                      <span className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
+                        {heatSummary.total} cells
+                      </span>
+                    </Tip>
                   }
                 >
                   Real Urban Heat Island grid
                 </PanelHeading>
-                <p className="text-[11.5px] leading-[1.5] text-ink-2">
-                  Each cell is under a hectare, well finer than SA1. Category
-                  runs 2 (lowest, present here) to 4 (highest); every cell
-                  also carries a real Social Vulnerability Index, from{' '}
-                  {heatSummary.sviMin.toFixed(2)} to {heatSummary.sviMax.toFixed(2)}{' '}
-                  across the LGA, shown on hover on the map.
-                </p>
                 <div className="mt-1.5 flex gap-1.5">
                   {[2, 3, 4].map((cat) => (
                     <div
@@ -5444,22 +5446,21 @@ function BlueprintPanel({
         {tab === 'overview' && (
           <div className="border-t border-line px-2.5 py-2">
             <PanelHeading>Watch for</PanelHeading>
-            <ol className="space-y-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {bp.watch.map((w, i) => (
-                <li key={i} className="flex gap-1.5">
+                <Tip key={i} label={`${i + 1}`} body={w.detail} side="top">
                   <span
-                    className="num mt-[1px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                    className="inline-flex cursor-help items-center rounded-full px-2 py-1 text-[11.5px] font-medium"
                     style={{
-                      background: withAlpha(bp.accent, 0.12),
+                      background: withAlpha(bp.accent, 0.1),
                       color: bp.accent,
                     }}
                   >
-                    {i + 1}
+                    {w.tag}
                   </span>
-                  <span className="text-[11.5px] leading-[1.5] text-ink-2">{w}</span>
-                </li>
+                </Tip>
               ))}
-            </ol>
+            </div>
           </div>
         )}
 
@@ -5523,10 +5524,15 @@ function BlueprintPanel({
             Density quadrant
           </button>
         )}
-        <div className="text-[11px] leading-[1.45] text-ink-3">
-          {SCENARIO_LABEL[sc]}. {SCENARIO_NOTE[sc]} Scenario changes the
-          magnitude, not the ranking.
-        </div>
+        <Tip
+          label={SCENARIO_LABEL[sc]}
+          body={`${SCENARIO_NOTE[sc]} Scenario changes the magnitude, not the ranking.`}
+          side="top"
+        >
+          <div className="cursor-help text-[11px] text-ink-3 underline decoration-dotted">
+            {SCENARIO_LABEL[sc]}, changes magnitude not ranking
+          </div>
+        </Tip>
       </footer>
     </aside>
   );
