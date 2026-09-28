@@ -3535,12 +3535,7 @@ function LayersTab({
             >
               <div className="flex items-center gap-1.5">
                 <button
-                  onClick={() =>
-                    // Heat Vulnerability opens the fuller Blueprint view
-                    // instead of the plain layer-info panel, it's the one
-                    // blueprint doing real work right now.
-                    l.id === 'heat-vuln' ? applyBlueprint('heat-vuln') : toggleLayer(l.id)
-                  }
+                  onClick={() => toggleLayer(l.id)}
                   className="flex flex-1 items-center gap-1.5 text-left"
                 >
                   <Check on={checked} />
@@ -3558,11 +3553,6 @@ function LayersTab({
                   >
                     {l.name}
                   </span>
-                  {l.id === 'heat-vuln' && (
-                    <span className="shrink-0 rounded-[3px] bg-accent-soft px-1 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-accent">
-                      Blueprint
-                    </span>
-                  )}
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
                   <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
