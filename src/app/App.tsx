@@ -77,7 +77,7 @@ import vapLogo from '@/assets/vaplogo.png';
 
 type HazardId = 'heat' | 'flooding' | 'coastal' | 'drought';
 
-type PanelTab = 'layers' | 'place' | 'analysis' | 'help';
+type PanelTab = 'layers' | 'assets' | 'place' | 'analysis' | 'help';
 
 type LayerGroup =
   | 'hazard'
@@ -1903,6 +1903,15 @@ const IconPlace = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
+const IconAssets = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M5 21V6l7-3 7 3v15" />
+    <path d="M5 21h14" />
+    <path d="M9 21v-5h6v5" />
+    <path d="M9 10h2M13 10h2M9 14h2M13 14h2" />
+  </svg>
+);
+
 const IconAnalysis = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M4 20V10" />
@@ -3585,64 +3594,39 @@ interface PlaceTabProps {
   setSelectedId: (id: string | null) => void;
   year: number;
   sc: Scenario;
-  buildingOffTypes: Set<string>;
-  setBuildingOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
-/** Top ranked suburb on a metric, used by the LGA overview cards. */
 function PlaceTab({
   selectedId,
   setSelectedId,
   year,
   sc,
-  buildingOffTypes,
-  setBuildingOffTypes,
 }: PlaceTabProps) {
   const [openAsset, setOpenAsset] = useState<string | null>(null);
-  const [lgaTab, setLgaTab] = useState<'overview' | 'register'>('overview');
   const [placeTab, setPlaceTab] = useState<'overview' | 'demographics' | 'register'>('overview');
 
   if (!selectedId) {
     return (
-      <div>
-        <SubTabStrip
-          tabs={[
-            { value: 'overview', label: 'Overview' },
-            { value: 'register', label: 'Buildings register', count: `${REAL_BUILDINGS.length}` },
-          ]}
-          value={lgaTab}
-          onChange={setLgaTab}
-        />
-        {lgaTab === 'overview' ? (
-          <div className="fade-in px-2.5 py-2.5">
-            <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
-              No suburb selected. Pick one below, or click it on the map.
-            </p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {SUBURBS.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSelectedId(s.id)}
-                  className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
-                >
-                  <span className="block truncate text-[12.5px] font-medium text-ink">
-                    {s.name}
-                  </span>
-                  <span className="num mt-[2px] block text-[11px] text-ink-3">
-                    SA2 {s.sa2}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="fade-in px-2.5 py-2.5">
-            <RealBuildingsRegister
-              offTypes={buildingOffTypes}
-              setOffTypes={setBuildingOffTypes}
-            />
-          </div>
-        )}
+      <div className="fade-in px-2.5 py-2.5">
+        <p className="mb-2 text-[12.5px] leading-[1.55] text-ink-2">
+          No suburb selected. Pick one below, or click it on the map.
+        </p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {SUBURBS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSelectedId(s.id)}
+              className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+            >
+              <span className="block truncate text-[12.5px] font-medium text-ink">
+                {s.name}
+              </span>
+              <span className="num mt-[2px] block text-[11px] text-ink-3">
+                SA2 {s.sa2}
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
     );
   }
@@ -4305,19 +4289,19 @@ function HelpTab() {
         <ul className="space-y-1.5">
           <li>
             <span className="font-semibold text-ink">Layers.</span> Hazard
-            and vulnerability layers, plus building toggles under Assets.
-            Opacity slider at the top, per-layer opacity on hover.
+            and vulnerability layers. Opacity slider at the top, per-layer
+            opacity on hover.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">Assets.</span> The
+            real council buildings register, LGA-wide — browse by
+            category, or manage which types show on the map.
           </li>
           <li>
             <span className="font-semibold text-ink">Place.</span> One
-            suburb at a time — population, demographics, and its real
+            suburb at a time — population, demographics, and its own real
             buildings. Risk scores and consequence links open on the right
             once you pick one.
-          </li>
-          <li>
-            <span className="font-semibold text-ink">Analysis.</span> Pick
-            two layers to compare. The chart and table appear below, and
-            the map switches to compare mode.
           </li>
         </ul>,
       )}
@@ -5559,9 +5543,14 @@ const TAB_META: Record<
     subtitle: 'Hazards, real buildings and the network behind them',
     icon: IconLayers,
   },
+  assets: {
+    title: 'Assets',
+    subtitle: 'The real council buildings register, LGA-wide',
+    icon: IconAssets,
+  },
   place: {
     title: 'Place',
-    subtitle: 'SA2 profile, real buildings and the register at large',
+    subtitle: 'SA2 profile: population, demographics and its buildings',
     icon: IconPlace,
   },
   analysis: {
@@ -5586,7 +5575,9 @@ function IconRail({
   // Analysis hidden for the workshop build, same as the 5 other
   // blueprints and the fabricated layers, it only offers to compare
   // layers that aren't visible or toggleable anywhere else right now.
-  const order: PanelTab[] = ['layers', 'place', 'help'];
+  // Assets split out from Place: a real, LGA-wide register isn't a
+  // suburb profile, it doesn't belong nested under one.
+  const order: PanelTab[] = ['layers', 'assets', 'place', 'help'];
   return (
     <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
@@ -6099,9 +6090,11 @@ const BUILDINGS_REGISTER_EXPLAINER =
 /* ------------------------------------------------------------------ *
  * Real buildings register
  *
- * A browse and inspect view with its own building-type toggles built
- * in, rather than pointing across to Layers for them, since Layers is
- * now scoped to the 8 workshop layers and has no home for this.
+ * The Assets tab's whole content: a browse and inspect view over the
+ * real, LGA-wide register, with its own building-type toggles for the
+ * map built in. Used to live nested under Place, as a sibling of the
+ * suburb picker, which stopped making sense once it was a standalone,
+ * suburb-independent dataset in its own right, not a suburb profile.
  * ------------------------------------------------------------------ */
 
 interface RealBuildingsRegisterProps {
@@ -6454,7 +6447,7 @@ export default function App() {
   // unchecked while its panel is showing.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
   // Building types switched off on the MAP. Lifted to root so the map and
-  // Place's buildings register both read the one state. Starts with
+  // the Assets tab's register both read the one state. Starts with
   // everything off there, opt-in, so the map isn't a surprise on load.
   // The register's own list is a separate concern (see RealBuildingsRegister
   // below): it always shows every real building regardless of this, since
@@ -6624,14 +6617,20 @@ export default function App() {
               clearAllLayers={clearAllLayers}
             />
           )}
+          {panelTab === 'assets' && (
+            <div className="px-2.5 py-2.5">
+              <RealBuildingsRegister
+                offTypes={buildingOffTypes}
+                setOffTypes={setBuildingOffTypes}
+              />
+            </div>
+          )}
           {panelTab === 'place' && (
             <PlaceTab
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               year={year}
               sc={sc}
-              buildingOffTypes={buildingOffTypes}
-              setBuildingOffTypes={setBuildingOffTypes}
             />
           )}
           {panelTab === 'analysis' && (
