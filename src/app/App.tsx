@@ -23,6 +23,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { flushSync } from 'react-dom';
 import type { Map as LeafletMap, Layer as LeafletLayer } from 'leaflet';
 
 // Real asset register export. See "Real buildings register" below for the
@@ -5942,12 +5943,29 @@ interface AssetTypeTogglesProps {
   setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
+/** A real step change, the browser crossfades the old DOM state into the
+ *  new one natively (a plain white background underneath means that
+ *  crossfade reads as a whiteout, without drawing one by hand). Falls
+ *  back to an instant, un-animated swap wherever the API isn't there
+ *  (Firefox, older Safari), never breaks, just skips the transition.
+ *  flushSync forces React to commit inside the callback synchronously,
+ *  which the browser needs to capture the "after" state correctly. */
+function withViewTransition(update: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => void };
+  if (typeof doc.startViewTransition === 'function') {
+    doc.startViewTransition(() => flushSync(update));
+  } else {
+    update();
+  }
+}
+
 function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
-  // A tab, not an accordion: exactly one category selected at all times,
-  // its types show in the same fixed spot below, content swaps there
-  // rather than a panel expanding and pushing everything after it down.
-  const [openUse, setOpenUse] = useState<string>(REAL_USE_TREE[0]?.key ?? '');
+  // A drill-down, not a selector-plus-panel: picking a category replaces
+  // the whole category grid with that category's types, one screen at a
+  // time, rather than showing both stacked at once.
+  const [openUse, setOpenUse] = useState<string | null>(null);
   const [showOther, setShowOther] = useState(false);
+  const selectUse = (key: string | null) => withViewTransition(() => setOpenUse(key));
 
   const toggleType = useCallback(
     (key: string) => {
@@ -5997,60 +6015,66 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           show all
         </button>
       </div>
-      <div className="flex flex-wrap gap-1">
-        {REAL_USE_TREE.map((use) => {
-          const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
-          const allOff = offCount === use.types.length;
-          const isOpen = openUse === use.key;
-          const isUnclassified = use.key === UNCLASSIFIED;
-          const chip = (
-            <button
-              onClick={() => setOpenUse(use.key)}
-              className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
-              style={
-                isOpen
-                  ? { borderColor: ACCENT, background: withAlpha(ACCENT, 0.08) }
-                  : allOff
-                    ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
-                    : { borderColor: '#E2E7E7', background: '#fff' }
-              }
-            >
-              <span
-                className="h-[7px] w-[7px] shrink-0 rounded-full"
-                style={{ background: allOff ? '#C9D3D2' : ACCENT }}
-              />
-              <span className="text-[11.5px] font-medium text-ink">
-                {isUnclassified ? 'Not yet classified' : use.label}
-              </span>
-              <span className="num text-[10.5px] text-ink-3">{use.count}</span>
-            </button>
-          );
-          return (
-            <span key={use.key}>
-              {isUnclassified ? (
-                <Tip
-                  label="Not yet classified"
-                  body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
-                  side="top"
-                >
-                  {chip}
-                </Tip>
-              ) : (
-                chip
-              )}
-            </span>
-          );
-        })}
-      </div>
-
+      <div style={{ viewTransitionName: 'asset-type-step' } as React.CSSProperties}>
       {(() => {
-        const activeUse = REAL_USE_TREE.find((u) => u.key === openUse);
-        if (!activeUse) return null;
+        const activeUse = openUse ? REAL_USE_TREE.find((u) => u.key === openUse) : undefined;
+
+        if (!activeUse) {
+          return (
+            <div className="flex flex-wrap gap-1">
+              {REAL_USE_TREE.map((use) => {
+                const offCount = use.types.filter((t) => offTypes.has(t.key)).length;
+                const allOff = offCount === use.types.length;
+                const isUnclassified = use.key === UNCLASSIFIED;
+                const chip = (
+                  <button
+                    onClick={() => selectUse(use.key)}
+                    className="flex items-center gap-1 rounded-[5px] border px-1.5 py-1 text-left transition-colors"
+                    style={
+                      allOff
+                        ? { borderColor: '#E2E7E7', background: '#F6F8F8', opacity: 0.6 }
+                        : { borderColor: '#E2E7E7', background: '#fff' }
+                    }
+                  >
+                    <span
+                      className="h-[7px] w-[7px] shrink-0 rounded-full"
+                      style={{ background: allOff ? '#C9D3D2' : ACCENT }}
+                    />
+                    <span className="text-[11.5px] font-medium text-ink">
+                      {isUnclassified ? 'Not yet classified' : use.label}
+                    </span>
+                    <span className="num text-[10.5px] text-ink-3">{use.count}</span>
+                  </button>
+                );
+                return (
+                  <span key={use.key}>
+                    {isUnclassified ? (
+                      <Tip
+                        label="Not yet classified"
+                        body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
+                        side="top"
+                      >
+                        {chip}
+                      </Tip>
+                    ) : (
+                      chip
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+          );
+        }
+
         return (
-          <div
-            key={openUse}
-            className="fade-in mt-1.5 rounded-[6px] border border-line bg-surface-2 p-1.5"
-          >
+          <div className="rounded-[6px] border border-line bg-surface-2 p-1.5">
+            <button
+              onClick={() => selectUse(null)}
+              className="mb-1.5 flex items-center gap-[3px] text-[11px] text-ink-3 transition-colors hover:text-accent"
+            >
+              <IconChevron size={12} className="rotate-180" />
+              All categories
+            </button>
             <div className="mb-1 flex items-center justify-between">
               <span className="text-[11px] font-semibold text-ink-2">
                 {activeUse.label}
@@ -6086,6 +6110,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           </div>
         );
       })()}
+      </div>
 
       <button
         onClick={() => setShowOther(!showOther)}
