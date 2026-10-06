@@ -90,13 +90,7 @@ type LayerGroup =
 
 type LayerKind = 'choropleth' | 'canvas' | 'vector';
 
-type BlueprintId =
-  | 'flood-risk'
-  | 'heat-vuln'
-  | 'population'
-  | 'infrastructure'
-  | 'land-use'
-  | 'transport';
+type BlueprintId = 'heat-vuln';
 
 type Scenario = 'ssp245' | 'ssp585';
 
@@ -233,12 +227,7 @@ const HAZARD_LABEL: Record<HazardId, string> = {
 };
 
 const BLUEPRINT_ACCENT: Record<BlueprintId, string> = {
-  'flood-risk': '#2563EB',
   'heat-vuln': '#D97706',
-  population: '#006E78',
-  infrastructure: '#7C3AED',
-  'land-use': '#059669',
-  transport: '#0891B2',
 };
 
 /** Fill families for SA1 sub-areas, one per parent SA2. */
@@ -357,50 +346,6 @@ const BASEMAP_BY_ID: Record<string, BasemapDef> = Object.fromEntries(
 
 const LAYERS: LayerDef[] = [
   {
-    id: 'flood-100',
-    name: 'Flood 1:100yr',
-    group: 'hazard',
-    kind: 'choropleth',
-    lo: '#DBEAFE',
-    hi: '#1D4ED8',
-    unit: 'share of area inundated',
-    note: 'Modelled extent of a 1 percent annual exceedance probability event. Depth is not shown, only extent.',
-    source: 'Stormwater flood mapping, catchment model outputs',
-  },
-  {
-    id: 'flood-20',
-    name: 'Flood 1:20yr',
-    group: 'hazard',
-    kind: 'choropleth',
-    lo: '#DBEAFE',
-    hi: '#2563EB',
-    unit: 'share of area inundated',
-    note: 'A 5 percent annual exceedance event. Closer to the frequency that drives repeat service calls.',
-    source: 'Stormwater flood mapping, catchment model outputs',
-  },
-  {
-    id: 'flood-5',
-    name: 'Flood 1:5yr',
-    group: 'hazard',
-    kind: 'choropleth',
-    lo: '#E0F2FE',
-    hi: '#3B82F6',
-    unit: 'share of area inundated',
-    note: 'Nuisance flooding. Useful for spotting streets that flood often rather than severely.',
-    source: 'Stormwater flood mapping, catchment model outputs',
-  },
-  {
-    id: 'sea-2050',
-    name: 'Sea Rise 2050',
-    group: 'hazard',
-    kind: 'choropleth',
-    lo: '#CFFAFE',
-    hi: '#0369A1',
-    unit: 'share of area below threshold',
-    note: 'Land below the 2050 still-water level for the selected scenario. Storm surge sits on top of this.',
-    source: 'State coastal inundation mapping',
-  },
-  {
     id: 'heat-vuln',
     name: 'Heat Vulnerability',
     group: 'hazard',
@@ -453,96 +398,6 @@ const LAYERS: LayerDef[] = [
     source: 'Council GIS export, TOPO_Waterbodies_GDA2020.shp, clipped to the LGA from the statewide layer',
   },
   {
-    id: 'coastal-erosion',
-    name: 'Coastal Erosion',
-    group: 'hazard',
-    kind: 'choropleth',
-    lo: '#FFE4E6',
-    hi: '#9F1239',
-    unit: 'metres of recession by 2050',
-    note: 'Shoreline recession allowance. Only meaningful for the coastal SA2s.',
-    source: 'Coastal process assessment',
-  },
-  {
-    id: 'pop-2021',
-    name: 'Population 2021',
-    group: 'vulnerability',
-    kind: 'choropleth',
-    lo: '#EDE9FE',
-    hi: '#4C1D95',
-    unit: 'usual residents',
-    note: 'Census usual resident count. The denominator behind every per-person figure in this tool.',
-    source: 'Census 2021, usual residence',
-  },
-  {
-    id: 'pop-2041',
-    name: 'Population 2041',
-    group: 'vulnerability',
-    kind: 'choropleth',
-    lo: '#EDE9FE',
-    hi: '#5B21B6',
-    unit: 'projected residents',
-    note: 'Projected residents under the selected scenario. Interpolated linearly between census years.',
-    source: 'State population projections, scenario adjusted',
-    steps: [2021, 2031, 2041],
-  },
-  {
-    id: 'pop-change',
-    name: 'Pop. Change',
-    group: 'vulnerability',
-    kind: 'choropleth',
-    lo: '#FEF9C3',
-    hi: '#166534',
-    unit: 'percent change from 2021',
-    note: 'Growth relative to the 2021 base. Read this beside the hazard layers to see where growth is being directed into exposure.',
-    source: 'Derived from projections',
-    steps: [2021, 2031, 2041],
-  },
-  {
-    id: 'seifa',
-    name: 'SEIFA Disadvantage',
-    group: 'vulnerability',
-    kind: 'choropleth',
-    lo: '#FFE4E6',
-    hi: '#881337',
-    unit: 'decile, 1 most disadvantaged',
-    note: 'Index of relative socio-economic disadvantage. Darker means more disadvantaged, because that is the direction that matters for response capacity.',
-    source: 'SEIFA IRSD, SA1 aggregated',
-  },
-  {
-    id: 'employment',
-    name: 'Employment Access',
-    group: 'vulnerability',
-    kind: 'choropleth',
-    lo: '#E3F1F2',
-    hi: '#00434A',
-    unit: 'jobs reachable in 30 min',
-    note: 'Jobs reachable within 30 minutes by public transport in the morning peak. Separates commuter road demand from recreational demand.',
-    source: 'Journey to work, network accessibility model',
-    steps: [2021, 2031, 2041],
-  },
-  {
-    id: 'tree-canopy',
-    name: 'Tree Canopy',
-    group: 'vulnerability',
-    kind: 'canvas',
-    lo: '#F0FDF4',
-    hi: '#14532D',
-    unit: 'percent cover',
-    note: 'Canopy cover across all land tenures. Private land dominates the total, which limits what council can move on its own.',
-    source: 'Canopy cover audit, aerial classification',
-  },
-  {
-    id: 'sw-pipes',
-    name: 'SW Pipes',
-    group: 'infrastructure',
-    kind: 'vector',
-    hi: '#2563EB',
-    unit: 'pipe network',
-    note: 'Stormwater mains. Capacity here decides whether surface flooding is brief or sustained.',
-    source: 'Stormwater asset register',
-  },
-  {
     id: 'obstetric-hospitals',
     name: 'Obstetric Hospitals',
     group: 'infrastructure',
@@ -552,26 +407,6 @@ const LAYERS: LayerDef[] = [
     note: 'Not a council asset, but a real state health facility inside the LGA, of the four in the statewide dataset only one point actually falls inside the boundary once checked against the real LGA shape rather than a loose bounding box.',
     source: 'Council GIS export, "Obstetric_Hospitals_2014.shp" (statewide, GDA2020 SA Lambert), reprojected and matched to the real LGA boundary',
     vintage: 2014,
-  },
-  {
-    id: 'roads',
-    name: 'Roads',
-    group: 'transport',
-    kind: 'vector',
-    hi: '#475569',
-    unit: 'road network',
-    note: 'Council road network. Hover a road asset in Place to see whether it carries commuters, freight or local trips.',
-    source: 'Road asset register',
-  },
-  {
-    id: 'pt-stops',
-    name: 'PT Stops',
-    group: 'transport',
-    kind: 'vector',
-    hi: '#0891B2',
-    unit: 'stops',
-    note: 'Bus and tram stops. Stops without shade are a heat exposure point for people with no alternative.',
-    source: 'Public transport stop register',
   },
   {
     id: 'railways',
@@ -592,66 +427,6 @@ const LAYERS: LayerDef[] = [
     unit: 'stations',
     note: 'Real train station locations inside the LGA, from the same rail network export as the Railways layer.',
     source: 'Council GIS export, "Train Stations.shp"',
-  },
-  {
-    id: 'pt-freq',
-    name: 'PT Freq.',
-    group: 'transport',
-    kind: 'vector',
-    hi: '#0EA5E9',
-    unit: 'services per hour',
-    note: 'Service frequency in the interpeak. Low frequency plus low car ownership is a mobility dependency.',
-    source: 'Timetable extract',
-  },
-  {
-    id: 'cycling',
-    name: 'Cycling',
-    group: 'transport',
-    kind: 'vector',
-    hi: '#059669',
-    unit: 'cycle network',
-    note: 'On-road and separated cycling routes, including the coastal path.',
-    source: 'Cycling network',
-  },
-  {
-    id: 'industrial',
-    name: 'Industrial',
-    group: 'planning',
-    kind: 'vector',
-    hi: '#B45309',
-    unit: 'industrial land',
-    note: 'Employment land. Hard surfaced, low canopy, and a runoff source for everything downstream.',
-    source: 'Land use classification',
-  },
-  {
-    id: 'zoning',
-    name: 'Zoning',
-    group: 'planning',
-    kind: 'vector',
-    hi: '#9333EA',
-    unit: 'planning zones',
-    note: 'Planning and Design Code zones. Sets the dwelling ceiling that growth has to fit inside.',
-    source: 'Planning and Design Code',
-  },
-  {
-    id: 'heritage',
-    name: 'Heritage Points',
-    group: 'planning',
-    kind: 'vector',
-    hi: '#A16207',
-    unit: 'heritage items',
-    note: 'Local and state heritage items. Constrains the retrofit options available on a site.',
-    source: 'Heritage register',
-  },
-  {
-    id: 'res-pipeline',
-    name: 'Res. Pipeline',
-    group: 'planning',
-    kind: 'vector',
-    hi: '#DB2777',
-    unit: 'approved dwellings',
-    note: 'Approved and under-construction dwellings. The growth already committed, before any new policy.',
-    source: 'Development application register',
   },
 ];
 
@@ -698,22 +473,6 @@ const WORKSHOP_LAYER_IDS = new Set([
 
 const BLUEPRINTS: Blueprint[] = [
   {
-    id: 'flood-risk',
-    title: 'Flood Risk',
-    accent: BLUEPRINT_ACCENT['flood-risk'],
-    description:
-      'Modelled inundation at three return periods against the drainage network and the buildings inside it. Frequent nuisance flooding and rare severe flooding are different problems, so both are on.',
-    layers: ['flood-100', 'flood-20', 'watercourses', 'sw-pipes'],
-    rank: 'floodScore',
-    steps: [2021, 2041],
-    watch: [
-      { tag: 'Highest extent, mixed disadvantage', detail: 'West Lakes and Flinders Park carry the highest modelled extent, but their disadvantage profiles differ sharply.' },
-      { tag: '1:5yr drives repeat calls', detail: 'The 1:5yr layer is the one that generates repeat service requests. Rank by nuisance as well as by severity.' },
-      { tag: 'Pipes undersized for today', detail: 'Pipe capacity was sized for a catchment with far less hard surface than it has now.' },
-      { tag: 'New dwellings in flood extent', detail: 'Dwellings in the residential pipeline are being approved inside the 1:100yr extent in two SA2s.' },
-    ],
-  },
-  {
     id: 'heat-vuln',
     title: 'Heat Vulnerability',
     accent: BLUEPRINT_ACCENT['heat-vuln'],
@@ -729,68 +488,6 @@ const BLUEPRINTS: Blueprint[] = [
       { tag: 'Canopy mostly private land', detail: 'Canopy sits mostly on private land, so council levers reach a minority of the deficit.' },
       { tag: 'Unshaded stops, low car', detail: 'Unshaded stops matter most where car ownership is lowest.' },
       { tag: 'Hindmarsh: lowest canopy', detail: 'Hindmarsh - Brompton has the lowest canopy in the LGA and the fastest dwelling growth.' },
-    ],
-  },
-  {
-    id: 'population',
-    title: 'Population & Growth',
-    accent: BLUEPRINT_ACCENT.population,
-    description:
-      'Where people are now, where projections put them by 2041, and how much of that growth current zoning can absorb. Use the horizon buttons to step the projection.',
-    layers: ['pop-2041', 'pop-change', 'res-pipeline', 'zoning'],
-    rank: 'growth',
-    steps: [2021, 2031, 2041],
-    watch: [
-      { tag: 'Fastest growth, low SEIFA', detail: 'Royal Park - Hendon - Albert Park carries the largest proportional growth on one of the lowest SEIFA deciles in the LGA.' },
-      { tag: 'Negative gap needs rezoning', detail: 'Capacity gap is zoned ceiling minus projected dwellings. A negative gap means zoning has to change or the projection will not land.' },
-      { tag: 'Growth stacking on hazard', detail: 'Density and hazard exposure are being added in the same places, not different ones.' },
-      { tag: 'Scenario: ±6%, same ranking', detail: 'Scenario choice moves the 2041 figure by up to 6 percent. It does not change the ranking.' },
-    ],
-  },
-  {
-    id: 'infrastructure',
-    title: 'Infrastructure',
-    accent: BLUEPRINT_ACCENT.infrastructure,
-    description:
-      'The council asset portfolio against hazard extent. Answers the portfolio question, which assets carry the most exposure, before the single-site question.',
-    layers: ['sw-pipes', 'roads', 'flood-20'],
-    rank: 'assets',
-    watch: [
-      { tag: '10+ repairs: renewal territory', detail: 'Reactive repair counts are shown per asset. Ten or more interventions in five years is where renewal usually beats maintenance.' },
-      { tag: 'Value, hazard rank differently', detail: 'The highest-value exposed assets are not in the highest-hazard suburbs. Value and hazard rank differently.' },
-      { tag: 'State assets, LGA-wide stakes', detail: 'State significant assets carry consequences beyond the LGA boundary and beyond council budgets.' },
-      { tag: 'Road purpose changes stakes', detail: 'Road purpose changes the consequence of losing it. A commuter spine and a recreational path fail differently.' },
-    ],
-  },
-  {
-    id: 'land-use',
-    title: 'Land Use & Planning',
-    accent: BLUEPRINT_ACCENT['land-use'],
-    description:
-      'Zoning, industrial land and heritage against the hazard layers. Shows where the planning framework and the risk picture disagree.',
-    layers: ['zoning', 'industrial', 'heritage', 'flood-100'],
-    rank: 'zonedGrossDensity',
-    watch: [
-      { tag: 'Highest density, lowest canopy', detail: 'Hindmarsh - Brompton is zoned to 55 dwellings per hectare, the highest ceiling in the LGA, on the lowest canopy.' },
-      { tag: 'Industrial land, most runoff', detail: 'Industrial land is the largest single contributor of runoff into the drainage network.' },
-      { tag: 'Heritage limits heat retrofits', detail: 'Heritage listing narrows retrofit options on exactly the older stock that performs worst in heat.' },
-      { tag: 'Ceiling, not a forecast', detail: 'Zoned capacity is a ceiling, not a forecast. Take-up has run well below it.' },
-    ],
-  },
-  {
-    id: 'transport',
-    title: 'Transport Access',
-    accent: BLUEPRINT_ACCENT.transport,
-    description:
-      'Network, service frequency and reachable jobs. Purpose matters here. A road carrying the morning commute fails differently from one carrying weekend recreation.',
-    layers: ['pt-stops', 'pt-freq', 'railways', 'cycling', 'employment'],
-    rank: 'employmentScore',
-    steps: [2021, 2031, 2041],
-    watch: [
-      { tag: 'Best job access, by far', detail: 'Hindmarsh - Brompton reaches the most jobs in 30 minutes, well ahead of the rest of the LGA.' },
-      { tag: 'Transit dependency, evacuation risk', detail: 'Low frequency plus low car ownership is a dependency, and it shows up in evacuation planning.' },
-      { tag: 'Only N-S cycling link', detail: 'The coastal path is recreational, and it is also the only continuous north to south cycling link.' },
-      { tag: 'Crossings: flood-response pinch points', detail: 'Level crossings on the rail corridor are pinch points during flood response.' },
     ],
   },
 ];
@@ -1771,16 +1468,6 @@ function rawLayerValue(
   sc: Scenario,
 ): number {
   switch (layerId) {
-    case 'flood-100':
-      return s.floodScore * 5.5;
-    case 'flood-20':
-      return s.floodScore * 3.2;
-    case 'flood-5':
-      return s.floodScore * 1.4;
-    case 'sea-2050':
-      return s.coastalScore * (sc === 'ssp585' ? 4.2 : 3.1);
-    case 'coastal-erosion':
-      return s.coastalScore * (sc === 'ssp585' ? 9.5 : 7.0);
     case 'heat-vuln': {
       const base =
         s.heatScore * 13 + (22 - s.treeCanopy) * 0.9 + (10 - s.seifa) * 1.6;
@@ -1788,20 +1475,6 @@ function rawLayerValue(
         1 + ((year - 2021) / 20) * (sc === 'ssp585' ? 0.22 : 0.13);
       return clamp(base * drift, 0, 100);
     }
-    case 'pop-2021':
-      return s.pop2021;
-    case 'pop-2041':
-      return popAt(s, year, sc);
-    case 'pop-change':
-      return (popAt(s, year, sc) / s.pop2021 - 1) * 100;
-    case 'seifa':
-      return s.seifa;
-    case 'employment':
-      return Math.round(
-        (s.employmentScore * 11000 + 8000) * (1 + (year - 2021) * 0.006),
-      );
-    case 'tree-canopy':
-      return s.treeCanopy;
     default:
       return 0;
   }
@@ -1809,20 +1482,8 @@ function rawLayerValue(
 
 function formatLayerValue(layerId: string, raw: number): string {
   switch (layerId) {
-    case 'flood-100':
-    case 'flood-20':
-    case 'flood-5':
-    case 'sea-2050':
-    case 'tree-canopy':
-      return fmtPct(raw, 1);
-    case 'pop-change':
-      return fmtSigned(raw, 1);
-    case 'coastal-erosion':
-      return `${raw.toFixed(1)}m`;
     case 'heat-vuln':
       return raw.toFixed(0);
-    case 'seifa':
-      return `${raw.toFixed(0)} / 10`;
     default:
       return fmtInt(raw);
   }
@@ -1844,9 +1505,6 @@ function normLayerValue(
   year: number,
   sc: Scenario,
 ): number {
-  // SEIFA runs the other way. A low decile is more disadvantage, which is
-  // the end of the scale that should read as darker.
-  if (layerId === 'seifa') return (10 - s.seifa) / 9;
   const raw = rawLayerValue(layerId, s, year, sc);
   const [lo, hi] = layerExtent(layerId, year, sc);
   if (hi - lo < 1e-9) return 0.5;
@@ -2746,48 +2404,7 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    if (checkedLayers.has('roads')) {
-      const c = LAYER_BY_ID['roads'].hi!;
-      for (const s of SUBURBS) {
-        const [lat, lng] = s.centroid;
-        const [dLat, dLng] = s.span;
-        haloLine(
-          [
-            [lat, lng - dLng],
-            [lat, lng + dLng],
-          ] as LatLngTuple[],
-          { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
-        );
-        haloLine(
-          [
-            [lat - dLat, lng],
-            [lat + dLat, lng],
-          ] as LatLngTuple[],
-          { color: c, weight: 1.3, opacity: vecAlpha('roads') * 0.75 },
-        );
-      }
-    }
 
-    if (checkedLayers.has('sw-pipes')) {
-      const c = LAYER_BY_ID['sw-pipes'].hi!;
-      for (const s of SUBURBS) {
-        const [lat, lng] = s.centroid;
-        const [dLat, dLng] = s.span;
-        haloLine(
-          [
-            [lat - dLat * 0.6, lng - dLng * 0.8],
-            [lat + dLat * 0.2, lng - dLng * 0.1],
-            [lat + dLat * 0.7, lng + dLng * 0.7],
-          ] as LatLngTuple[],
-          {
-            color: c,
-            weight: 1.1,
-            opacity: vecAlpha('sw-pipes') * 0.8,
-            dashArray: '3 2',
-          },
-        );
-      }
-    }
 
     if (checkedLayers.has('railways')) {
       const c = LAYER_BY_ID['railways'].hi!;
@@ -2842,147 +2459,12 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    if (checkedLayers.has('cycling')) {
-      const c = LAYER_BY_ID['cycling'].hi!;
-      haloLine(
-        [
-          [-34.962, 138.503],
-          [-34.928, 138.499],
-          [-34.895, 138.496],
-          [-34.86, 138.492],
-        ] as LatLngTuple[],
-        { color: c, weight: 1.8, opacity: vecAlpha('cycling') },
-      );
-      haloLine(
-        [
-          [-34.932, 138.545],
-          [-34.928, 138.565],
-          [-34.92, 138.585],
-        ] as LatLngTuple[],
-        {
-          color: c,
-          weight: 1.4,
-          opacity: vecAlpha('cycling'),
-          dashArray: '5 3',
-        },
-      );
-    }
 
-    if (checkedLayers.has('pt-stops')) {
-      const c = LAYER_BY_ID['pt-stops'].hi!;
-      for (const s of SUBURBS) {
-        for (let i = 0; i < 6; i++) {
-          const lat =
-            s.centroid[0] + (hashUnit(i, s.pop2021) - 0.5) * s.span[0] * 1.7;
-          const lng =
-            s.centroid[1] + (hashUnit(s.pop2021, i) - 0.5) * s.span[1] * 1.7;
-          push(
-            L.circleMarker([lat, lng] as LatLngTuple, {
-              radius: 2.6,
-              color: '#fff',
-              weight: 1,
-              fillColor: c,
-              fillOpacity: vecAlpha('pt-stops'),
-            }),
-          );
-        }
-      }
-    }
 
-    if (checkedLayers.has('pt-freq')) {
-      const c = LAYER_BY_ID['pt-freq'].hi!;
-      for (const s of SUBURBS) {
-        push(
-          L.circle(s.centroid, {
-            radius: 240 + s.employmentScore * 130,
-            stroke: false,
-            fillColor: c,
-            fillOpacity: vecAlpha('pt-freq') * 0.28,
-          }),
-        );
-      }
-    }
 
-    if (checkedLayers.has('industrial')) {
-      const c = LAYER_BY_ID['industrial'].hi!;
-      for (const id of ['royal-park-hendon', 'hindmarsh-brompton', 'woodville-cheltenham']) {
-        const s = SUBURB_BY_ID[id];
-        push(
-          L.rectangle(
-            [
-              [s.centroid[0] - s.span[0] * 0.5, s.centroid[1] - s.span[1] * 0.85],
-              [s.centroid[0] + s.span[0] * 0.1, s.centroid[1] - s.span[1] * 0.1],
-            ],
-            {
-              color: c,
-              weight: 0.8,
-              fillColor: c,
-              fillOpacity: vecAlpha('industrial') * 0.3,
-            },
-          ),
-        );
-      }
-    }
 
-    if (checkedLayers.has('zoning')) {
-      const c = LAYER_BY_ID['zoning'].hi!;
-      for (const s of SUBURBS) {
-        const d = PLANNING[s.id].zonedGrossDensity;
-        push(
-          L.rectangle(
-            [
-              [s.centroid[0] - s.span[0] * 0.45, s.centroid[1] - s.span[1] * 0.45],
-              [s.centroid[0] + s.span[0] * 0.45, s.centroid[1] + s.span[1] * 0.45],
-            ],
-            {
-              color: c,
-              weight: 0.9,
-              dashArray: '3 2',
-              fillColor: c,
-              fillOpacity: vecAlpha('zoning') * (d / 55) * 0.34,
-            },
-          ),
-        );
-      }
-    }
 
-    if (checkedLayers.has('heritage')) {
-      const c = LAYER_BY_ID['heritage'].hi!;
-      for (const s of SUBURBS) {
-        const n = s.id === 'hindmarsh-brompton' ? 9 : 4;
-        for (let i = 0; i < n; i++) {
-          const lat =
-            s.centroid[0] + (hashUnit(i * 3, s.seifa) - 0.5) * s.span[0] * 1.5;
-          const lng =
-            s.centroid[1] + (hashUnit(s.seifa, i * 3) - 0.5) * s.span[1] * 1.5;
-          push(
-            L.circleMarker([lat, lng] as LatLngTuple, {
-              radius: 2,
-              color: darkBase ? '#1B2A28' : '#FFFFFF',
-              weight: 1,
-              fillColor: c,
-              fillOpacity: vecAlpha('heritage'),
-            }),
-          );
-        }
-      }
-    }
 
-    if (checkedLayers.has('res-pipeline')) {
-      const c = LAYER_BY_ID['res-pipeline'].hi!;
-      for (const s of SUBURBS) {
-        const committed = dwellingsAt(s.id, 2031, sc) - PLANNING[s.id].dwellings2021;
-        push(
-          L.circle(s.centroid, {
-            radius: 160 + committed * 0.12,
-            color: c,
-            weight: 1,
-            fillColor: c,
-            fillOpacity: vecAlpha('res-pipeline') * 0.2,
-          }),
-        );
-      }
-    }
 
     /* Boundary outlines sit above every fill so they stay legible. The
        real council LGA shape (from council's own GIS, not an ABS
@@ -4565,8 +4047,6 @@ function exposedValueM(s: Suburb): number {
 
 function rankValue(metric: string, s: Suburb, year: number, sc: Scenario): number {
   switch (metric) {
-    case 'floodScore':
-      return rawLayerValue('flood-100', s, year, sc);
     case 'heatScore':
       return rawLayerValue('heat-vuln', s, year, sc);
     case 'growth':
@@ -4575,8 +4055,6 @@ function rankValue(metric: string, s: Suburb, year: number, sc: Scenario): numbe
       return exposedValueM(s);
     case 'zonedGrossDensity':
       return PLANNING[s.id].zonedGrossDensity;
-    case 'employmentScore':
-      return rawLayerValue('employment', s, year, sc);
     case 'pop-count':
       return dwellingsAt(s.id, year, sc);
     case 'pop-growth':
@@ -4640,30 +4118,6 @@ function glanceFor(
 ): GlanceStat[] {
   const allAssets = SUBURBS.flatMap((s) => s.assets);
   switch (bp.id) {
-    case 'flood-risk': {
-      const exposed = allAssets.filter((a) => a.hazards.includes('flooding'));
-      const overThreshold = allAssets.filter(
-        (a) => a.category === 'stormwater' && a.repairs5yr >= 10,
-      );
-      const worst = [...SUBURBS].sort((a, b) => b.floodScore - a.floodScore)[0];
-      return [
-        {
-          label: 'Assets in extent',
-          value: `${exposed.length}`,
-          sub: `of ${allAssets.length} listed, $${exposed.reduce((n, a) => n + assetValueM(a), 0).toFixed(0)}M`,
-        },
-        {
-          label: 'Drains over threshold',
-          value: `${overThreshold.length}`,
-          sub: '10 or more repairs in 5 years',
-        },
-        {
-          label: 'Largest extent',
-          value: fmtPct(rawLayerValue('flood-100', worst, year, sc), 1),
-          sub: worst.name,
-        },
-      ];
-    }
     case 'heat-vuln': {
       const avgCanopy =
         SUBURBS.reduce((n, s) => n + s.treeCanopy, 0) / SUBURBS.length;
@@ -4690,100 +4144,6 @@ function glanceFor(
           label: `Peak index ${year}`,
           value: rawLayerValue('heat-vuln', worst, year, sc).toFixed(0),
           sub: worst.name,
-        },
-      ];
-    }
-    case 'population': {
-      const now = SUBURBS.reduce((n, s) => n + popAt(s, year, sc), 0);
-      const base = SUBURBS.reduce((n, s) => n + s.pop2021, 0);
-      const gap = SUBURBS.reduce((n, s) => n + capacityGap(s.id, 2041, sc), 0);
-      return [
-        {
-          label: `Residents ${year}`,
-          value: fmtInt(now),
-          sub: `${fmtSigned((now / base - 1) * 100, 1)} on 2021`,
-        },
-        {
-          label: 'Zoned headroom 2041',
-          value: fmtInt(gap),
-          sub: 'dwellings under the current code',
-        },
-        {
-          label: 'SA2s with no headroom',
-          value: `${SUBURBS.filter((s) => capacityGap(s.id, 2041, sc) < 0).length}`,
-          sub: 'zoning has to move or growth will not land',
-        },
-      ];
-    }
-    case 'infrastructure': {
-      const exposed = allAssets.filter((a) => a.hazards.length > 0);
-      const over = allAssets.filter((a) => a.repairs5yr >= 10);
-      const state = allAssets.filter((a) => a.significance === 'state');
-      return [
-        {
-          label: 'Exposed portfolio',
-          value: `$${exposed.reduce((n, a) => n + assetValueM(a), 0).toFixed(0)}M`,
-          sub: `${exposed.length} assets with at least one hazard`,
-        },
-        {
-          label: 'Over repair threshold',
-          value: `${over.length}`,
-          sub: '10 or more interventions in 5 years',
-        },
-        {
-          label: 'State significant',
-          value: `${state.length}`,
-          sub: 'consequences beyond the LGA boundary',
-        },
-      ];
-    }
-    case 'land-use': {
-      const ceiling = SUBURBS.reduce((n, s) => n + zonedCapacity(s.id), 0);
-      const built = SUBURBS.reduce((n, s) => n + PLANNING[s.id].dwellings2021, 0);
-      const top = [...SUBURBS].sort(
-        (a, b) =>
-          PLANNING[b.id].zonedGrossDensity - PLANNING[a.id].zonedGrossDensity,
-      )[0];
-      return [
-        {
-          label: 'Zoned ceiling',
-          value: fmtInt(ceiling),
-          sub: 'dwellings permitted under the code',
-        },
-        {
-          label: 'Take-up',
-          value: fmtPct((built / ceiling) * 100, 0),
-          sub: 'built against the ceiling today',
-        },
-        {
-          label: 'Highest density zone',
-          value: `${PLANNING[top.id].zonedGrossDensity} du/ha`,
-          sub: top.name,
-        },
-      ];
-    }
-    case 'transport': {
-      const vals = SUBURBS.map((s) => rawLayerValue('employment', s, year, sc));
-      const best = [...SUBURBS].sort(
-        (a, b) =>
-          rawLayerValue('employment', b, year, sc) -
-          rawLayerValue('employment', a, year, sc),
-      );
-      return [
-        {
-          label: 'Best access',
-          value: fmtInt(Math.max(...vals)),
-          sub: `jobs in 30 min, ${best[0].name}`,
-        },
-        {
-          label: 'Weakest access',
-          value: fmtInt(Math.min(...vals)),
-          sub: `jobs in 30 min, ${best[best.length - 1].name}`,
-        },
-        {
-          label: 'Spread',
-          value: `${(Math.max(...vals) / Math.min(...vals)).toFixed(1)}x`,
-          sub: 'between the best and weakest SA2',
         },
       ];
     }
@@ -4822,7 +4182,6 @@ function BlueprintPanel({
   onOpenQuadrant,
 }: BlueprintPanelProps) {
   const bp = blueprint;
-  const isPop = bp.id === 'population';
   const isHeatVuln = bp.id === 'heat-vuln';
   const selected = selectedId ? SUBURB_BY_ID[selectedId] : null;
   const glance = useMemo(() => glanceFor(bp, year, sc), [bp, year, sc]);
@@ -4845,17 +4204,17 @@ function BlueprintPanel({
 
   // The population blueprint reranks on whichever metric the toggle is set
   // to, since the four metrics answer genuinely different questions.
-  const rankKey = isPop ? "pop-" + planMetric : bp.rank;
+  const rankKey = bp.rank;
 
   const ranked = useMemo(() => {
     const rows = SUBURBS.map((s) => ({
       s,
-      v: rankValue(rankKey, s, isPop ? planYear : year, sc),
+      v: rankValue(rankKey, s, year, sc),
     }));
     rows.sort((a, b) => b.v - a.v);
     const max = Math.max(...rows.map((r) => Math.abs(r.v)), 1);
     return { rows, max };
-  }, [rankKey, year, sc, isPop, planYear]);
+  }, [rankKey, year, sc]);
 
   const plan = selected ? PLANNING[selected.id] : null;
   const [tab, setTab] = useState<'overview' | 'spotlight' | 'ranking'>('overview');
@@ -4953,37 +4312,6 @@ function BlueprintPanel({
               </div>
             )}
 
-            {isPop && (
-              <div className="border-b border-line px-2.5 py-2">
-                <PanelHeading>Metric</PanelHeading>
-                <Segmented
-                  dense
-                  accent={bp.accent}
-                  value={planMetric}
-                  onChange={setPlanMetric}
-                  options={[
-                    { value: 'count' as PlanMetric, label: 'Count' },
-                    { value: 'growth' as PlanMetric, label: 'Growth' },
-                    { value: 'density' as PlanMetric, label: 'Density' },
-                    { value: 'gap' as PlanMetric, label: 'Gap' },
-                  ]}
-                />
-                <div className="mt-2">
-                  <PanelHeading>Horizon</PanelHeading>
-                  <Segmented
-                    dense
-                    accent={bp.accent}
-                    value={planYear}
-                    onChange={setPlanYear}
-                    options={[
-                      { value: 2021, label: 'Baseline' },
-                      { value: 2031, label: '2031' },
-                      { value: 2041, label: '2041' },
-                    ]}
-                  />
-                </div>
-              </div>
-            )}
 
             {!isHeatVuln && (
               <div className="px-2.5 py-2">
@@ -5036,67 +4364,6 @@ function BlueprintPanel({
             </div>
             <div className="num text-[11.5px] text-ink-3">SA2 {selected.sa2}</div>
 
-            {isPop && plan ? (
-              <div className="mt-1.5">
-                <div className="grid grid-cols-2 gap-1.5">
-                  <Stat
-                    label="Dwellings"
-                    value={fmtInt(dwellingsAt(selected.id, planYear, sc))}
-                    sub={`${planYear} ${SCENARIO_LABEL[sc]}`}
-                  />
-                  <Stat
-                    label="Zoned max"
-                    value={fmtInt(zonedCapacity(selected.id))}
-                    sub={`${plan.zonedGrossDensity} du/ha ceiling`}
-                  />
-                  <Stat
-                    label="Capacity gap"
-                    value={fmtInt(capacityGap(selected.id, planYear, sc))}
-                    tone={
-                      capacityGap(selected.id, planYear, sc) < 0
-                        ? 'warn'
-                        : 'default'
-                    }
-                    sub="ceiling minus projected"
-                  />
-                  <Stat
-                    label="CAGR"
-                    value={fmtPct(
-                      cagr(
-                        plan.dwellings2021,
-                        plan.dwellings2041[sc],
-                        20,
-                      ),
-                      2,
-                    )}
-                    sub="dwellings, 2021 to 2041"
-                  />
-                </div>
-                <div className="mt-1.5 rounded-[5px] border border-line bg-white px-2 py-1.5">
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="text-[11.5px] uppercase tracking-[0.05em] text-ink-3">
-                      Trajectory
-                    </span>
-                    <span className="num text-[11px] text-ink-3">
-                      {fmtInt(selected.densityPerKm2)} per km2
-                    </span>
-                  </div>
-                  <Sparkline
-                    values={[
-                      plan.dwellings2021,
-                      plan.dwellings2031[sc],
-                      plan.dwellings2041[sc],
-                    ]}
-                    labels={['2021', '2031', '2041']}
-                    color={bp.accent}
-                  />
-                </div>
-                <div className="mt-1.5 text-[11.5px] leading-[1.5] text-ink-3">
-                  {plan.zoningLabel}. Zoned capacity is a ceiling, not a
-                  forecast.
-                </div>
-              </div>
-            ) : (
               <div className="mt-1.5 grid grid-cols-2 gap-1.5">
                 {relevantRisks(bp.id).map((r) => {
                   const score =
@@ -5130,7 +4397,7 @@ function BlueprintPanel({
                   );
                 })}
               </div>
-            )}
+
 
             {(() => {
               const buildings = REAL_BUILDINGS_BY_SUBURB[selected.id] ?? [];
@@ -5240,15 +4507,6 @@ function BlueprintPanel({
       </div>
 
       <footer className="border-t border-line px-2.5 py-2">
-        {isPop && (
-          <button
-            onClick={onOpenQuadrant}
-            className="mb-1.5 w-full rounded-[5px] border px-2 py-1.5 text-[12.5px] font-semibold transition-colors"
-            style={{ borderColor: bp.accent, color: bp.accent }}
-          >
-            Density quadrant
-          </button>
-        )}
         <Tip
           label={SCENARIO_LABEL[sc]}
           body={`${SCENARIO_NOTE[sc]} Scenario changes the magnitude, not the ranking.`}
@@ -5266,16 +4524,8 @@ function BlueprintPanel({
 /** Hazards worth showing in the spotlight for a given blueprint. */
 function relevantRisks(id: BlueprintId): HazardId[] {
   switch (id) {
-    case 'flood-risk':
-      return ['flooding', 'coastal'];
     case 'heat-vuln':
       return ['heat', 'drought'];
-    case 'infrastructure':
-      return ['flooding', 'heat'];
-    case 'land-use':
-      return ['flooding', 'heat'];
-    case 'transport':
-      return ['heat', 'flooding'];
     default:
       return ['heat', 'flooding'];
   }
@@ -6789,7 +6039,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoom, setZoom] = useState(MAP_ZOOM);
   const [compareA, setCompareA] = useState('heat-vuln');
-  const [compareB, setCompareB] = useState('seifa');
+  const [compareB, setCompareB] = useState('heat-vuln');
   const [overlayOpacity, setOverlayOpacity] = useState(0.85);
   const [layerOpacity, setLayerOpacityState] = useState<Record<string, number>>(
     {},
@@ -6941,7 +6191,6 @@ export default function App() {
       const bp = BLUEPRINT_BY_ID[id];
       setCheckedLayers(new Set(bp.layers));
       setActiveBlueprint(id);
-      if (id !== 'population') setShowQuadrant(false);
     },
     [activeBlueprint],
   );
