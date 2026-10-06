@@ -53,7 +53,7 @@ import trainStationsData from '@/data/trainStations.json';
 import watercoursesData from '@/data/watercourses.json';
 import waterbodiesData from '@/data/waterbodies.json';
 import obstetricHospitalsData from '@/data/obstetricHospitals.json';
-import floodContoursData from '@/data/floodContours1in5.json';
+import floodContoursData from '@/data/floodContours.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a real, fine-grained grid (not
 // modelled at SA1 or SA2 resolution, individual cells run well under a
@@ -414,13 +414,23 @@ const LAYERS: LayerDef[] = [
   },
   {
     id: 'flood-1in5-real',
-    name: 'Flood 1 in 5 (2 of 9 catchments)',
+    name: 'Flood 1 in 5 (8 of 9 catchments)',
     group: 'hazard',
     kind: 'vector',
     hi: '#1D4ED8',
     unit: 'flood polygons',
-    note: 'Real 1 in 5 flood polygons for the TRDA and River Torrens catchments only. The other seven catchments have not been supplied, so this is not the full 1 in 5 picture. No depth is shown, the attribute table was not supplied.',
-    source: 'Council GIS export, TRDA_FloodContours_5yr_longterm_GDA2020.shp and RiverTorrens_SMP_LT2050_20pc 1 in 5 ARI polygons, reprojected from GDA2020 MGA Zone 54',
+    note: 'Real 1 in 5 flood polygons for eight of the nine catchments. Trimmer is missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    source: 'Council GIS export, flood contour polygons per catchment, 1 in 5 ARI, reprojected from GDA2020 MGA Zone 54',
+  },
+  {
+    id: 'flood-1in20-real',
+    name: 'Flood 1 in 20 (3 of 9 catchments)',
+    group: 'hazard',
+    kind: 'vector',
+    hi: '#2563EB',
+    unit: 'flood polygons',
+    note: 'Real 1 in 20 flood polygons for TRDA, River Torrens and Trimmer only. Six catchments are missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
     id: 'watercourses',
@@ -671,6 +681,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'watercourses',
   'waterbodies',
   'flood-1in5-real',
+  'flood-1in20-real',
   'railways',
   'train-stations',
   'obstetric-hospitals',
@@ -2713,17 +2724,21 @@ function MapView(props: MapViewProps) {
       }
     }
 
-    if (checkedLayers.has('flood-1in5-real')) {
-      const c = LAYER_BY_ID['flood-1in5-real'].hi!;
-      for (const catchment of floodContoursData.catchments) {
+    for (const [layerId, catchments] of [
+      ['flood-1in5-real', floodContoursData.returnPeriods['1in5']],
+      ['flood-1in20-real', floodContoursData.returnPeriods['1in20']],
+    ] as const) {
+      if (!checkedLayers.has(layerId)) continue;
+      const c = LAYER_BY_ID[layerId].hi!;
+      for (const catchment of catchments) {
         for (const rings of catchment.rings) {
           push(
             L.polygon(rings as LatLngTuple[], {
               color: c,
               weight: 0.6,
               fillColor: c,
-              fillOpacity: vecAlpha('flood-1in5-real') * 0.45,
-              opacity: vecAlpha('flood-1in5-real') * 0.8,
+              fillOpacity: vecAlpha(layerId) * 0.45,
+              opacity: vecAlpha(layerId) * 0.8,
               interactive: false,
             }),
           );
