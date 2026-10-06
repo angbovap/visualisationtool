@@ -43,19 +43,9 @@ alone with no emit.
   and publish `dist`; Pages additionally needs its Source set to
   **GitHub Actions** under repo Settings → Pages.
 
-## What's real and what's indicative
+## What's real
 
-This tool mixes two kinds of data, and every panel says which is which:
-
-- **Real, sourced data**: the SA1/SA2 boundaries, the Council LGA
-  boundary, the buildings register, the geocoded map positions, and the
-  consequence framework's category and metric names (from project
-  correspondence with council's planning team).
-- **Indicative demonstration data**: population, hazard scores (heat,
-  flood, coastal, drought), SEIFA, and the other suburb-level figures used
-  to shape the map and demonstrate the mechanism. None of these come from
-  council systems, and no consequence tolerance or threshold value has
-  been invented for any category, those are shown as not yet set.
-
-The Help tab documents this in full, including sources and the thresholds
-the tool does use.
+Every figure and layer in the tool comes from a real source. Nothing is
+estimated or invented. Where a figure has not been supplied, the tool shows
+nothing for it rather than a placeholder value. The Help tab lists the
+sources and what is not yet shown.
