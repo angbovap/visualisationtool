@@ -270,6 +270,16 @@ const LAYERS: LayerDef[] = [
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
+    id: 'flood-1in100-real',
+    name: 'Flood 1 in 100 (8 of 9 catchments)',
+    group: 'hazard',
+    kind: 'vector',
+    hi: '#1E3A8A',
+    unit: 'flood polygons',
+    note: 'Real 1 in 100 flood polygons for eight of the nine catchments. WC is missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
+  },
+  {
     id: 'watercourses',
     name: 'Watercourses',
     group: 'hazard',
@@ -341,6 +351,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'waterbodies',
   'flood-1in5-real',
   'flood-1in20-real',
+  'flood-1in100-real',
   'railways',
   'train-stations',
   'obstetric-hospitals',
@@ -1006,6 +1017,7 @@ function MapView(props: MapViewProps) {
     for (const [layerId, catchments] of [
       ['flood-1in5-real', floodContoursData.returnPeriods['1in5']],
       ['flood-1in20-real', floodContoursData.returnPeriods['1in20']],
+      ['flood-1in100-real', floodContoursData.returnPeriods['1in100']],
     ] as const) {
       if (!checkedLayers.has(layerId)) continue;
       const c = LAYER_BY_ID[layerId].hi!;
