@@ -1767,6 +1767,47 @@ function LayerInfoPanel({
  * Tab. Help
  * ------------------------------------------------------------------ */
 
+/** Council's own seven consequence categories and indicators, from Systems
+ *  Cooperative's "Consequence category / Data end metrics" table (12 Oct
+ *  2026). Reference only: the table gives real category and indicator
+ *  names but no tolerance or threshold for any of them, and no rule for
+ *  connecting a category to a specific layer or place, so none is shown
+ *  here either. */
+interface ConsequenceCategory {
+  name: string;
+  indicators: string;
+}
+
+const CONSEQUENCE_CATEGORIES: ConsequenceCategory[] = [
+  { name: 'Financial Sustainability', indicators: 'Expenditure; % of annual budget; impact on budget' },
+  {
+    name: 'Core Service Delivery / Asset Management',
+    indicators: 'Council facility impact duration; core service impact duration; BCP activation; impact on Civic Centre, Beverley Depot and MRF',
+  },
+  { name: 'Legislative / Regulatory', indicators: 'Compliance; disciplinary action; court costs' },
+  { name: 'Reputation', indicators: 'Media impact and duration; local response; Net Promoter Score' },
+  {
+    name: 'Our People',
+    indicators: 'WHS incident severity; staff turnover; volunteer numbers; staff culture; conduct breaches',
+  },
+  { name: 'Environment', indicators: 'Impact duration on environment; EPA Act 1993 classification' },
+  {
+    name: 'Community Wellbeing and Local Economy',
+    indicators: 'Utilisation of facilities; number of people whose wellbeing or safety is compromised',
+  },
+];
+
+/** The same table's explicit list of data it says the tool still needs,
+ *  named by council and Systems Cooperative, not inferred here. */
+const CONSEQUENCE_DATA_GAPS = [
+  'Coastal flood: current conditions, and climate/development scenarios',
+  'Road traffic: current conditions, and climate/development scenarios',
+  'Active transport: current conditions, and climate/development scenarios',
+  'Stormwater hydraulics',
+  'Building usage (foot traffic)',
+  'Asset values for buildings, roads, the stormwater system and trees',
+];
+
 function HelpTab() {
   const [open, setOpen] = useState<string | null>('quick');
   const section = (id: string, title: string, body: React.ReactNode) => (
@@ -1840,6 +1881,33 @@ function HelpTab() {
             level" sit somewhere along the road, not at the building.
           </li>
         </ul>,
+      )}
+      {section(
+        'framework',
+        "Council's consequence framework",
+        <>
+          <p className="mb-2">
+            Council's own seven categories for what a hazard actually costs,
+            from Systems Cooperative's data and metrics table (12 Oct 2026).
+            Reference only, nothing here is scored or linked to the map: the
+            table gives real indicator names but no agreed tolerance for any
+            of them yet.
+          </p>
+          <ul className="space-y-2">
+            {CONSEQUENCE_CATEGORIES.map((c) => (
+              <li key={c.name}>
+                <span className="font-semibold text-ink">{c.name}.</span>{' '}
+                <span className="text-ink-2">{c.indicators}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mb-1 mt-3 font-semibold text-ink">Data gaps the same table names</p>
+          <ul className="list-disc space-y-1 pl-4">
+            {CONSEQUENCE_DATA_GAPS.map((g) => (
+              <li key={g}>{g}</li>
+            ))}
+          </ul>
+        </>,
       )}
       {section(
         'missing',
