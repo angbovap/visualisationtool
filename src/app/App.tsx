@@ -338,8 +338,8 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#0D9488',
     unit: 'line features',
-    note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. No hierarchy level is shown, the attribute table was not supplied, only the geometry.',
-    source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp", clipped to the LGA boundary',
+    note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. All 20 real segments inside the LGA carry the same classification, "High Activity Pedestrian Area" (hover a segment); the export\'s other two categories, Pedestrian Local and Priority Pedestrian Area, only occur outside Charles Sturt.',
+    source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp/.dbf", clipped to the LGA boundary, fc_descrip is the real classification field',
   },
 ];
 
@@ -1019,8 +1019,15 @@ function MapView(props: MapViewProps) {
 
     if (checkedLayers.has('pedestrian-network')) {
       const c = LAYER_BY_ID['pedestrian-network'].hi!;
-      for (const line of pedestrianNetworkData as LatLngTuple[][]) {
-        haloLine(line, { color: c, weight: 2, opacity: vecAlpha('pedestrian-network'), dashArray: '1 3' });
+      for (const seg of pedestrianNetworkData.segments) {
+        haloLine(seg.line as LatLngTuple[], { color: c, weight: 2, opacity: vecAlpha('pedestrian-network'), dashArray: '1 3' });
+        push(
+          L.polyline(seg.line as LatLngTuple[], { opacity: 0, weight: 8 }).bindTooltip(seg.category, {
+            direction: 'top',
+            offset: [0, -3],
+            sticky: true,
+          }),
+        );
       }
     }
 
