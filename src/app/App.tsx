@@ -1586,7 +1586,6 @@ function LayersTab({
       </div>
 
       {renderLayerList(activeTab)}
-
     </div>
   );
 }
@@ -1656,6 +1655,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
         <div className="text-[15px] font-semibold text-ink">{s.name}</div>
         <div className="num text-[11.5px] text-ink-3">SA2 {s.sa2}</div>
       </div>
+      <PanelHeading>At a glance</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
           <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-3">Buildings</div>
