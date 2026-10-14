@@ -45,6 +45,7 @@ import watercoursesData from '@/data/watercourses.json';
 import waterbodiesData from '@/data/waterbodies.json';
 import obstetricHospitalsData from '@/data/obstetricHospitals.json';
 import floodContoursData from '@/data/floodContours.json';
+import pedestrianNetworkData from '@/data/pedestrianNetwork.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -330,6 +331,16 @@ const LAYERS: LayerDef[] = [
     note: 'Real train station locations inside the LGA, from the same rail network export as the Railways layer.',
     source: 'Council GIS export, "Train Stations.shp"',
   },
+  {
+    id: 'pedestrian-network',
+    name: 'Pedestrian Network',
+    group: 'transport',
+    kind: 'vector',
+    hi: '#0D9488',
+    unit: 'line features',
+    note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. No hierarchy level is shown, the attribute table was not supplied, only the geometry.',
+    source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp", clipped to the LGA boundary',
+  },
 ];
 
 const LAYER_BY_ID: Record<string, LayerDef> = Object.fromEntries(
@@ -352,6 +363,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'flood-1in5-real',
   'flood-1in20-real',
   'flood-1in100-real',
+  'pedestrian-network',
   'railways',
   'train-stations',
   'obstetric-hospitals',
@@ -1066,6 +1078,13 @@ function MapView(props: MapViewProps) {
             fillOpacity: vecAlpha('train-stations'),
           }).bindTooltip('Train station', { direction: 'top', offset: [0, -3] }),
         );
+      }
+    }
+
+    if (checkedLayers.has('pedestrian-network')) {
+      const c = LAYER_BY_ID['pedestrian-network'].hi!;
+      for (const line of pedestrianNetworkData as LatLngTuple[][]) {
+        haloLine(line, { color: c, weight: 2, opacity: vecAlpha('pedestrian-network'), dashArray: '1 3' });
       }
     }
 
