@@ -981,76 +981,12 @@ function MapView(props: MapViewProps) {
       push(L.polyline(latlngs, opts));
     };
 
-    if (checkedLayers.has('heat-vuln')) {
-      const def = LAYER_BY_ID['heat-vuln'];
-      const alpha = opacityFor('heat-vuln');
-      for (const cell of HEAT_VULNERABILITY) {
-        const t = (cell.uhiCat - 2) / 2;
-        push(
-          L.polygon(cell.rings, {
-            stroke: false,
-            fillColor: lerpHex(def.lo!, def.hi!, t),
-            fillOpacity: alpha * 0.6,
-            interactive: true,
-          }).bindTooltip(
-            `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
-            { direction: 'top', offset: [0, -3] },
-          ),
-        );
-      }
-    }
-
     /* Vector overlays. Each is a schematic rendering of the network, drawn
        from the SA2 geometry so the shape stays honest about its resolution. */
     const vecAlpha = (id: string) => opacityFor(id);
 
-    if (checkedLayers.has('watercourses')) {
-      const c = LAYER_BY_ID['watercourses'].hi!;
-      for (const line of WATERCOURSES) {
-        haloLine(line, { color: c, weight: 1.6, opacity: vecAlpha('watercourses') });
-      }
-    }
-
-    if (checkedLayers.has('waterbodies')) {
-      const c = LAYER_BY_ID['waterbodies'].hi!;
-      for (const rings of WATERBODIES) {
-        push(
-          L.polygon(rings, {
-            color: c,
-            weight: 1,
-            fillColor: c,
-            fillOpacity: vecAlpha('waterbodies') * 0.55,
-            opacity: vecAlpha('waterbodies'),
-          }),
-        );
-      }
-    }
-
-    for (const [layerId, catchments] of [
-      ['flood-1in5-real', floodContoursData.returnPeriods['1in5']],
-      ['flood-1in20-real', floodContoursData.returnPeriods['1in20']],
-      ['flood-1in100-real', floodContoursData.returnPeriods['1in100']],
-    ] as const) {
-      if (!checkedLayers.has(layerId)) continue;
-      const c = LAYER_BY_ID[layerId].hi!;
-      for (const catchment of catchments) {
-        for (const rings of catchment.rings) {
-          push(
-            L.polygon(rings as LatLngTuple[], {
-              color: c,
-              weight: 0.6,
-              fillColor: c,
-              fillOpacity: vecAlpha(layerId) * 0.45,
-              opacity: vecAlpha(layerId) * 0.8,
-              interactive: false,
-            }),
-          );
-        }
-      }
-    }
-
-
-
+    /* Transport and infrastructure, drawn first so the hazard layers
+       below always paint on top of them, never the other way round. */
     if (checkedLayers.has('railways')) {
       const c = LAYER_BY_ID['railways'].hi!;
       for (const line of RAILWAYS) {
@@ -1108,6 +1044,72 @@ function MapView(props: MapViewProps) {
             opacity: vecAlpha('obstetric-hospitals'),
           }).bindTooltip('Obstetric hospital (state facility, not council)', { direction: 'top', offset: [0, -10] }),
         );
+      }
+    }
+
+    /* Hazards. Always drawn last in this effect so they sit visually
+       above transport and infrastructure, never underneath them. */
+    if (checkedLayers.has('heat-vuln')) {
+      const def = LAYER_BY_ID['heat-vuln'];
+      const alpha = opacityFor('heat-vuln');
+      for (const cell of HEAT_VULNERABILITY) {
+        const t = (cell.uhiCat - 2) / 2;
+        push(
+          L.polygon(cell.rings, {
+            stroke: false,
+            fillColor: lerpHex(def.lo!, def.hi!, t),
+            fillOpacity: alpha * 0.6,
+            interactive: true,
+          }).bindTooltip(
+            `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
+            { direction: 'top', offset: [0, -3] },
+          ),
+        );
+      }
+    }
+
+    if (checkedLayers.has('watercourses')) {
+      const c = LAYER_BY_ID['watercourses'].hi!;
+      for (const line of WATERCOURSES) {
+        haloLine(line, { color: c, weight: 1.6, opacity: vecAlpha('watercourses') });
+      }
+    }
+
+    if (checkedLayers.has('waterbodies')) {
+      const c = LAYER_BY_ID['waterbodies'].hi!;
+      for (const rings of WATERBODIES) {
+        push(
+          L.polygon(rings, {
+            color: c,
+            weight: 1,
+            fillColor: c,
+            fillOpacity: vecAlpha('waterbodies') * 0.55,
+            opacity: vecAlpha('waterbodies'),
+          }),
+        );
+      }
+    }
+
+    for (const [layerId, catchments] of [
+      ['flood-1in5-real', floodContoursData.returnPeriods['1in5']],
+      ['flood-1in20-real', floodContoursData.returnPeriods['1in20']],
+      ['flood-1in100-real', floodContoursData.returnPeriods['1in100']],
+    ] as const) {
+      if (!checkedLayers.has(layerId)) continue;
+      const c = LAYER_BY_ID[layerId].hi!;
+      for (const catchment of catchments) {
+        for (const rings of catchment.rings) {
+          push(
+            L.polygon(rings as LatLngTuple[], {
+              color: c,
+              weight: 0.6,
+              fillColor: c,
+              fillOpacity: vecAlpha(layerId) * 0.45,
+              opacity: vecAlpha(layerId) * 0.8,
+              interactive: false,
+            }),
+          );
+        }
       }
     }
 
