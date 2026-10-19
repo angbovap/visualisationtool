@@ -46,6 +46,7 @@ import waterbodiesData from '@/data/waterbodies.json';
 import obstetricHospitalsData from '@/data/obstetricHospitals.json';
 import floodContoursData from '@/data/floodContours.json';
 import pedestrianNetworkData from '@/data/pedestrianNetwork.json';
+import dwellingDensityData from '@/data/dwellingDensity.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -341,6 +342,16 @@ const LAYERS: LayerDef[] = [
     note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. All 20 real segments inside the LGA carry the same classification, "High Activity Pedestrian Area" (hover a segment); the export\'s other two categories, Pedestrian Local and Priority Pedestrian Area, only occur outside Charles Sturt.',
     source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp/.dbf", clipped to the LGA boundary, fc_descrip is the real classification field',
   },
+  {
+    id: 'dwelling-density',
+    name: 'Dwelling Density (2021)',
+    group: 'vulnerability',
+    kind: 'vector',
+    hi: '#6B3FA0',
+    unit: 'Very Low / Low / Medium / High (unit not confirmed by council)',
+    note: '253 of the 257 real SA1s, classified into council\'s own category, read off the "Density 21" field using the exact break values set in the CoCS_DwellingDensity2021 QGIS layer: Emp. Only exactly 0 (employment-only, no dwellings), Very Low 0-10, Low 10-22, Medium 22-40, High 40-180. The other 4 SA1s have no usable value, the export\'s own field overflowed for them ("***********"), so they are left uncoloured rather than guessed into a category. The unit behind these numbers, and who produced them, hasn\'t been confirmed by council.',
+    source: 'Council GIS export, CoCS_DwellingDensity2021.shp/.dbf, "Density 21" field, classified using the export\'s own QGIS symbology',
+  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -404,6 +415,19 @@ const GROUP_LABEL: Record<LayerGroup, string> = {
 
 // The layers sourced from council's GIS export. Scopes what the Layers tab
 // shows, and flags which layers are real for the layer info panel.
+/** Council's own Dwelling Density categories, coloured light to dark
+ *  purple in the same order as the CoCS_DwellingDensity2021 QGIS layer.
+ *  Colour only encodes that real ordering, not a severity judgement.
+ *  Emp. Only sits outside the density scale entirely (no dwellings), so
+ *  it gets a neutral grey rather than a step on the purple ramp. */
+const DWELLING_DENSITY_COLOR: Record<string, string> = {
+  'Emp. Only': '#9CA3AF',
+  'Very Low': '#EDE4F7',
+  Low: '#C9AEEA',
+  Medium: '#9B6FD1',
+  High: '#6B3FA0',
+};
+
 const WORKSHOP_LAYER_IDS = new Set([
   'watercourses',
   'waterbodies',
@@ -415,6 +439,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'train-stations',
   'obstetric-hospitals',
   'heat-vuln',
+  'dwelling-density',
 ]);
 
 interface RealBoundary {
@@ -1107,6 +1132,22 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    if (checkedLayers.has('dwelling-density')) {
+      const alpha = vecAlpha('dwelling-density');
+      for (const a of SA1S) {
+        const entry = (dwellingDensityData.byCode as Record<string, { value: number; category: string }>)[a.id];
+        if (!entry) continue;
+        push(
+          L.polygon(a.path, {
+            stroke: false,
+            fillColor: DWELLING_DENSITY_COLOR[entry.category] ?? '#9CA3AF',
+            fillOpacity: alpha * 0.65,
+            interactive: true,
+          }).bindTooltip(`${entry.category} (Density 21: ${entry.value})`, { direction: 'top', offset: [0, -3] }),
+        );
+      }
+    }
+
     /* Hazards. Always drawn last in this effect so they sit visually
        above transport and infrastructure, never underneath them. */
     if (checkedLayers.has('heat-vuln')) {
@@ -1544,11 +1585,6 @@ function LayersTab({
   type LayersSection = LayerGroup;
   const [activeTab, setActiveTab] = useState<LayersSection>('hazard');
 
-  // Dwelling Density has no home in visibleLayers yet, it's the one of
-  // the 8 workshop layers still waiting on its own attribute table (see
-  // CoCS_DwellingDensity2021.shp in the project notes), so Vulnerability
-  // stays in the list with a fixed count of 1 to hold its place rather
-  // than disappearing as if it were never promised.
   const allCategories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
     {
       value: 'hazard',
@@ -1561,8 +1597,8 @@ function LayersTab({
       value: 'vulnerability',
       label: GROUP_LABEL.vulnerability,
       color: '#7C3AED',
-      on: 0,
-      total: 1,
+      on: visibleLayers.filter((l) => l.group === 'vulnerability' && checkedLayers.has(l.id)).length,
+      total: visibleLayers.filter((l) => l.group === 'vulnerability').length,
     },
     {
       value: 'transport',
@@ -1589,18 +1625,6 @@ function LayersTab({
         <PanelHeading>{GROUP_LABEL[g]}</PanelHeading>
       </div>
     );
-    if (g === 'vulnerability') {
-      return (
-        <div className="pb-1.5">
-          {heading}
-          <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
-            <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#D8CFF0]" />
-            <span className="flex-1 truncate text-[12px] text-ink-3">Dwelling Density</span>
-            <span className="text-[10.5px] text-ink-3">needs attribute data</span>
-          </div>
-        </div>
-      );
-    }
     const layers = visibleLayers.filter((l) => l.group === g);
     return (
       <div className="pb-1.5">
