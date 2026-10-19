@@ -1201,6 +1201,29 @@ function MapView(props: MapViewProps) {
       );
     }
 
+    if (sa1Mode) {
+      for (const a of SA1S) {
+        push(
+          L.polygon(a.path, {
+            fill: false,
+            color: darkBase ? '#F2F7F6' : '#2B3C3A',
+            weight: 0.6,
+            opacity: darkBase ? 0.5 : 0.35,
+            interactive: false,
+          }).bindTooltip(`SA1 ${a.id}`, { direction: 'top', offset: [0, -3] }),
+        );
+      }
+      push(
+        L.polygon(LGA_BOUNDARY.ring, {
+          fill: false,
+          color: darkBase ? '#F2F7F6' : '#14201F',
+          weight: 1.8,
+          opacity: darkBase ? 0.9 : 0.8,
+          interactive: false,
+        }),
+      );
+    }
+
     /* Real buildings, on top of everything else, since the point of
        showing them is to read them against whatever hazard fill is
        underneath. Filtered by the same Building Type toggles as Layers,
