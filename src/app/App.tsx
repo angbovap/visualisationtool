@@ -343,6 +343,53 @@ const LAYERS: LayerDef[] = [
   },
 ];
 
+/* ------------------------------------------------------------------ *
+ * Blueprints
+ *
+ * A one-click preset that turns on a curated set of real layers at once,
+ * nothing more. There is no suburb ranking or score attached, because
+ * none of the real layers carries one: the right panel just lists which
+ * layers the preset includes and where each one came from.
+ * ------------------------------------------------------------------ */
+
+type BlueprintId = 'heat' | 'flood' | 'transport';
+
+interface Blueprint {
+  id: BlueprintId;
+  title: string;
+  accent: string;
+  description: string;
+  layers: string[];
+}
+
+const BLUEPRINTS: Blueprint[] = [
+  {
+    id: 'heat',
+    title: 'Heat Vulnerability',
+    accent: '#D97706',
+    description: 'The real Urban Heat Island grid, with its Social Vulnerability Index.',
+    layers: ['heat-vuln'],
+  },
+  {
+    id: 'flood',
+    title: 'Flood Risk',
+    accent: '#2563EB',
+    description: 'Every real flood return-period layer supplied so far, plus the watercourses and waterbodies they interact with.',
+    layers: ['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real', 'watercourses', 'waterbodies'],
+  },
+  {
+    id: 'transport',
+    title: 'Transport Network',
+    accent: '#0891B2',
+    description: 'Rail, train stations and the pedestrian network supplied so far.',
+    layers: ['railways', 'train-stations', 'pedestrian-network'],
+  },
+];
+
+const BLUEPRINT_BY_ID: Record<BlueprintId, Blueprint> = Object.fromEntries(
+  BLUEPRINTS.map((b) => [b.id, b]),
+) as Record<BlueprintId, Blueprint>;
+
 const LAYER_BY_ID: Record<string, LayerDef> = Object.fromEntries(
   LAYERS.map((l) => [l.id, l]),
 );
@@ -1391,6 +1438,8 @@ interface LayersTabProps {
   layerOpacity: Record<string, number>;
   setLayerOpacity: (id: string, v: number) => void;
   clearAllLayers: () => void;
+  activeBlueprint: BlueprintId | null;
+  applyBlueprint: (id: BlueprintId) => void;
 }
 
 function LayersTab({
@@ -1401,6 +1450,8 @@ function LayersTab({
   layerOpacity,
   setLayerOpacity,
   clearAllLayers,
+  activeBlueprint,
+  applyBlueprint,
 }: LayersTabProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const visibleLayers = LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id));
@@ -1614,6 +1665,38 @@ function LayersTab({
       </div>
 
       {renderLayerList(activeTab)}
+
+      {/* Blueprints. A one-click preset for a curated set of real layers,
+          pinned below the sections rather than inside one of them, since
+          picking one is a shortcut, not something to browse. */}
+      <div className="border-t border-line px-2.5 py-2.5">
+        <PanelHeading>Blueprints</PanelHeading>
+        <div className="grid grid-cols-1 gap-1.5">
+          {BLUEPRINTS.map((b) => {
+            const on = activeBlueprint === b.id;
+            return (
+              <button
+                key={b.id}
+                onClick={() => applyBlueprint(b.id)}
+                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
+                style={{
+                  borderColor: on ? b.accent : '#E2E7E7',
+                  background: on ? withAlpha(b.accent, 0.08) : '#fff',
+                }}
+              >
+                <span className="mb-1 block h-1.5 w-1.5 rounded-full" style={{ background: b.accent }} />
+                <span
+                  className="block text-[12.5px] font-semibold leading-tight"
+                  style={{ color: on ? b.accent : '#14201F' }}
+                >
+                  {b.title}
+                </span>
+                <span className="num mt-[2px] block text-[11px] text-ink-3">{b.layers.length} layers</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1777,6 +1860,49 @@ function RightPanelShell({
 }
 
 /* ------------------------------------------------------------------ *
+ * Blueprint panel
+ *
+ * What a preset turned on and why, nothing scored. Each included layer
+ * gets its own real note and source, the same text the plain layer info
+ * panel would show for it, just gathered in one place.
+ * ------------------------------------------------------------------ */
+
+function BlueprintPanel({
+  blueprint,
+  onClose,
+}: {
+  blueprint: Blueprint;
+  onClose: () => void;
+}) {
+  return (
+    <RightPanelShell accent={blueprint.accent} eyebrow="Blueprint" title={blueprint.title} onClose={onClose}>
+      <div className="px-2.5 py-2">
+        <p className="mb-3 text-[12.5px] leading-[1.55] text-ink-2">{blueprint.description}</p>
+        <PanelHeading>Layers this turns on</PanelHeading>
+        <div className="space-y-1.5">
+          {blueprint.layers.map((id) => {
+            const l = LAYER_BY_ID[id];
+            return (
+              <div key={id} className="rounded-[6px] border border-line bg-white px-2.5 py-2">
+                <span
+                  className="mb-1 inline-block h-[9px] w-[9px] rounded-[2px]"
+                  style={{
+                    background: l.kind === 'vector' ? l.hi : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
+                  }}
+                />
+                <div className="text-[12.5px] font-semibold text-ink">{l.name}</div>
+                <div className="mt-[2px] text-[11.5px] leading-[1.5] text-ink-2">{l.note}</div>
+                <div className="num mt-1 text-[10.5px] text-ink-3">{l.source}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </RightPanelShell>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Layer info panel
  *
  * Checking a layer opens its description here, so what the layer is and
@@ -1868,8 +1994,9 @@ function HelpTab() {
         'Quick start',
         <>
           <p>
-            Turn on a layer in the Layers tab. Click a suburb on the map, or
-            pick one in Place, to see the council buildings inside it. Turn on
+            Turn on a layer in the Layers tab, or click a Blueprint card for a
+            ready-made set of real layers. Click a suburb on the map, or pick
+            one in Place, to see the council buildings inside it. Turn on
             building types in Assets to show buildings on the map, then click
             a dot to read its register detail.
           </p>
@@ -2997,6 +3124,7 @@ export default function App() {
   // Turning a layer on opens its description on the right. Cleared when
   // that same layer is unchecked.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
+  const [activeBlueprint, setActiveBlueprint] = useState<BlueprintId | null>(null);
   // Building types switched off on the MAP, shared by the map and the
   // Assets tab's type toggles. Starts with everything off, opt-in.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
@@ -3011,11 +3139,13 @@ export default function App() {
     setSelectedBuildingIds(ids);
   }, []);
 
-  const rightPanelMode: 'building' | 'layer' | null = selectedBuildingKey
-    ? 'building'
-    : panelTab === 'layers' && layerInfoId
-      ? 'layer'
-      : null;
+  const rightPanelMode: 'blueprint' | 'building' | 'layer' | null = activeBlueprint
+    ? 'blueprint'
+    : selectedBuildingKey
+      ? 'building'
+      : panelTab === 'layers' && layerInfoId
+        ? 'layer'
+        : null;
 
   // Years the checked layers' own source files state. Layers whose source
   // states no year contribute nothing here.
@@ -3033,6 +3163,7 @@ export default function App() {
   // Turning a layer on opens its description on the right; turning the same
   // one back off closes it again.
   const toggleLayer = useCallback((id: string) => {
+    setActiveBlueprint(null);
     const isOn = checkedLayers.has(id);
     setCheckedLayers((prev) => {
       const next = new Set(prev);
@@ -3054,7 +3185,29 @@ export default function App() {
   const clearAllLayers = useCallback(() => {
     setCheckedLayers(new Set());
     setLayerInfoId(null);
+    setActiveBlueprint(null);
   }, []);
+
+  // Turning a blueprint back off releases exactly the layers it turned on;
+  // anything hand-picked separately stays untouched.
+  const applyBlueprint = useCallback(
+    (id: BlueprintId) => {
+      if (activeBlueprint === id) {
+        const bp = BLUEPRINT_BY_ID[id];
+        setCheckedLayers((prev) => {
+          const next = new Set(prev);
+          for (const l of bp.layers) next.delete(l);
+          return next;
+        });
+        setActiveBlueprint(null);
+        return;
+      }
+      setCheckedLayers(new Set(BLUEPRINT_BY_ID[id].layers));
+      setActiveBlueprint(id);
+      setLayerInfoId(null);
+    },
+    [activeBlueprint],
+  );
 
   // Clicking a suburb opens its Place profile, the same as picking it there.
   const handleSelectSuburb = useCallback((id: string) => {
@@ -3093,6 +3246,8 @@ export default function App() {
               layerOpacity={layerOpacity}
               setLayerOpacity={setLayerOpacity}
               clearAllLayers={clearAllLayers}
+              activeBlueprint={activeBlueprint}
+              applyBlueprint={applyBlueprint}
             />
           )}
           {panelTab === 'assets' && (
@@ -3126,7 +3281,7 @@ export default function App() {
             onSelectSuburb={handleSelectSuburb}
             hoveredSuburb={hoveredSuburb}
             setHoveredSuburb={setHoveredSuburb}
-            rightPanelAccent={ACCENT}
+            rightPanelAccent={activeBlueprint ? BLUEPRINT_BY_ID[activeBlueprint].accent : ACCENT}
             onZoomChange={setZoom}
             showBuildings={buildingOffTypes.size < ALL_BUILDING_TYPES.size}
             buildingOffTypes={buildingOffTypes}
@@ -3138,6 +3293,12 @@ export default function App() {
         <SourceYears snapshot={snapshot} />
       </main>
 
+      {rightPanelMode === 'blueprint' && activeBlueprint && (
+        <BlueprintPanel
+          blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
+          onClose={() => applyBlueprint(activeBlueprint)}
+        />
+      )}
       {rightPanelMode === 'building' && (
         <BuildingPointPanel ids={selectedBuildingIds} onClose={() => setSelectedBuildingKey(null)} />
       )}
