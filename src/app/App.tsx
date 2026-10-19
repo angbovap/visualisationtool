@@ -272,12 +272,12 @@ const LAYERS: LayerDef[] = [
   },
   {
     id: 'flood-1in100-real',
-    name: 'Flood 1 in 100 (8 of 9 catchments)',
+    name: 'Flood 1 in 100 (all 9 catchments)',
     group: 'hazard',
     kind: 'vector',
     hi: '#1E3A8A',
     unit: 'flood polygons',
-    note: 'Real 1 in 100 flood polygons for eight of the nine catchments. WC is missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: 'Real 1 in 100 flood polygons for all nine catchments. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
