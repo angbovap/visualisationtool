@@ -1874,89 +1874,206 @@ function BlueprintPanel({
   blueprint: Blueprint;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<'overview' | 'by-sa2'>('overview');
   const [showExposed, setShowExposed] = useState(false);
+  const [saSel, setSaSel] = useState<string | null>(null);
+  const [openAsset, setOpenAsset] = useState<string | null>(null);
+  useEffect(() => {
+    setTab('overview');
+    setSaSel(null);
+  }, [blueprint.id]);
+
   const floodLayers = blueprint.layers.filter((id) => id in FLOOD_RETURN_PERIOD_BY_LAYER);
+  const isFlood = floodLayers.length > 0;
+  const isHeat = blueprint.id === 'heat';
+  const hasExposure = isFlood || isHeat;
+
   const exposedToFlood = useMemo(
-    () => (floodLayers.length > 0 ? buildingsInFlood(floodLayers) : null),
+    () => (isFlood ? buildingsInFlood(floodLayers) : null),
     [blueprint.id],
   );
-  const heatCategories = useMemo(
-    () => (blueprint.id === 'heat' ? buildingsByHeatCategory() : null),
-    [blueprint.id],
+  const exposedFloodIds = useMemo(
+    () => new Set((exposedToFlood ?? []).map((b) => b.id)),
+    [exposedToFlood],
   );
+  const heatData = useMemo(() => (isHeat ? buildingsByHeatCategory() : null), [blueprint.id]);
   const mappedTotal = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]).length;
+
+  // Per real SA2, how many of ITS real buildings fall inside this
+  // blueprint's hazard, most-affected first. Sorting by the real count
+  // itself isn't a threshold, nothing is marked as "the worst".
+  const sa2Rows = useMemo(() => {
+    if (!hasExposure) return [];
+    return SUBURBS.map((s) => {
+      const buildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+      const count = isFlood
+        ? buildings.filter((b) => exposedFloodIds.has(b.id)).length
+        : buildings.filter((b) => heatData!.byBuildingId.has(b.id)).length;
+      return { s, buildings, count };
+    }).sort((a, b) => b.count - a.count);
+  }, [hasExposure, isFlood, exposedFloodIds, heatData]);
 
   return (
     <RightPanelShell accent={blueprint.accent} eyebrow="Blueprint" title={blueprint.title} onClose={onClose}>
       <div className="px-2.5 py-2">
         <p className="mb-3 text-[12.5px] leading-[1.55] text-ink-2">{blueprint.description}</p>
 
-        {exposedToFlood && (
+        {hasExposure && (
+          <div className="mb-3">
+            <Segmented
+              value={tab}
+              onChange={setTab}
+              accent={blueprint.accent}
+              options={[
+                { value: 'overview' as const, label: 'Overview' },
+                { value: 'by-sa2' as const, label: 'By SA2' },
+              ]}
+            />
+          </div>
+        )}
+
+        {(!hasExposure || tab === 'overview') && (
           <>
-            <PanelHeading>Real buildings inside this flood extent</PanelHeading>
-            <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
-              <div className="num text-[22px] font-semibold leading-none text-ink">
-                {exposedToFlood.length} <span className="text-[12px] font-normal text-ink-3">of {mappedTotal} mapped</span>
-              </div>
-              <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
-                Real buildings whose geocoded point falls inside at least one of the
-                mapped flood polygons this preset turns on. A point either sits
-                inside a mapped extent or it doesn't, no severity is implied.
-              </div>
-              {exposedToFlood.length > 0 && (
-                <button
-                  onClick={() => setShowExposed((v) => !v)}
-                  className="mt-2 text-[11.5px] font-medium text-accent underline decoration-dotted hover:text-ink"
-                >
-                  {showExposed ? 'Hide the list' : 'List them'}
-                </button>
-              )}
-            </div>
-            {showExposed && (
-              <div className="mb-3 max-h-[260px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-                {exposedToFlood.map((b) => (
-                  <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-[11.5px]">
-                    <span className="font-medium text-ink">{b.name}</span>
-                    {b.address && <span className="block text-[10.5px] text-ink-3">{b.address}</span>}
+            {exposedToFlood && (
+              <>
+                <PanelHeading>Real buildings inside this flood extent</PanelHeading>
+                <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
+                  <div className="num text-[22px] font-semibold leading-none text-ink">
+                    {exposedToFlood.length} <span className="text-[12px] font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
-                ))}
-              </div>
+                  <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
+                    Real buildings whose geocoded point falls inside at least one of the
+                    mapped flood polygons this preset turns on. A point either sits
+                    inside a mapped extent or it doesn't, no severity is implied.
+                  </div>
+                  {exposedToFlood.length > 0 && (
+                    <button
+                      onClick={() => setShowExposed((v) => !v)}
+                      className="mt-2 text-[11.5px] font-medium text-accent underline decoration-dotted hover:text-ink"
+                    >
+                      {showExposed ? 'Hide the list' : 'List them'}
+                    </button>
+                  )}
+                </div>
+                {showExposed && (
+                  <div className="mb-3 max-h-[260px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                    {exposedToFlood.map((b) => (
+                      <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-[11.5px]">
+                        <span className="font-medium text-ink">{b.name}</span>
+                        {b.address && <span className="block text-[10.5px] text-ink-3">{b.address}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {heatData && (
+              <>
+                <PanelHeading>Real buildings by UHI category</PanelHeading>
+                <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
+                  <div className="space-y-1.5">
+                    {[...heatData.byCategory.keys()]
+                      .sort((a, c) => c - a)
+                      .map((cat) => {
+                        const list = heatData.byCategory.get(cat)!;
+                        return (
+                          <div key={cat} className="flex items-center gap-2">
+                            <span className="w-[80px] shrink-0 text-[11.5px] text-ink-2">Category {cat}</span>
+                            <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                              <span
+                                className="block h-full rounded-[3px] bg-accent"
+                                style={{ width: `${(list.length / mappedTotal) * 100}%` }}
+                              />
+                            </span>
+                            <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">
+                              {list.length}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  <div className="mt-2 text-[11px] leading-[1.5] text-ink-3">
+                    Counts are the real heat grid cell each building's geocoded point
+                    falls inside, against {mappedTotal} mapped buildings. No category
+                    is marked as the one that counts as "in danger": that line hasn't
+                    been agreed by council.
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
 
-        {heatCategories && (
+        {hasExposure && tab === 'by-sa2' && (
           <>
-            <PanelHeading>Real buildings by UHI category</PanelHeading>
-            <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
-              <div className="space-y-1.5">
-                {[...heatCategories.keys()]
-                  .sort((a, c) => c - a)
-                  .map((cat) => {
-                    const list = heatCategories.get(cat)!;
-                    return (
-                      <div key={cat} className="flex items-center gap-2">
-                        <span className="w-[80px] shrink-0 text-[11.5px] text-ink-2">Category {cat}</span>
-                        <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
-                          <span
-                            className="block h-full rounded-[3px] bg-accent"
-                            style={{ width: `${(list.length / mappedTotal) * 100}%` }}
-                          />
-                        </span>
-                        <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">
-                          {list.length}
-                        </span>
+            {!saSel ? (
+              <>
+                <PanelHeading>SA2s, most affected first</PanelHeading>
+                <div className="space-y-1.5">
+                  {sa2Rows.map(({ s, buildings, count }) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSaSel(s.id)}
+                      className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
+                    >
+                      <span>
+                        <span className="block text-[13px] font-medium text-ink">{s.name}</span>
+                        <span className="num mt-[2px] block text-[11px] text-ink-3">SA2 {s.sa2}</span>
+                      </span>
+                      <span className="text-right">
+                        <span className="num block text-[14px] font-semibold text-ink">{count}</span>
+                        <span className="block text-[10.5px] text-ink-3">of {buildings.length}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : (
+              (() => {
+                const row = sa2Rows.find((r) => r.s.id === saSel)!;
+                const shown = isFlood ? row.buildings.filter((b) => exposedFloodIds.has(b.id)) : row.buildings;
+                return (
+                  <div>
+                    <button
+                      onClick={() => setSaSel(null)}
+                      className="mb-2 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+                    >
+                      <IconChevron size={13} className="rotate-180" />
+                      All SA2s
+                    </button>
+                    <div className="mb-2">
+                      <div className="text-[14px] font-semibold text-ink">{row.s.name}</div>
+                      <div className="num text-[11.5px] text-ink-3">
+                        {row.count} of {row.buildings.length} buildings{' '}
+                        {isFlood ? 'inside this extent' : 'matched to a heat cell'}
                       </div>
-                    );
-                  })}
-              </div>
-              <div className="mt-2 text-[11px] leading-[1.5] text-ink-3">
-                Counts are the real heat grid cell each building's geocoded point
-                falls inside, against {mappedTotal} mapped buildings. No category
-                is marked as the one that counts as "in danger": that line hasn't
-                been agreed by council.
-              </div>
-            </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {shown.map((b) => (
+                        <div key={b.id}>
+                          <BuildingCard
+                            b={b}
+                            isOpen={openAsset === b.id}
+                            onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                          />
+                          {isHeat && heatData!.byBuildingId.has(b.id) && (
+                            <div className="num mt-[2px] pl-2 text-[10.5px] text-ink-3">
+                              UHI category {heatData!.byBuildingId.get(b.id)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {shown.length === 0 && (
+                        <p className="text-[12px] text-ink-3">
+                          No buildings here {isFlood ? 'fall inside this extent' : 'matched a heat cell'}.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()
+            )}
           </>
         )}
 
@@ -2499,8 +2616,9 @@ const HEAT_CELLS_WITH_BBOX = HEAT_VULNERABILITY.map((cell) => ({
  *  their geocoded point falls inside. Buildings whose point falls
  *  outside every cell, or that have no geocoded position, are not
  *  counted rather than guessed into a category. */
-function buildingsByHeatCategory(): Map<number, RealAsset[]> {
+function buildingsByHeatCategory(): { byCategory: Map<number, RealAsset[]>; byBuildingId: Map<string, number> } {
   const byCategory = new Map<number, RealAsset[]>();
+  const byBuildingId = new Map<string, number>();
   for (const b of REAL_BUILDINGS) {
     const loc = BUILDING_LOCATION[b.id];
     if (!loc) continue;
@@ -2509,11 +2627,12 @@ function buildingsByHeatCategory(): Map<number, RealAsset[]> {
         const list = byCategory.get(cell.uhiCat) ?? [];
         list.push(b);
         byCategory.set(cell.uhiCat, list);
+        byBuildingId.set(b.id, cell.uhiCat);
         break;
       }
     }
   }
-  return byCategory;
+  return { byCategory, byBuildingId };
 }
 
 
