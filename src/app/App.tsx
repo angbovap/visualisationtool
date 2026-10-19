@@ -896,6 +896,10 @@ interface MapViewProps {
   buildingOffTypes: Set<string>;
   selectedBuildingKey: string | null;
   onSelectBuildingPoint: (key: string, ids: string[]) => void;
+  /** The SA2 to label real buildings for, and which ones: null means
+   *  every real building in that SA2, otherwise only these ids. */
+  focusSuburbId: string | null;
+  focusBuildingIds: string[] | null;
 }
 
 
@@ -917,6 +921,8 @@ function MapView(props: MapViewProps) {
     buildingOffTypes,
     selectedBuildingKey,
     onSelectBuildingPoint,
+    focusSuburbId,
+    focusBuildingIds,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1179,15 +1185,17 @@ function MapView(props: MapViewProps) {
        statistical approximation) draws as the bold outer edge; the 8
        SA2 shapes draw lighter, inside it, for the suburb divisions. */
     if (boundsMode === 'sa2') {
-      for (const ring of SUBURBS.map((s) => s.path)) {
+      for (const s of SUBURBS) {
         push(
-          L.polygon(ring, {
+          L.polygon(s.path, {
             fill: false,
             color: darkBase ? '#F2F7F6' : '#2B3C3A',
             weight: 0.7,
             opacity: darkBase ? 0.55 : 0.4,
-            interactive: false,
-          }),
+            interactive: true,
+          })
+            .bindTooltip(s.name, { direction: 'top', offset: [0, -3] })
+            .on('click', () => onSelectSuburb(s.id)),
         );
       }
       push(
@@ -1210,7 +1218,9 @@ function MapView(props: MapViewProps) {
             weight: 1.1,
             opacity: darkBase ? 0.75 : 0.65,
             interactive: true,
-          }).bindTooltip(`SA1 ${a.id}`, { direction: 'top', offset: [0, -3] }),
+          })
+            .bindTooltip(`SA1 ${a.id}`, { direction: 'top', offset: [0, -3] })
+            .on('click', () => onSelectSuburb(a.parentId)),
         );
       }
       push(
@@ -1307,6 +1317,48 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    /* Focused SA2: an outline plus a permanent name label for each real
+       building in it, on top of everything else. Driven by either Place's
+       selected suburb (every one of its real buildings) or a Blueprint's
+       "By SA2" drill-down (only the buildings that preset's hazard
+       actually touches there), set by the root component. */
+    if (focusSuburbId) {
+      const s = SUBURB_BY_ID[focusSuburbId];
+      if (s) {
+        push(
+          L.polygon(s.path, {
+            fill: false,
+            color: ACCENT,
+            weight: 2.4,
+            opacity: 0.9,
+            interactive: false,
+          }),
+        );
+        const inSuburb = REAL_BUILDINGS_BY_SUBURB[focusSuburbId] ?? [];
+        const idSet = focusBuildingIds ? new Set(focusBuildingIds) : null;
+        const toLabel = idSet ? inSuburb.filter((b) => idSet.has(b.id)) : inSuburb;
+        for (const b of toLabel) {
+          const loc = BUILDING_LOCATION[b.id];
+          if (!loc) continue;
+          push(
+            L.circleMarker([loc.lat, loc.lng] as LatLngTuple, {
+              radius: 5,
+              color: '#fff',
+              weight: 1.4,
+              fillColor: ACCENT,
+              fillOpacity: 0.95,
+              interactive: false,
+            }).bindTooltip(b.name, {
+              permanent: true,
+              direction: 'top',
+              offset: [0, -5],
+              className: 'building-label',
+            }),
+          );
+        }
+      }
+    }
+
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -1329,6 +1381,8 @@ function MapView(props: MapViewProps) {
     buildingOffTypes,
     selectedBuildingKey,
     onSelectBuildingPoint,
+    focusSuburbId,
+    focusBuildingIds,
   ]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
@@ -1893,9 +1947,11 @@ function RightPanelShell({
 function BlueprintPanel({
   blueprint,
   onClose,
+  onFocus,
 }: {
   blueprint: Blueprint;
   onClose: () => void;
+  onFocus: (suburbId: string | null, buildingIds: string[] | null) => void;
 }) {
   const [tab, setTab] = useState<'overview' | 'by-sa2'>('overview');
   const [showExposed, setShowExposed] = useState(false);
@@ -1935,6 +1991,26 @@ function BlueprintPanel({
       return { s, buildings, count };
     }).sort((a, b) => b.count - a.count);
   }, [hasExposure, isFlood, exposedFloodIds, heatData]);
+
+  const selectedRow = useMemo(
+    () => (saSel ? sa2Rows.find((r) => r.s.id === saSel) ?? null : null),
+    [saSel, sa2Rows],
+  );
+  // The buildings this preset's hazard actually touches inside the
+  // drilled-into SA2, not every building there: for flood that's the
+  // ones inside the extent, for heat every mapped building counts.
+  const shownBuildings = useMemo(() => {
+    if (!selectedRow) return null;
+    return isFlood ? selectedRow.buildings.filter((b) => exposedFloodIds.has(b.id)) : selectedRow.buildings;
+  }, [selectedRow, isFlood, exposedFloodIds]);
+
+  // Tells the map which real buildings to label at their actual
+  // location, so drilling into a SA2 here shows the same buildings on
+  // the map, not just as cards in this panel.
+  useEffect(() => {
+    onFocus(saSel, shownBuildings ? shownBuildings.map((b) => b.id) : null);
+    return () => onFocus(null, null);
+  }, [saSel, shownBuildings, onFocus]);
 
   return (
     <RightPanelShell accent={blueprint.accent} eyebrow="Blueprint" title={blueprint.title} onClose={onClose}>
@@ -2052,51 +2128,45 @@ function BlueprintPanel({
                   ))}
                 </div>
               </>
-            ) : (
-              (() => {
-                const row = sa2Rows.find((r) => r.s.id === saSel)!;
-                const shown = isFlood ? row.buildings.filter((b) => exposedFloodIds.has(b.id)) : row.buildings;
-                return (
-                  <div>
-                    <button
-                      onClick={() => setSaSel(null)}
-                      className="mb-2 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
-                    >
-                      <IconChevron size={13} className="rotate-180" />
-                      All SA2s
-                    </button>
-                    <div className="mb-2">
-                      <div className="text-[14px] font-semibold text-ink">{row.s.name}</div>
-                      <div className="num text-[11.5px] text-ink-3">
-                        {row.count} of {row.buildings.length} buildings{' '}
-                        {isFlood ? 'inside this extent' : 'matched to a heat cell'}
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      {shown.map((b) => (
-                        <div key={b.id}>
-                          <BuildingCard
-                            b={b}
-                            isOpen={openAsset === b.id}
-                            onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
-                          />
-                          {isHeat && heatData!.byBuildingId.has(b.id) && (
-                            <div className="num mt-[2px] pl-2 text-[10.5px] text-ink-3">
-                              UHI category {heatData!.byBuildingId.get(b.id)}
-                            </div>
-                          )}
+            ) : selectedRow && shownBuildings ? (
+              <div>
+                <button
+                  onClick={() => setSaSel(null)}
+                  className="mb-2 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+                >
+                  <IconChevron size={13} className="rotate-180" />
+                  All SA2s
+                </button>
+                <div className="mb-2">
+                  <div className="text-[14px] font-semibold text-ink">{selectedRow.s.name}</div>
+                  <div className="num text-[11.5px] text-ink-3">
+                    {selectedRow.count} of {selectedRow.buildings.length} buildings{' '}
+                    {isFlood ? 'inside this extent' : 'matched to a heat cell'}, labelled on the map
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  {shownBuildings.map((b) => (
+                    <div key={b.id}>
+                      <BuildingCard
+                        b={b}
+                        isOpen={openAsset === b.id}
+                        onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+                      />
+                      {isHeat && heatData!.byBuildingId.has(b.id) && (
+                        <div className="num mt-[2px] pl-2 text-[10.5px] text-ink-3">
+                          UHI category {heatData!.byBuildingId.get(b.id)}
                         </div>
-                      ))}
-                      {shown.length === 0 && (
-                        <p className="text-[12px] text-ink-3">
-                          No buildings here {isFlood ? 'fall inside this extent' : 'matched a heat cell'}.
-                        </p>
                       )}
                     </div>
-                  </div>
-                );
-              })()
-            )}
+                  ))}
+                  {shownBuildings.length === 0 && (
+                    <p className="text-[12px] text-ink-3">
+                      No buildings here {isFlood ? 'fall inside this extent' : 'matched a heat cell'}.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </>
         )}
 
@@ -3436,6 +3506,13 @@ export default function App() {
   // that same layer is unchecked.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
   const [activeBlueprint, setActiveBlueprint] = useState<BlueprintId | null>(null);
+  // Which SA2 a Blueprint's "By SA2" drill-down is showing, and the exact
+  // real buildings it's showing for it, so the map can label those same
+  // buildings at their real location rather than just listing them here.
+  const [blueprintFocus, setBlueprintFocus] = useState<{ suburbId: string; buildingIds: string[] | null } | null>(null);
+  const handleBlueprintFocus = useCallback((suburbId: string | null, buildingIds: string[] | null) => {
+    setBlueprintFocus(suburbId ? { suburbId, buildingIds } : null);
+  }, []);
   // Building types switched off on the MAP, shared by the map and the
   // Assets tab's type toggles. Starts with everything off, opt-in.
   const [buildingOffTypes, setBuildingOffTypes] = useState<Set<string>>(
@@ -3528,6 +3605,12 @@ export default function App() {
 
   const meta = TAB_META[panelTab];
 
+  // What the map should label at its real location: a Blueprint's
+  // drilled-into SA2 takes priority (and its exact filtered buildings),
+  // otherwise Place's selected SA2 labels every real building inside it.
+  const focusSuburbId = blueprintFocus?.suburbId ?? (panelTab === 'place' ? selectedId : null);
+  const focusBuildingIds = blueprintFocus ? blueprintFocus.buildingIds : null;
+
   return (
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} />
@@ -3598,6 +3681,8 @@ export default function App() {
             buildingOffTypes={buildingOffTypes}
             selectedBuildingKey={selectedBuildingKey}
             onSelectBuildingPoint={handleSelectBuildingPoint}
+            focusSuburbId={focusSuburbId}
+            focusBuildingIds={focusBuildingIds}
           />
         </div>
 
@@ -3608,6 +3693,7 @@ export default function App() {
         <BlueprintPanel
           blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
           onClose={() => applyBlueprint(activeBlueprint)}
+          onFocus={handleBlueprintFocus}
         />
       )}
       {rightPanelMode === 'building' && (
