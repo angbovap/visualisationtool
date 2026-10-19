@@ -1207,9 +1207,9 @@ function MapView(props: MapViewProps) {
           L.polygon(a.path, {
             fill: false,
             color: darkBase ? '#F2F7F6' : '#2B3C3A',
-            weight: 0.6,
-            opacity: darkBase ? 0.5 : 0.35,
-            interactive: false,
+            weight: 1.1,
+            opacity: darkBase ? 0.75 : 0.65,
+            interactive: true,
           }).bindTooltip(`SA1 ${a.id}`, { direction: 'top', offset: [0, -3] }),
         );
       }
