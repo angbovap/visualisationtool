@@ -1874,10 +1874,92 @@ function BlueprintPanel({
   blueprint: Blueprint;
   onClose: () => void;
 }) {
+  const [showExposed, setShowExposed] = useState(false);
+  const floodLayers = blueprint.layers.filter((id) => id in FLOOD_RETURN_PERIOD_BY_LAYER);
+  const exposedToFlood = useMemo(
+    () => (floodLayers.length > 0 ? buildingsInFlood(floodLayers) : null),
+    [blueprint.id],
+  );
+  const heatCategories = useMemo(
+    () => (blueprint.id === 'heat' ? buildingsByHeatCategory() : null),
+    [blueprint.id],
+  );
+  const mappedTotal = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]).length;
+
   return (
     <RightPanelShell accent={blueprint.accent} eyebrow="Blueprint" title={blueprint.title} onClose={onClose}>
       <div className="px-2.5 py-2">
         <p className="mb-3 text-[12.5px] leading-[1.55] text-ink-2">{blueprint.description}</p>
+
+        {exposedToFlood && (
+          <>
+            <PanelHeading>Real buildings inside this flood extent</PanelHeading>
+            <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
+              <div className="num text-[22px] font-semibold leading-none text-ink">
+                {exposedToFlood.length} <span className="text-[12px] font-normal text-ink-3">of {mappedTotal} mapped</span>
+              </div>
+              <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
+                Real buildings whose geocoded point falls inside at least one of the
+                mapped flood polygons this preset turns on. A point either sits
+                inside a mapped extent or it doesn't, no severity is implied.
+              </div>
+              {exposedToFlood.length > 0 && (
+                <button
+                  onClick={() => setShowExposed((v) => !v)}
+                  className="mt-2 text-[11.5px] font-medium text-accent underline decoration-dotted hover:text-ink"
+                >
+                  {showExposed ? 'Hide the list' : 'List them'}
+                </button>
+              )}
+            </div>
+            {showExposed && (
+              <div className="mb-3 max-h-[260px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                {exposedToFlood.map((b) => (
+                  <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-[11.5px]">
+                    <span className="font-medium text-ink">{b.name}</span>
+                    {b.address && <span className="block text-[10.5px] text-ink-3">{b.address}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {heatCategories && (
+          <>
+            <PanelHeading>Real buildings by UHI category</PanelHeading>
+            <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
+              <div className="space-y-1.5">
+                {[...heatCategories.keys()]
+                  .sort((a, c) => c - a)
+                  .map((cat) => {
+                    const list = heatCategories.get(cat)!;
+                    return (
+                      <div key={cat} className="flex items-center gap-2">
+                        <span className="w-[80px] shrink-0 text-[11.5px] text-ink-2">Category {cat}</span>
+                        <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                          <span
+                            className="block h-full rounded-[3px] bg-accent"
+                            style={{ width: `${(list.length / mappedTotal) * 100}%` }}
+                          />
+                        </span>
+                        <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">
+                          {list.length}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+              <div className="mt-2 text-[11px] leading-[1.5] text-ink-3">
+                Counts are the real heat grid cell each building's geocoded point
+                falls inside, against {mappedTotal} mapped buildings. No category
+                is marked as the one that counts as "in danger": that line hasn't
+                been agreed by council.
+              </div>
+            </div>
+          </>
+        )}
+
         <PanelHeading>Layers this turns on</PanelHeading>
         <div className="space-y-1.5">
           {blueprint.layers.map((id) => {
@@ -2345,6 +2427,93 @@ for (const b of REAL_BUILDINGS) {
   const suburbId = SA2_CODE_TO_SUBURB_ID[hit.code];
   if (!suburbId) continue;
   (REAL_BUILDINGS_BY_SUBURB[suburbId] ??= []).push(b);
+}
+
+/* ------------------------------------------------------------------ *
+ * Real asset exposure
+ *
+ * Whether a real building's geocoded point falls inside a real hazard
+ * polygon, nothing more. No severity cutoff is applied: for flood, a
+ * building either sits inside a mapped flood extent or it doesn't; for
+ * heat, every mapped building is placed in its real UHI category and
+ * the counts are shown by category, not collapsed into a judgement
+ * about which categories count as "in danger". That line hasn't been
+ * agreed by anyone, so it isn't drawn here.
+ * ------------------------------------------------------------------ */
+
+interface RingBBox {
+  latLo: number;
+  latHi: number;
+  lngLo: number;
+  lngHi: number;
+}
+
+function bboxOf(ring: LatLngTuple[]): RingBBox {
+  let latLo = Infinity, latHi = -Infinity, lngLo = Infinity, lngHi = -Infinity;
+  for (const [lat, lng] of ring) {
+    if (lat < latLo) latLo = lat;
+    if (lat > latHi) latHi = lat;
+    if (lng < lngLo) lngLo = lng;
+    if (lng > lngHi) lngHi = lng;
+  }
+  return { latLo, latHi, lngLo, lngHi };
+}
+
+function inBBox(lat: number, lng: number, b: RingBBox): boolean {
+  return lat >= b.latLo && lat <= b.latHi && lng >= b.lngLo && lng <= b.lngHi;
+}
+
+const FLOOD_RETURN_PERIOD_BY_LAYER: Record<string, '1in5' | '1in20' | '1in100'> = {
+  'flood-1in5-real': '1in5',
+  'flood-1in20-real': '1in20',
+  'flood-1in100-real': '1in100',
+};
+
+/** Every ring (across every catchment) for a flood layer, with its
+ *  bounding box precomputed once so each building test can skip most
+ *  rings cheaply before running the real point-in-polygon check. */
+function floodRingsFor(layerId: string): { ring: LatLngTuple[]; bbox: RingBBox }[] {
+  const rp = FLOOD_RETURN_PERIOD_BY_LAYER[layerId];
+  if (!rp) return [];
+  const catchments = floodContoursData.returnPeriods[rp];
+  return catchments.flatMap((c) => (c.rings as LatLngTuple[][]).map((ring) => ({ ring, bbox: bboxOf(ring) })));
+}
+
+/** Real buildings (with a geocoded position) whose point falls inside at
+ *  least one ring from the given flood layers. */
+function buildingsInFlood(layerIds: string[]): RealAsset[] {
+  const ringSets = layerIds.flatMap(floodRingsFor);
+  return REAL_BUILDINGS.filter((b) => {
+    const loc = BUILDING_LOCATION[b.id];
+    if (!loc) return false;
+    return ringSets.some(({ ring, bbox }) => inBBox(loc.lat, loc.lng, bbox) && pointInRing(loc.lat, loc.lng, ring));
+  });
+}
+
+const HEAT_CELLS_WITH_BBOX = HEAT_VULNERABILITY.map((cell) => ({
+  cell,
+  rings: cell.rings.map((ring) => ({ ring, bbox: bboxOf(ring) })),
+}));
+
+/** Real buildings grouped by the real UHI category of the heat grid cell
+ *  their geocoded point falls inside. Buildings whose point falls
+ *  outside every cell, or that have no geocoded position, are not
+ *  counted rather than guessed into a category. */
+function buildingsByHeatCategory(): Map<number, RealAsset[]> {
+  const byCategory = new Map<number, RealAsset[]>();
+  for (const b of REAL_BUILDINGS) {
+    const loc = BUILDING_LOCATION[b.id];
+    if (!loc) continue;
+    for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+      if (rings.some(({ ring, bbox }) => inBBox(loc.lat, loc.lng, bbox) && pointInRing(loc.lat, loc.lng, ring))) {
+        const list = byCategory.get(cell.uhiCat) ?? [];
+        list.push(b);
+        byCategory.set(cell.uhiCat, list);
+        break;
+      }
+    }
+  }
+  return byCategory;
 }
 
 
