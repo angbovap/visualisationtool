@@ -1614,6 +1614,17 @@ function LayersTab({
       on: visibleLayers.filter((l) => l.group === 'infrastructure' && checkedLayers.has(l.id)).length,
       total: visibleLayers.filter((l) => l.group === 'infrastructure').length,
     },
+    // Development Zones has no real layer yet, council hasn't supplied the
+    // export. Kept visible with a held place rather than disappearing, so
+    // staff who were told "planning layers are coming" can see it's a
+    // known, waiting slot, not something forgotten.
+    {
+      value: 'planning',
+      label: GROUP_LABEL.planning,
+      color: '#059669',
+      on: 0,
+      total: 1,
+    },
   ];
   const categories = allCategories.filter((c) => c.total > 0);
 
@@ -1625,6 +1636,18 @@ function LayersTab({
         <PanelHeading>{GROUP_LABEL[g]}</PanelHeading>
       </div>
     );
+    if (g === 'planning') {
+      return (
+        <div className="pb-1.5">
+          {heading}
+          <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
+            <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#A7D9C2]" />
+            <span className="flex-1 truncate text-[12px] text-ink-3">Development Zones</span>
+            <span className="text-[10.5px] text-ink-3">not yet supplied</span>
+          </div>
+        </div>
+      );
+    }
     const layers = visibleLayers.filter((l) => l.group === g);
     return (
       <div className="pb-1.5">
@@ -2405,6 +2428,11 @@ function HelpTab() {
           <p className="mt-1.5">
             No thresholds or tolerances have been set for any measure. Where
             one is needed it will be entered from council's own agreed values.
+          </p>
+          <p className="mt-1.5">
+            Planning & Land Use is a held, empty category rather than a hidden
+            one: council's roads, stormwater and development zone exports
+            haven't been supplied yet, so there is nothing real to show there.
           </p>
         </>,
       )}
