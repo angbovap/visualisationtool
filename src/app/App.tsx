@@ -2504,21 +2504,27 @@ const TAB_META: Record<
 function IconRail({
   tab,
   setTab,
+  onHome,
 }: {
   tab: PanelTab;
   setTab: (t: PanelTab) => void;
+  onHome: () => void;
 }) {
   // Assets split out from Place: a real, LGA-wide register isn't a
   // suburb profile, it doesn't belong nested under one.
   const order: PanelTab[] = ['layers', 'assets', 'place', 'help'];
   return (
     <nav data-tour="rail" className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
-      <div
-        className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-base font-bold text-white"
-        style={{ background: ACCENT }}
-      >
-        CS
-      </div>
+      <Tip label="Home" body="Back to the landing screen" side="right">
+        <button
+          onClick={onHome}
+          className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-base font-bold text-white transition-transform hover:scale-105"
+          style={{ background: ACCENT }}
+          aria-label="Back to home"
+        >
+          CS
+        </button>
+      </Tip>
       {order.map((t) => {
         const meta = TAB_META[t];
         const Icon = meta.icon;
@@ -3868,7 +3874,7 @@ export default function App() {
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
-      <IconRail tab={panelTab} setTab={setPanelTab} />
+      <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
       <section data-tour="left-panel" className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
