@@ -20,6 +20,32 @@
   --color-haz-flooding: #2563EB;
   --color-haz-coastal: #0EA5E9;
   --color-haz-drought: #D97706;
+
+  /* Type scale. Before this, the app had accumulated 15 near-duplicate
+     one-off pixel sizes (11px, 11.5px, 12px, 12.5px, 13px, 13.5px, ...)
+     from features built independently over many sessions, with no shared
+     ladder and no name tying a size to what it's for. These are that
+     ladder: a size for prose text, in ascending steps, plus a separate
+     "stat" sub-scale for the big tabular numbers panels use for counts
+     and dollar figures, since those read at a different scale than body
+     text and shouldn't be forced onto the same rungs. Replacing the old
+     arbitrary values with these also quietly fixed a few accidental
+     near-duplicates (13.5px folded into 14px, 15px folded into 17px,
+     22px folded into 20px) that were never meant to differ.
+     No line-height is paired here deliberately: every call site already
+     sets its own leading-* utility, and pairing one in here would fight
+     that rather than replace it. */
+  --text-2xs: 10.5px;
+  --text-xs: 11px;
+  --text-sm: 11.5px;
+  --text-base: 12px;
+  --text-md: 12.5px;
+  --text-lg: 13px;
+  --text-xl: 14px;
+  --text-2xl: 17px;
+  --text-stat-sm: 16px;
+  --text-stat: 20px;
+  --text-stat-lg: 26px;
 }
 
 html, body, #root { height: 100%; }

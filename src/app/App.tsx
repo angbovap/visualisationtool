@@ -758,14 +758,14 @@ function Tip({
       {children}
       {open && (
         <span
-          className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-[12px] leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
+          className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
         >
-          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-[11px] mb-1">
+          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-xs mb-1">
             {label}
           </span>
           <span className="block text-[#C2D2D1]">{body}</span>
           {source && (
-            <span className="mt-1 block border-t border-[#25403E] pt-1 text-[11px] text-[#7E9997]">
+            <span className="mt-1 block border-t border-[#25403E] pt-1 text-xs text-[#7E9997]">
               Source: {source}
             </span>
           )}
@@ -802,10 +802,10 @@ function Accordion({
           size={14}
           className={`shrink-0 text-ink-3 transition-transform duration-150 ${open ? 'rotate-90' : ''}`}
         />
-        <span className="flex-1 text-[13.5px] font-semibold tracking-[0.01em] text-ink">
+        <span className="flex-1 text-xl font-semibold tracking-[0.01em] text-ink">
           {title}
         </span>
-        {count && <span className="num text-[12px] text-ink-3">{count}</span>}
+        {count && <span className="num text-base text-ink-3">{count}</span>}
       </button>
       {open && <div className="pb-1.5">{children}</div>}
     </div>
@@ -855,7 +855,7 @@ function Segmented<T extends string | number>({
             key={String(o.value)}
             disabled={o.disabled}
             onClick={() => onChange(o.value)}
-            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-[12px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
+            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
             style={
               on
                 ? { background: accent, color: '#fff' }
@@ -885,7 +885,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <span className="text-[13px] font-semibold uppercase tracking-[0.07em] text-ink-3">
+      <span className="text-lg font-semibold uppercase tracking-[0.07em] text-ink-3">
         {children}
       </span>
       {right}
@@ -1466,7 +1466,7 @@ function MapView(props: MapViewProps) {
 
       <div className="absolute left-3 top-3 z-[999]">
         <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
             Basemap
           </div>
           <Segmented
@@ -1480,7 +1480,7 @@ function MapView(props: MapViewProps) {
 
       <div className="absolute right-3 top-3 z-[999]">
         <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+          <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
             Bounds
           </div>
           <Segmented
@@ -1503,8 +1503,8 @@ function MapView(props: MapViewProps) {
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: rightPanelAccent }} />
-            <span className="text-[13.5px] font-semibold text-ink">{selected.name}</span>
-            <span className="num text-[12px] text-ink-3">{selected.sa2}</span>
+            <span className="text-xl font-semibold text-ink">{selected.name}</span>
+            <span className="num text-base text-ink-3">{selected.sa2}</span>
           </div>
         </div>
       )}
@@ -1513,8 +1513,8 @@ function MapView(props: MapViewProps) {
         <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[240px]">
           <div className="fade-up rounded-[6px] border border-line bg-white/96 p-2 shadow-[0_2px_12px_rgba(20,32,31,0.12)] backdrop-blur">
             <div className="flex items-baseline justify-between">
-              <span className="text-[13.5px] font-semibold text-ink">{hovered.name}</span>
-              <span className="num text-[11.5px] text-ink-3">{hovered.sa2}</span>
+              <span className="text-xl font-semibold text-ink">{hovered.name}</span>
+              <span className="num text-sm text-ink-3">{hovered.sa2}</span>
             </div>
           </div>
         </div>
@@ -1535,7 +1535,7 @@ function MapView(props: MapViewProps) {
         >
           <IconMinus />
         </button>
-        <div className="num mt-[2px] rounded-[4px] border border-line bg-white/95 py-[1px] text-center text-[11.5px] text-ink-3">
+        <div className="num mt-[2px] rounded-[4px] border border-line bg-white/95 py-[1px] text-center text-sm text-ink-3">
           z{zoomLevel}
         </div>
       </div>
@@ -1642,8 +1642,8 @@ function LayersTab({
           {heading}
           <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
             <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#A7D9C2]" />
-            <span className="flex-1 truncate text-[12px] text-ink-3">Development Zones</span>
-            <span className="text-[10.5px] text-ink-3">not yet supplied</span>
+            <span className="flex-1 truncate text-base text-ink-3">Development Zones</span>
+            <span className="text-2xs text-ink-3">not yet supplied</span>
           </div>
         </div>
       );
@@ -1679,13 +1679,13 @@ function LayersTab({
                     }}
                   />
                   <span
-                    className={`flex-1 truncate text-[12px] ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
+                    className={`flex-1 truncate text-base ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
                   >
                     {l.name}
                   </span>
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
-                  <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-[10px] font-semibold text-ink-3 hover:border-accent hover:text-accent">
+                  <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-2xs font-semibold text-ink-3 hover:border-accent hover:text-accent">
                     i
                   </span>
                 </Tip>
@@ -1702,7 +1702,7 @@ function LayersTab({
                     }
                     className="h-3 flex-1"
                   />
-                  <span className="num w-[32px] text-right text-[11.5px] text-ink-3">
+                  <span className="num w-[32px] text-right text-sm text-ink-3">
                     {Math.round(op * 100)}%
                   </span>
                 </div>
@@ -1721,12 +1721,12 @@ function LayersTab({
           what the others switched on. */}
       {checkedLayers.size > 0 && (
         <div className="flex items-center justify-between border-b border-line bg-surface-2 px-2.5 py-1.5">
-          <span className="text-[11px] text-ink-3">
+          <span className="text-xs text-ink-3">
             {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on
           </span>
           <button
             onClick={clearAllLayers}
-            className="text-[11px] font-medium text-accent underline decoration-dotted hover:text-ink"
+            className="text-xs font-medium text-accent underline decoration-dotted hover:text-ink"
           >
             Clear all
           </button>
@@ -1738,7 +1738,7 @@ function LayersTab({
       <div className="border-b border-line px-2.5 py-2.5">
         <PanelHeading
           right={
-            <span className="num text-[12.5px] font-semibold text-accent">
+            <span className="num text-md font-semibold text-accent">
               {Math.round(overlayOpacity * 100)}%
             </span>
           }
@@ -1774,10 +1774,10 @@ function LayersTab({
               >
                 <div className="flex items-center justify-between">
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
-                  <span className="num text-[10.5px] text-ink-3">{c.on}/{c.total}</span>
+                  <span className="num text-2xs text-ink-3">{c.on}/{c.total}</span>
                 </div>
                 <span
-                  className="mt-1 block text-[12px] font-semibold leading-tight"
+                  className="mt-1 block text-base font-semibold leading-tight"
                   style={{ color: on ? c.color : '#14201F' }}
                 >
                   {c.label}
@@ -1810,12 +1810,12 @@ function LayersTab({
               >
                 <span className="mb-1 block h-1.5 w-1.5 rounded-full" style={{ background: b.accent }} />
                 <span
-                  className="block text-[12.5px] font-semibold leading-tight"
+                  className="block text-md font-semibold leading-tight"
                   style={{ color: on ? b.accent : '#14201F' }}
                 >
                   {b.title}
                 </span>
-                <span className="num mt-[2px] block text-[11px] text-ink-3">{b.layers.length} layers</span>
+                <span className="num mt-[2px] block text-xs text-ink-3">{b.layers.length} layers</span>
               </button>
             );
           })}
@@ -1840,7 +1840,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
       <div className="px-2.5 py-2.5">
-        <p className="mb-3 text-[12.5px] leading-[1.6] text-ink-2">
+        <p className="mb-3 text-md leading-[1.6] text-ink-2">
           The eight ABS SA2s covering the LGA. Choose one to see the council
           buildings register filed inside it. Population, SEIFA and hazard
           scores are not shown, because no real figures for them have been
@@ -1858,12 +1858,12 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
                 className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
               >
                 <span>
-                  <span className="block text-[13px] font-medium text-ink">{s.name}</span>
-                  <span className="num mt-[2px] block text-[11px] text-ink-3">SA2 {s.sa2}</span>
+                  <span className="block text-lg font-medium text-ink">{s.name}</span>
+                  <span className="num mt-[2px] block text-xs text-ink-3">SA2 {s.sa2}</span>
                 </span>
                 <span className="text-right">
-                  <span className="num block text-[13px] font-semibold text-ink">{bs.length} buildings</span>
-                  <span className="num block text-[11px] text-ink-3">${(value / 1e6).toFixed(1)}M insured</span>
+                  <span className="num block text-lg font-semibold text-ink">{bs.length} buildings</span>
+                  <span className="num block text-xs text-ink-3">${(value / 1e6).toFixed(1)}M insured</span>
                 </span>
               </button>
             );
@@ -1881,33 +1881,33 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
     <div className="px-2.5 py-2.5">
       <button
         onClick={() => setSelectedId(null)}
-        className="mb-2 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+        className="mb-2 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
       >
         <IconChevron size={13} className="rotate-180" />
         All SA2s
       </button>
       <div className="mb-3">
-        <div className="text-[15px] font-semibold text-ink">{s.name}</div>
-        <div className="num text-[11.5px] text-ink-3">SA2 {s.sa2}</div>
+        <div className="text-2xl font-semibold text-ink">{s.name}</div>
+        <div className="num text-sm text-ink-3">SA2 {s.sa2}</div>
       </div>
       <PanelHeading>At a glance</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-3">Buildings</div>
-          <div className="num mt-1 text-[20px] font-semibold leading-none text-ink">{buildings.length}</div>
+          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Buildings</div>
+          <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
         </div>
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-[11px] font-medium uppercase tracking-[0.06em] text-ink-3">Insured value</div>
-          <div className="num mt-1 text-[20px] font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
+          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Insured value</div>
+          <div className="num mt-1 text-stat font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
         </div>
       </div>
-      <p className="mb-3 text-[11.5px] leading-[1.5] text-ink-3">
+      <p className="mb-3 text-sm leading-[1.5] text-ink-3">
         Population, SEIFA and hazard scores for this SA2 are not shown, no
         real figures for them have been supplied yet.
       </p>
       <PanelHeading>Buildings in this SA2</PanelHeading>
       {buildings.length === 0 ? (
-        <p className="text-[12px] text-ink-3">No register buildings geocode inside this SA2.</p>
+        <p className="text-base text-ink-3">No register buildings geocode inside this SA2.</p>
       ) : (
         <div className="space-y-1.5">
           {buildings.map((b) => (
@@ -1931,10 +1931,10 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-1 first:mt-0">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-ink-3">
+      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">
         {label}
       </div>
-      <div className="mt-[1px] text-[12px] leading-[1.5] text-ink-2">{value}</div>
+      <div className="mt-[1px] text-base leading-[1.5] text-ink-2">{value}</div>
     </div>
   );
 }
@@ -1961,10 +1961,10 @@ function RightPanelShell({
       <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
         <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
         <div className="min-w-0 flex-1">
-          <div className="text-[10.5px] font-semibold uppercase tracking-[0.1em] text-ink-3">
+          <div className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-3">
             {eyebrow}
           </div>
-          <div className="truncate text-[14px] font-semibold leading-tight" style={{ color: accent }}>
+          <div className="truncate text-xl font-semibold leading-tight" style={{ color: accent }}>
             {title}
           </div>
         </div>
@@ -2062,7 +2062,7 @@ function BlueprintPanel({
   return (
     <RightPanelShell accent={blueprint.accent} eyebrow="Blueprint" title={blueprint.title} onClose={onClose}>
       <div className="px-2.5 py-2">
-        <p className="mb-3 text-[12.5px] leading-[1.55] text-ink-2">{blueprint.description}</p>
+        <p className="mb-3 text-md leading-[1.55] text-ink-2">{blueprint.description}</p>
 
         {hasExposure && (
           <div className="mb-3">
@@ -2084,10 +2084,10 @@ function BlueprintPanel({
               <>
                 <PanelHeading>Real buildings inside this flood extent</PanelHeading>
                 <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
-                  <div className="num text-[22px] font-semibold leading-none text-ink">
-                    {exposedToFlood.length} <span className="text-[12px] font-normal text-ink-3">of {mappedTotal} mapped</span>
+                  <div className="num text-stat font-semibold leading-none text-ink">
+                    {exposedToFlood.length} <span className="text-base font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
-                  <div className="mt-1 text-[11px] leading-[1.5] text-ink-3">
+                  <div className="mt-1 text-xs leading-[1.5] text-ink-3">
                     Real buildings whose geocoded point falls inside at least one of the
                     mapped flood polygons this preset turns on. A point either sits
                     inside a mapped extent or it doesn't, no severity is implied.
@@ -2095,7 +2095,7 @@ function BlueprintPanel({
                   {exposedToFlood.length > 0 && (
                     <button
                       onClick={() => setShowExposed((v) => !v)}
-                      className="mt-2 text-[11.5px] font-medium text-accent underline decoration-dotted hover:text-ink"
+                      className="mt-2 text-sm font-medium text-accent underline decoration-dotted hover:text-ink"
                     >
                       {showExposed ? 'Hide the list' : 'List them'}
                     </button>
@@ -2104,9 +2104,9 @@ function BlueprintPanel({
                 {showExposed && (
                   <div className="mb-3 max-h-[260px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
                     {exposedToFlood.map((b) => (
-                      <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-[11.5px]">
+                      <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-sm">
                         <span className="font-medium text-ink">{b.name}</span>
-                        {b.address && <span className="block text-[10.5px] text-ink-3">{b.address}</span>}
+                        {b.address && <span className="block text-2xs text-ink-3">{b.address}</span>}
                       </div>
                     ))}
                   </div>
@@ -2125,21 +2125,21 @@ function BlueprintPanel({
                         const list = heatData.byCategory.get(cat)!;
                         return (
                           <div key={cat} className="flex items-center gap-2">
-                            <span className="w-[80px] shrink-0 text-[11.5px] text-ink-2">Category {cat}</span>
+                            <span className="w-[80px] shrink-0 text-sm text-ink-2">Category {cat}</span>
                             <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
                               <span
                                 className="block h-full rounded-[3px] bg-accent"
                                 style={{ width: `${(list.length / mappedTotal) * 100}%` }}
                               />
                             </span>
-                            <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">
+                            <span className="num w-7 shrink-0 text-right text-sm font-semibold text-ink">
                               {list.length}
                             </span>
                           </div>
                         );
                       })}
                   </div>
-                  <div className="mt-2 text-[11px] leading-[1.5] text-ink-3">
+                  <div className="mt-2 text-xs leading-[1.5] text-ink-3">
                     Counts are the real heat grid cell each building's geocoded point
                     falls inside, against {mappedTotal} mapped buildings. No category
                     is marked as the one that counts as "in danger": that line hasn't
@@ -2164,12 +2164,12 @@ function BlueprintPanel({
                       className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
                     >
                       <span>
-                        <span className="block text-[13px] font-medium text-ink">{s.name}</span>
-                        <span className="num mt-[2px] block text-[11px] text-ink-3">SA2 {s.sa2}</span>
+                        <span className="block text-lg font-medium text-ink">{s.name}</span>
+                        <span className="num mt-[2px] block text-xs text-ink-3">SA2 {s.sa2}</span>
                       </span>
                       <span className="text-right">
-                        <span className="num block text-[14px] font-semibold text-ink">{count}</span>
-                        <span className="block text-[10.5px] text-ink-3">of {buildings.length}</span>
+                        <span className="num block text-xl font-semibold text-ink">{count}</span>
+                        <span className="block text-2xs text-ink-3">of {buildings.length}</span>
                       </span>
                     </button>
                   ))}
@@ -2179,14 +2179,14 @@ function BlueprintPanel({
               <div>
                 <button
                   onClick={() => setSaSel(null)}
-                  className="mb-2 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+                  className="mb-2 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
                 >
                   <IconChevron size={13} className="rotate-180" />
                   All SA2s
                 </button>
                 <div className="mb-2">
-                  <div className="text-[14px] font-semibold text-ink">{selectedRow.s.name}</div>
-                  <div className="num text-[11.5px] text-ink-3">
+                  <div className="text-xl font-semibold text-ink">{selectedRow.s.name}</div>
+                  <div className="num text-sm text-ink-3">
                     {selectedRow.count} of {selectedRow.buildings.length} buildings{' '}
                     {isFlood ? 'inside this extent' : 'matched to a heat cell'}, labelled on the map
                   </div>
@@ -2200,14 +2200,14 @@ function BlueprintPanel({
                         onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
                       />
                       {isHeat && heatData!.byBuildingId.has(b.id) && (
-                        <div className="num mt-[2px] pl-2 text-[10.5px] text-ink-3">
+                        <div className="num mt-[2px] pl-2 text-2xs text-ink-3">
                           UHI category {heatData!.byBuildingId.get(b.id)}
                         </div>
                       )}
                     </div>
                   ))}
                   {shownBuildings.length === 0 && (
-                    <p className="text-[12px] text-ink-3">
+                    <p className="text-base text-ink-3">
                       No buildings here {isFlood ? 'fall inside this extent' : 'matched a heat cell'}.
                     </p>
                   )}
@@ -2229,9 +2229,9 @@ function BlueprintPanel({
                     background: l.kind === 'vector' ? l.hi : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
                   }}
                 />
-                <div className="text-[12.5px] font-semibold text-ink">{l.name}</div>
-                <div className="mt-[2px] text-[11.5px] leading-[1.5] text-ink-2">{l.note}</div>
-                <div className="num mt-1 text-[10.5px] text-ink-3">{l.source}</div>
+                <div className="text-md font-semibold text-ink">{l.name}</div>
+                <div className="mt-[2px] text-sm leading-[1.5] text-ink-2">{l.note}</div>
+                <div className="num mt-1 text-2xs text-ink-3">{l.source}</div>
               </div>
             );
           })}
@@ -2258,8 +2258,8 @@ function LayerInfoPanel({
   return (
     <RightPanelShell accent={layer.hi ?? ACCENT} eyebrow="Layer" title={layer.name} onClose={onClose}>
       <div className="px-2.5 py-2">
-        <p className="text-[12.5px] leading-[1.55] text-ink-2">{layer.note}</p>
-        <div className="num mt-2 text-[11px] text-ink-3">
+        <p className="text-md leading-[1.55] text-ink-2">{layer.note}</p>
+        <div className="num mt-2 text-xs text-ink-3">
           Unit: {layer.unit} · {layer.source}
         </div>
       </div>
@@ -2322,7 +2322,7 @@ function HelpTab() {
       open={open === id}
       onToggle={() => setOpen(open === id ? null : id)}
     >
-      <div className="px-2.5 text-[12.5px] leading-[1.6] text-ink-2">{body}</div>
+      <div className="px-2.5 text-md leading-[1.6] text-ink-2">{body}</div>
     </Accordion>
   );
 
@@ -2451,10 +2451,10 @@ function HelpTab() {
 function SourceYears({ snapshot }: { snapshot: string | null }) {
   return (
     <div className="flex h-[40px] shrink-0 items-center justify-between border-t border-line bg-white px-3">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.09em] text-ink-3">
+      <span className="text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
         Source years
       </span>
-      <span className="num text-[12px] text-ink-2">{snapshot ?? 'No dated layer on the map'}</span>
+      <span className="num text-base text-ink-2">{snapshot ?? 'No dated layer on the map'}</span>
     </div>
   );
 }
@@ -2502,7 +2502,7 @@ function IconRail({
   return (
     <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
-        className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-[12px] font-bold text-white"
+        className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-base font-bold text-white"
         style={{ background: ACCENT }}
       >
         CS
@@ -2822,27 +2822,27 @@ function BuildingCard({
       <button onClick={onToggle} className="w-full px-2 py-1.5 text-left">
         <div className="flex items-start justify-between gap-1.5">
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[12px] font-semibold text-ink">{b.name}</span>
-            <span className="num mt-[2px] block truncate text-[10.5px] text-ink-3">
+            <span className="block truncate text-base font-semibold text-ink">{b.name}</span>
+            <span className="num mt-[2px] block truncate text-2xs text-ink-3">
               {b.buildingType ?? 'Not yet classified'}
               {b.suburb ? ` · ${b.suburb}` : ''}
               {!located && ' · not mapped'}
             </span>
           </span>
           {b.insuredValue > 0 && (
-            <span className="num shrink-0 text-[11px] font-semibold text-ink-2">
+            <span className="num shrink-0 text-xs font-semibold text-ink-2">
               ${(b.insuredValue / 1000).toFixed(0)}k
             </span>
           )}
         </div>
         <div className="mt-1 flex flex-wrap gap-1">
           {b.condition && (
-            <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
+            <span className="rounded-[3px] px-1 text-2xs font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
               {b.condition}
             </span>
           )}
           {b.inherentRisk && (
-            <span className="rounded-[3px] px-1 text-[10.5px] font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
+            <span className="rounded-[3px] px-1 text-2xs font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
               {b.inherentRisk}
             </span>
           )}
@@ -2896,7 +2896,7 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
     return (
       <RightPanelShell accent={ACCENT} eyebrow="Map selection" title="No detail" onClose={onClose}>
         <div className="px-2.5 py-2">
-          <p className="text-[11.5px] leading-[1.55] text-ink-2">
+          <p className="text-sm leading-[1.55] text-ink-2">
             No register detail found for this point.
           </p>
         </div>
@@ -2926,12 +2926,12 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
             <PanelHeading>At this point</PanelHeading>
             <div className="mb-3 grid grid-cols-2 gap-1.5">
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">Buildings</div>
-                <div className="num text-[16px] font-semibold text-ink">{buildings.length}</div>
+                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Buildings</div>
+                <div className="num text-stat-sm font-semibold text-ink">{buildings.length}</div>
               </div>
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-[11px] uppercase tracking-[0.05em] text-ink-3">Insured value</div>
-                <div className="num text-[16px] font-semibold text-ink">
+                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Insured value</div>
+                <div className="num text-stat-sm font-semibold text-ink">
                   ${(totalInsured / 1e6).toFixed(1)}M
                 </div>
               </div>
@@ -2945,7 +2945,7 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
                       return (
                         <span
                           key={label}
-                          className="rounded-[3px] px-1 text-[10.5px] font-medium"
+                          className="rounded-[3px] px-1 text-2xs font-medium"
                           style={{ background: withAlpha(c, 0.12), color: c }}
                         >
                           {n} {label}
@@ -2961,7 +2961,7 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
                       return (
                         <span
                           key={label}
-                          className="rounded-[3px] px-1 text-[10.5px] font-medium"
+                          className="rounded-[3px] px-1 text-2xs font-medium"
                           style={{ background: withAlpha(c, 0.12), color: c }}
                         >
                           {n} {label}
@@ -3065,12 +3065,12 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-[11px] text-ink-3">
+        <span className="text-xs text-ink-3">
           {onCount} of {ALL_BUILDING_TYPES.size} types shown
         </span>
         <button
           onClick={() => setOffTypes(() => new Set())}
-          className="text-[11px] text-ink-3 underline decoration-dotted hover:text-ink"
+          className="text-xs text-ink-3 underline decoration-dotted hover:text-ink"
         >
           show all
         </button>
@@ -3082,7 +3082,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           return (
             <div key={use.key} className="rounded-[5px] border border-line bg-white p-1.5">
               <div className="mb-1 flex items-center justify-between">
-                <span className="flex items-center gap-1 text-[11px] font-semibold text-ink-2">
+                <span className="flex items-center gap-1 text-xs font-semibold text-ink-2">
                   {isUnclassified ? 'Not yet classified' : use.label}
                   {isUnclassified && (
                     <Tip
@@ -3096,7 +3096,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                 </span>
                 <button
                   onClick={() => toggleUse(use)}
-                  className="text-[10.5px] text-accent hover:underline"
+                  className="text-2xs text-accent hover:underline"
                 >
                   toggle all
                 </button>
@@ -3108,7 +3108,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                     <button
                       key={t.key}
                       onClick={() => toggleType(t.key)}
-                      className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-[11px] transition-colors"
+                      className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-xs transition-colors"
                       style={
                         on
                           ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
@@ -3117,7 +3117,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                     >
                       <Check on={on} />
                       {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                      <span className="num text-[10px] opacity-70">{t.count}</span>
+                      <span className="num text-2xs opacity-70">{t.count}</span>
                     </button>
                   );
                 })}
@@ -3129,21 +3129,21 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
 
       <button
         onClick={() => setShowOther(!showOther)}
-        className="mt-2 flex items-center gap-1 text-[11px] text-ink-3 hover:text-ink"
+        className="mt-2 flex items-center gap-1 text-xs text-ink-3 hover:text-ink"
       >
         <IconChevron size={12} className={`transition-transform ${showOther ? 'rotate-90' : ''}`} />
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
         <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
-          <p className="mb-1 text-[10.5px] leading-[1.45] text-ink-3">
+          <p className="mb-1 text-2xs leading-[1.45] text-ink-3">
             Real, in the same export, not classed as buildings, so kept
             out of the toggle list above rather than folded in.
           </p>
           {otherCounts.filter((o) => o.count > 0).map((o) => (
             <div key={o.c} className="flex items-center justify-between py-[2px]">
-              <span className="text-[11px] text-ink-2">{ASSET_CLASS_LABEL[o.c]}</span>
-              <span className="num text-[11px] font-semibold text-ink">{o.count}</span>
+              <span className="text-xs text-ink-2">{ASSET_CLASS_LABEL[o.c]}</span>
+              <span className="num text-xs font-semibold text-ink">{o.count}</span>
             </div>
           ))}
         </div>
@@ -3226,7 +3226,7 @@ function RealBuildingsRegister({
 
   return (
     <div className="mb-4 border-b border-line pb-4">
-      <p className="mb-4 text-[12.5px] leading-[1.6] text-ink-2">
+      <p className="mb-4 text-md leading-[1.6] text-ink-2">
         Every real building from council's own asset register
         (<span className="num">{`CCS_Buildings.xlsx`}</span>), one row per
         building rather than per fitout or meter.
@@ -3247,10 +3247,10 @@ function RealBuildingsRegister({
                 setOpenId(null);
               }}
               aria-pressed={on}
-              className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-[12px] transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
+              className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
             >
               {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
-              <span className="num text-[11px] text-ink-3">{w.count}</span>
+              <span className="num text-xs text-ink-3">{w.count}</span>
             </button>
           );
         })}
@@ -3261,42 +3261,42 @@ function RealBuildingsRegister({
       <PanelHeading>{scopeLabel}</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2.5">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-          <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+          <div className="text-base font-medium uppercase tracking-[0.06em] text-ink-3">
             Buildings
           </div>
-          <div className="num mt-1 text-[26px] font-semibold leading-none text-ink">
+          <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
             {scoped.length}
           </div>
-          <div className="mt-1 text-[12px] text-ink-3">{typeCount} types</div>
+          <div className="mt-1 text-base text-ink-3">{typeCount} types</div>
         </div>
         <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-          <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+          <div className="text-base font-medium uppercase tracking-[0.06em] text-ink-3">
             Insured value
           </div>
-          <div className="num mt-1 text-[26px] font-semibold leading-none text-ink">
+          <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
             ${(totalInsured / 1e6).toFixed(1)}M
           </div>
-          <div className="mt-1 text-[12px] text-ink-3">
+          <div className="mt-1 text-base text-ink-3">
             {scoped.filter((b) => b.insuredValue > 0).length} valued
           </div>
         </div>
       </div>
 
       <div className="mb-4 rounded-[6px] border border-line bg-white px-3 py-2.5">
-        <div className="mb-1.5 text-[12px] font-medium uppercase tracking-[0.06em] text-ink-3">
+        <div className="mb-1.5 text-base font-medium uppercase tracking-[0.06em] text-ink-3">
           Condition, as rated in the register
         </div>
         <div className="space-y-1.5">
           {conditionRows.map((r) => (
             <div key={r.label} className="flex items-center gap-2">
-              <span className="w-[116px] shrink-0 truncate text-[11.5px] text-ink-2">{r.label}</span>
+              <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
               <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
                 <span
                   className="block h-full rounded-[3px]"
                   style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
                 />
               </span>
-              <span className="num w-7 shrink-0 text-right text-[11.5px] font-semibold text-ink">{r.n}</span>
+              <span className="num w-7 shrink-0 text-right text-sm font-semibold text-ink">{r.n}</span>
             </div>
           ))}
         </div>
@@ -3310,7 +3310,7 @@ function RealBuildingsRegister({
       <PanelHeading
         right={
           <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
-            <span className="cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+            <span className="cursor-help text-base text-ink-3 underline decoration-dotted">
               how read
             </span>
           </Tip>
@@ -3326,15 +3326,15 @@ function RealBuildingsRegister({
               className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
             >
               <span>
-                <span className="block text-[13px] font-medium text-ink">
+                <span className="block text-lg font-medium text-ink">
                   Manage building types
                 </span>
-                <span className="mt-[2px] block text-[11.5px] text-ink-3">
+                <span className="mt-[2px] block text-sm text-ink-3">
                   <span className="num font-semibold text-ink-2">{onCount}</span> of{' '}
                   {ALL_BUILDING_TYPES.size} types shown on the map
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-[12px] text-accent">
+              <span className="flex shrink-0 items-center gap-1 text-base text-accent">
                 Manage
                 <IconChevron size={13} />
               </span>
@@ -3344,14 +3344,14 @@ function RealBuildingsRegister({
               className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
             >
               <span>
-                <span className="block text-[13px] font-medium text-ink">
+                <span className="block text-lg font-medium text-ink">
                   List {ward === null ? 'all ' : ''}{scoped.length} buildings
                 </span>
-                <span className="mt-[2px] block text-[11.5px] text-ink-3">
+                <span className="mt-[2px] block text-sm text-ink-3">
                   {ward === null ? 'Every real building' : `In ${scopeLabel}`}, by category or all at once
                 </span>
               </span>
-              <span className="flex shrink-0 items-center gap-1 text-[12px] text-accent">
+              <span className="flex shrink-0 items-center gap-1 text-base text-accent">
                 <span className="num">${(totalInsured / 1e6).toFixed(1)}M</span>
                 <IconChevron size={13} />
               </span>
@@ -3363,7 +3363,7 @@ function RealBuildingsRegister({
           <div>
             <button
               onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
             >
               <IconChevron size={13} className="rotate-180" />
               Back
@@ -3376,7 +3376,7 @@ function RealBuildingsRegister({
           <div>
             <button
               onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-[11.5px] text-ink-3 transition-colors hover:text-accent"
+              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
             >
               <IconChevron size={13} className="rotate-180" />
               Back
@@ -3389,10 +3389,10 @@ function RealBuildingsRegister({
                     onClick={() => selectListScope('all')}
                     className="flex w-full items-center justify-between rounded-[5px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                   >
-                    <span className="text-[11.5px] font-medium text-ink">
+                    <span className="text-sm font-medium text-ink">
                       All {scoped.length} buildings
                     </span>
-                    <span className="num text-[10.5px] text-ink-3">
+                    <span className="num text-2xs text-ink-3">
                       ${(totalInsured / 1e6).toFixed(1)}M
                     </span>
                   </button>
@@ -3405,10 +3405,10 @@ function RealBuildingsRegister({
                           onClick={() => selectListScope(use.key)}
                           className="flex items-center gap-1 rounded-[5px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
                         >
-                          <span className="text-[11.5px] font-medium text-ink">
+                          <span className="text-sm font-medium text-ink">
                             {isUnclassified ? 'Not yet classified' : use.label}
                           </span>
-                          <span className="num text-[10.5px] text-ink-3">{use.count}</span>
+                          <span className="num text-2xs text-ink-3">{use.count}</span>
                         </button>
                       );
                     })}
@@ -3430,16 +3430,16 @@ function RealBuildingsRegister({
                   <div>
                     <button
                       onClick={() => selectListScope(null)}
-                      className="mb-1.5 flex items-center gap-[3px] text-[11px] text-ink-3 transition-colors hover:text-accent"
+                      className="mb-1.5 flex items-center gap-[3px] text-xs text-ink-3 transition-colors hover:text-accent"
                     >
                       <IconChevron size={12} className="rotate-180" />
                       All categories
                     </button>
                     <div className="mb-1.5 flex items-center justify-between">
-                      <span className="text-[11.5px] font-medium text-ink">
+                      <span className="text-sm font-medium text-ink">
                         {label}, {buildings.length}
                       </span>
-                      <span className="num text-[10.5px] text-ink-3">
+                      <span className="num text-2xs text-ink-3">
                         ${(insured / 1e6).toFixed(1)}M
                       </span>
                     </div>
@@ -3466,7 +3466,7 @@ function RealBuildingsRegister({
           a question of its own. */}
       <div className="mt-4">
         <PanelHeading>Register dates</PanelHeading>
-        <div className="mb-4 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-[12px] leading-[1.5] text-ink-2">
+        <div className="mb-4 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-base leading-[1.5] text-ink-2">
           <div>
             Last modified{' '}
             <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -3488,7 +3488,7 @@ function RealBuildingsRegister({
               body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${scoped.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
               side="left"
             >
-              <span className="num cursor-help text-[12px] text-ink-3 underline decoration-dotted">
+              <span className="num cursor-help text-base text-ink-3 underline decoration-dotted">
                 {mappedCount} of {scoped.length} on map
               </span>
             </Tip>
@@ -3496,7 +3496,7 @@ function RealBuildingsRegister({
         >
           Map coverage
         </PanelHeading>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-[11.5px] text-ink-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-sm text-ink-3">
           <span className="flex items-center gap-1.5">
             <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
             {preciseCount} precise
@@ -3520,17 +3520,17 @@ function InfoSheet({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-ink">About this tool</span>
+          <span className="text-2xl font-semibold text-ink">About this tool</span>
           <button onClick={onClose} className="rounded-[4px] p-[3px] text-ink-3 hover:bg-surface-2 hover:text-ink" aria-label="Close">
             <IconClose />
           </button>
         </div>
-        <p className="text-[12.5px] leading-[1.6] text-ink-2">
+        <p className="text-md leading-[1.6] text-ink-2">
           A climate risk explorer for City of Charles Sturt. It shows council's
           own GIS layers and asset register on one map. Where a figure has not
           been supplied, the tool shows nothing for it rather than an estimate.
         </p>
-        <p className="mt-2 text-[12.5px] leading-[1.6] text-ink-2">
+        <p className="mt-2 text-md leading-[1.6] text-ink-2">
           Sources and what is not shown are on the Help tab.
         </p>
       </div>
@@ -3670,12 +3670,12 @@ export default function App() {
       <section className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="text-[17px] font-semibold leading-tight text-ink">{meta.title}</div>
-            <div className="mt-[2px] text-[11.5px] leading-tight text-ink-3">{meta.subtitle}</div>
+            <div className="text-2xl font-semibold leading-tight text-ink">{meta.title}</div>
+            <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button
             onClick={() => setShowInfo(true)}
-            className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-[11.5px] font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
+            className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-sm font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
             aria-label="About this tool"
           >
             i
@@ -3706,8 +3706,8 @@ export default function App() {
         </div>
 
         <footer className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
-          <span className="text-[11px] uppercase tracking-[0.08em] text-ink-3">City of Charles Sturt</span>
-          <span className="num text-[11px] text-ink-3">
+          <span className="text-xs uppercase tracking-[0.08em] text-ink-3">City of Charles Sturt</span>
+          <span className="num text-xs text-ink-3">
             {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
           </span>
         </footer>
