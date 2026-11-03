@@ -724,6 +724,55 @@ const IconMinus = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
+const IconInfo = ({ size = 15, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 11v5.5" />
+    <path d="M12 7.6v.1" />
+  </svg>
+);
+
+const IconHome = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M4 10.5 12 4l8 6.5" />
+    <path d="M6 9v10h12V9" />
+    <path d="M10 19v-5h4v5" />
+  </svg>
+);
+
+/** Basemap: a folded map sheet. */
+const IconMap = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" />
+    <path d="M9 4v14M15 6v14" />
+  </svg>
+);
+
+/** Boundaries: a polygon outline split into areas. */
+const IconBounds = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M5 5h14v14H5z" />
+    <path d="M5 12h7V5M12 12v7" />
+  </svg>
+);
+
+/** Focus on the LGA: a frame with the subject inside it. */
+const IconFocus = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" />
+    <circle cx="12" cy="12" r="3.2" />
+  </svg>
+);
+
+/** Recentre on the LGA. */
+const IconLocate = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <circle cx="12" cy="12" r="6.5" />
+    <circle cx="12" cy="12" r="1.8" />
+    <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
+  </svg>
+);
+
 /* ------------------------------------------------------------------ *
  * UI atoms
  * ------------------------------------------------------------------ */
@@ -835,7 +884,24 @@ function Check({ on }: { on: boolean }) {
   );
 }
 
-/** Segmented control. Used for basemap and bounds. */
+/** An on/off switch, for anything that is literally on or off on the map,
+ *  so the state reads at a glance from the knob's side and colour rather
+ *  than from a small tick. */
+function Switch({ on }: { on: boolean }) {
+  return (
+    <span
+      className="relative inline-flex h-[18px] w-[32px] shrink-0 items-center rounded-full transition-colors duration-200"
+      style={{ background: on ? ACCENT : '#D5DDDC' }}
+    >
+      <span
+        className="absolute h-[14px] w-[14px] rounded-full bg-white shadow-[0_1px_2px_rgba(20,32,31,0.3)] transition-transform duration-200"
+        style={{ transform: on ? 'translateX(16px)' : 'translateX(2px)' }}
+      />
+    </span>
+  );
+}
+
+/** Segmented control. Used for the Blueprint panel's tab switch. */
 
 function Segmented<T extends string | number>({
   options,
@@ -920,7 +986,6 @@ interface MapViewProps {
   setHoveredSuburb: (id: string | null) => void;
   /** Accent for the selected-suburb pill. */
   rightPanelAccent: string;
-  onZoomChange: (z: number) => void;
   showBuildings: boolean;
   buildingOffTypes: Set<string>;
   selectedBuildingKey: string | null;
@@ -948,7 +1013,6 @@ function MapView(props: MapViewProps) {
     hoveredSuburb,
     setHoveredSuburb,
     rightPanelAccent,
-    onZoomChange,
     showBuildings,
     buildingOffTypes,
     selectedBuildingKey,
@@ -967,6 +1031,7 @@ function MapView(props: MapViewProps) {
   const [zoomLevel, setZoomLevel] = useState(MAP_ZOOM);
   const [basemap, setBasemap] = useState(BASEMAPS[0].id);
   const [dimOutside, setDimOutside] = useState(true);
+  const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | null>(null);
   const baseDef = BASEMAP_BY_ID[basemap] ?? BASEMAPS[0];
   const darkBase = !!baseDef.dark;
 
@@ -992,7 +1057,6 @@ function MapView(props: MapViewProps) {
       });
       map.on('zoomend', () => {
         setZoomLevel(map.getZoom());
-        onZoomChange(map.getZoom());
       });
       mapRef.current = map;
       setReady(true);
@@ -1501,44 +1565,82 @@ function MapView(props: MapViewProps) {
     <div className="relative h-full w-full">
       <div ref={containerRef} className="absolute inset-0" />
 
-      <div className="absolute left-3 top-3 z-[999]">
-        <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
-            Basemap
-          </div>
-          <Segmented
-            dense
-            value={basemap}
-            onChange={setBasemap}
-            options={BASEMAPS.map((b) => ({ value: b.id, label: b.name }))}
-          />
-        </div>
-      </div>
-
-      <div className="absolute right-3 top-3 z-[999]">
-        <div className="rounded-[6px] border border-line bg-white/95 p-1 shadow-[0_2px_10px_rgba(20,32,31,0.1)] backdrop-blur">
-          <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
-            Bounds
-          </div>
-          <Segmented
-            dense
-            value={boundsMode}
-            onChange={(v) => setBoundsMode(v)}
-            options={[
-              { value: 'none' as BoundsMode, label: 'None' },
-              { value: 'sa2' as BoundsMode, label: 'SA2' },
-              { value: 'sa1' as BoundsMode, label: 'SA1' },
-            ]}
-          />
-          <button
-            onClick={() => setDimOutside((v) => !v)}
-            aria-pressed={dimOutside}
-            className={`mt-1 flex w-full items-center justify-between rounded-[4px] px-1.5 py-[3px] text-xs font-medium transition-colors ${dimOutside ? 'bg-accent-soft text-accent' : 'text-ink-3 hover:text-ink'}`}
-          >
-            Focus on LGA
-            <span className={`h-[7px] w-[7px] rounded-full ${dimOutside ? 'bg-accent' : 'bg-line'}`} />
-          </button>
-        </div>
+      {/* Map controls: icons, not labelled panels, stacked top right the
+          way map apps place them. Basemap and boundaries open a small
+          menu beside the button; Focus is a plain on/off. */}
+      <div className="absolute right-3 top-3 z-[999] flex flex-col gap-2">
+        {(
+          [
+            {
+              id: 'basemap' as const,
+              icon: IconMap,
+              label: 'Basemap',
+              options: BASEMAPS.map((b) => ({ value: b.id, label: b.name })),
+              value: basemap as string,
+              onChange: (v: string) => setBasemap(v),
+            },
+            {
+              id: 'bounds' as const,
+              icon: IconBounds,
+              label: 'Boundaries',
+              options: [
+                { value: 'none', label: 'None' },
+                { value: 'sa2', label: 'SA2 suburbs' },
+                { value: 'sa1', label: 'SA1 areas' },
+              ],
+              value: boundsMode as string,
+              onChange: (v: string) => setBoundsMode(v as BoundsMode),
+            },
+          ]
+        ).map((c) => {
+          const Icon = c.icon;
+          const open = openControl === c.id;
+          return (
+            <div key={c.id} className="relative">
+              <button
+                onClick={() => setOpenControl(open ? null : c.id)}
+                className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${open ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
+                aria-label={c.label}
+                aria-expanded={open}
+                title={c.label}
+              >
+                <Icon size={18} />
+              </button>
+              {open && (
+                <div className="fade-up absolute right-[calc(100%+8px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
+                  <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
+                    {c.label}
+                  </div>
+                  {c.options.map((o) => {
+                    const on = c.value === o.value;
+                    return (
+                      <button
+                        key={o.value}
+                        onClick={() => {
+                          c.onChange(o.value);
+                          setOpenControl(null);
+                        }}
+                        className={`flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'bg-accent-soft font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
+                      >
+                        {o.label}
+                        {on && <span className="h-[6px] w-[6px] rounded-full bg-accent" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        <button
+          onClick={() => setDimOutside((v) => !v)}
+          aria-pressed={dimOutside}
+          aria-label="Focus on the council area"
+          title={dimOutside ? 'Focus on the council area: on' : 'Focus on the council area: off'}
+          className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${dimOutside ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
+        >
+          <IconFocus size={18} />
+        </button>
       </div>
 
       {selected && (
@@ -1565,23 +1667,40 @@ function MapView(props: MapViewProps) {
         </div>
       )}
 
-      <div className="absolute bottom-3 right-3 z-[999] flex flex-col gap-[3px]">
+      <div className="absolute bottom-4 right-3 z-[999] flex flex-col items-center gap-2">
         <button
-          onClick={() => mapRef.current?.zoomIn()}
-          className="flex h-6 w-6 items-center justify-center rounded-[5px] border border-line bg-white/95 text-ink-2 shadow-[0_1px_5px_rgba(20,32,31,0.1)] transition-colors hover:border-accent hover:text-accent"
-          aria-label="Zoom in"
+          onClick={() => {
+            const L = LRef.current;
+            if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
+          }}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white text-ink-2 shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors hover:text-accent"
+          aria-label="Back to the whole council area"
+          title="Back to the whole council area"
         >
-          <IconPlus />
+          <IconLocate size={18} />
         </button>
-        <button
-          onClick={() => mapRef.current?.zoomOut()}
-          className="flex h-6 w-6 items-center justify-center rounded-[5px] border border-line bg-white/95 text-ink-2 shadow-[0_1px_5px_rgba(20,32,31,0.1)] transition-colors hover:border-accent hover:text-accent"
-          aria-label="Zoom out"
-        >
-          <IconMinus />
-        </button>
-        <div className="num mt-[2px] rounded-[4px] border border-line bg-white/95 py-[1px] text-center text-sm text-ink-3">
-          z{zoomLevel}
+        <div className="flex w-9 flex-col items-center rounded-[10px] bg-white py-1 shadow-[0_2px_10px_rgba(20,32,31,0.16)]">
+          <button
+            onClick={() => mapRef.current?.zoomIn()}
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            aria-label="Zoom in"
+          >
+            <IconPlus size={16} />
+          </button>
+          {/* Where the current zoom sits between fully out and fully in. */}
+          <div className="relative my-1 h-[52px] w-[3px] rounded-full bg-line">
+            <span
+              className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white bg-accent shadow-[0_0_0_1px_rgba(0,110,120,0.35)] transition-all duration-200"
+              style={{ bottom: `${(Math.min(Math.max(zoomLevel - 10, 0), 9) / 9) * 100}%` }}
+            />
+          </div>
+          <button
+            onClick={() => mapRef.current?.zoomOut()}
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            aria-label="Zoom out"
+          >
+            <IconMinus size={16} />
+          </button>
         </div>
       </div>
     </div>
@@ -1616,7 +1735,6 @@ function LayersTab({
   activeBlueprint,
   applyBlueprint,
 }: LayersTabProps) {
-  const [hoverId, setHoverId] = useState<string | null>(null);
   const visibleLayers = LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id));
 
   // Ordered by how often a council user needs it: the hazard itself,
@@ -1705,23 +1823,20 @@ function LayersTab({
         {heading}
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
-          const showSlider = checked || hoverId === l.id;
           const op = layerOpacity[l.id] ?? 1;
           return (
             <div
               key={l.id}
-              onMouseEnter={() => setHoverId(l.id)}
-              onMouseLeave={() => setHoverId(null)}
-              className={`px-2.5 py-[5px] transition-colors ${checked ? 'bg-accent-soft/45' : 'hover:bg-surface-2'}`}
+              className={`mx-2.5 mb-1.5 rounded-[8px] border px-2.5 py-2 transition-colors ${checked ? 'border-accent-line bg-accent-soft/40' : 'border-line bg-white hover:border-accent-line'}`}
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => toggleLayer(l.id)}
-                  className="flex flex-1 items-center gap-1.5 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  aria-pressed={checked}
                 >
-                  <Check on={checked} />
                   <span
-                    className="h-[9px] w-[9px] shrink-0 rounded-[2px]"
+                    className="h-[14px] w-[14px] shrink-0 rounded-[4px]"
                     style={{
                       background:
                         l.kind === 'vector'
@@ -1729,33 +1844,34 @@ function LayersTab({
                           : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
                     }}
                   />
-                  <span
-                    className={`flex-1 truncate text-base ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}
-                  >
+                  <span className={`flex-1 truncate text-base ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}>
                     {l.name}
                   </span>
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
-                  <span className="flex h-[16px] w-[16px] cursor-help items-center justify-center rounded-full border border-line text-2xs font-semibold text-ink-3 hover:border-accent hover:text-accent">
-                    i
+                  <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent">
+                    <IconInfo size={14} />
                   </span>
                 </Tip>
+                <button
+                  onClick={() => toggleLayer(l.id)}
+                  aria-label={`${checked ? 'Turn off' : 'Turn on'} ${l.name}`}
+                >
+                  <Switch on={checked} />
+                </button>
               </div>
-              {showSlider && (
-                <div className="fade-up mt-[3px] flex items-center gap-1.5 pl-[22px]">
+              {checked && (
+                <div className="fade-up mt-2 flex items-center gap-2 pl-[22px]">
+                  <span className="text-2xs uppercase tracking-[0.06em] text-ink-3">Opacity</span>
                   <input
                     type="range"
                     min={10}
                     max={100}
                     value={Math.round(op * 100)}
-                    onChange={(e) =>
-                      setLayerOpacity(l.id, Number(e.target.value) / 100)
-                    }
+                    onChange={(e) => setLayerOpacity(l.id, Number(e.target.value) / 100)}
                     className="h-3 flex-1"
                   />
-                  <span className="num w-[32px] text-right text-sm text-ink-3">
-                    {Math.round(op * 100)}%
-                  </span>
+                  <span className="num w-[32px] text-right text-xs text-ink-3">{Math.round(op * 100)}%</span>
                 </div>
               )}
             </div>
@@ -2562,17 +2678,17 @@ function IconRail({
   // suburb profile, it doesn't belong nested under one.
   const order: PanelTab[] = ['layers', 'assets', 'place', 'help'];
   return (
-    <nav data-tour="rail" className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
+    <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 border-r border-line bg-white py-3">
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-base font-bold text-white transition-transform hover:scale-105"
-          style={{ background: ACCENT }}
-          aria-label="Back to home"
+          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+          aria-label="Home"
         >
-          CS
+          <IconHome size={23} />
         </button>
       </Tip>
+      <div className="my-1 h-px w-7 bg-line" />
       {order.map((t) => {
         const meta = TAB_META[t];
         const Icon = meta.icon;
@@ -2580,30 +2696,26 @@ function IconRail({
         const separator = t === 'help';
         return (
           <React.Fragment key={t}>
-            {separator && <div className="my-1.5 h-px w-5 bg-line" />}
+            {separator && <div className="my-1 h-px w-7 bg-line" />}
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 onClick={() => setTab(t)}
-                className="flex h-8 w-8 items-center justify-center rounded-[7px] transition-colors"
-                style={{
-                  background: on ? ACCENT : 'transparent',
-                  color: on ? '#fff' : '#7E8D8C',
-                }}
+                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-accent text-white shadow-[0_4px_12px_rgba(0,110,120,0.3)]' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
-                <Icon size={18} />
+                <Icon size={23} />
               </button>
             </Tip>
           </React.Fragment>
         );
       })}
-      <div className="mt-auto pb-1">
+      <div className="mt-auto">
         <Tip label="Prepared by" body="Value Advisory Partners" side="right">
           <img
             src={vapLogo}
             alt="Value Advisory Partners"
-            className="h-8 w-8 shrink-0 object-contain"
+            className="h-10 w-10 shrink-0 object-contain"
           />
         </Tip>
       </div>
@@ -3925,7 +4037,6 @@ export default function App() {
     () => new Set(['heat-vuln']),
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(MAP_ZOOM);
   const [overlayOpacity, setOverlayOpacity] = useState(0.85);
   const [layerOpacity, setLayerOpacityState] = useState<Record<string, number>>({});
   const [hoveredSuburb, setHoveredSuburb] = useState<string | null>(null);
@@ -4106,11 +4217,12 @@ export default function App() {
           </div>
           <button
             data-tour="info"
-            onClick={() => setScreen('landing')}
-            className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-sm font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
-            aria-label="Open the guide"
+            onClick={() => setScreen('tour')}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+            aria-label="Take the guide"
+            title="Take the guide"
           >
-            i
+            <IconInfo size={17} />
           </button>
         </header>
 
@@ -4148,11 +4260,8 @@ export default function App() {
           {panelTab === 'help' && <HelpTab />}
         </div>
 
-        <footer className="flex items-center justify-between border-t border-line px-2.5 py-1.5">
+        <footer className="border-t border-line px-2.5 py-1.5">
           <span className="text-xs uppercase tracking-[0.08em] text-ink-3">City of Charles Sturt</span>
-          <span className="num text-xs text-ink-3">
-            {SA2_BOUNDARIES.length} SA2 · {SA1S.length} SA1 · z{zoom}
-          </span>
         </footer>
 
         {screen === 'landing' && (
@@ -4175,7 +4284,6 @@ export default function App() {
             hoveredSuburb={hoveredSuburb}
             setHoveredSuburb={setHoveredSuburb}
             rightPanelAccent={activeBlueprint ? BLUEPRINT_BY_ID[activeBlueprint].accent : ACCENT}
-            onZoomChange={setZoom}
             showBuildings={buildingOffTypes.size < ALL_BUILDING_TYPES.size}
             buildingOffTypes={buildingOffTypes}
             selectedBuildingKey={selectedBuildingKey}
