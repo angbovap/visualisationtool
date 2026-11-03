@@ -3548,20 +3548,36 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white px-6">
       <div className="flex w-full max-w-[400px] flex-col items-center text-center">
-        <img src={vapLogo} alt="Value Advisory Partners" className="h-16 w-16 object-contain" />
-        <div className="mt-6 h-px w-10 bg-line" />
-        <div className="mt-6 text-display font-semibold leading-tight text-ink">
+        <img
+          src={vapLogo}
+          alt="Value Advisory Partners"
+          className="landing-in h-16 w-16 object-contain"
+          style={{ animationDelay: '0ms' }}
+        />
+        <div className="landing-in mt-6 h-px w-10 bg-line" style={{ animationDelay: '80ms' }} />
+        <div
+          className="landing-in mt-6 text-display font-semibold leading-tight text-ink"
+          style={{ animationDelay: '140ms' }}
+        >
           CoCS Climate Risk Explorer
         </div>
-        <div className="num mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-3">
+        <div
+          className="landing-in num mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-3"
+          style={{ animationDelay: '200ms' }}
+        >
           City of Charles Sturt
         </div>
-        <p className="mt-4 text-md leading-[1.65] text-ink-2">
-          Council's own GIS layers and asset register, on one map. Where a
-          figure has not been supplied, the tool shows nothing for it rather
-          than an estimate.
+        <p className="landing-in mt-4 text-md leading-[1.65] text-ink-2" style={{ animationDelay: '260ms' }}>
+          An integrated view of City of Charles Sturt's climate risk data: real
+          hazard, infrastructure and asset information from council and its
+          project partners, brought together on a single map. Built to grow as
+          further data is supplied, with the source and coverage of every
+          layer shown plainly.
         </p>
-        <div className="mt-7 flex w-full max-w-[260px] flex-col gap-2.5">
+        <div
+          className="landing-in mt-7 flex w-full max-w-[260px] flex-col gap-2.5"
+          style={{ animationDelay: '340ms' }}
+        >
           <button
             onClick={onGuide}
             className="w-full rounded-[6px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#005963]"
@@ -3576,7 +3592,7 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           </button>
         </div>
       </div>
-      <div className="absolute bottom-6 text-xs text-ink-3">
+      <div className="landing-in absolute bottom-6 text-xs text-ink-3" style={{ animationDelay: '420ms' }}>
         Prepared by Value Advisory Partners
       </div>
     </div>

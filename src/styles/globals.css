@@ -126,3 +126,11 @@ input[type='range']::-moz-range-thumb {
    strips) reads as a soft dissolve rather than a hard content jump-cut. */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .fade-in { animation: fadeIn 180ms ease-out; }
+
+/* The landing screen's entrance: each element fades and rises in on its
+   own delay (set inline per element), so the logo, title and buttons
+   settle in one after another rather than all snapping on at once.
+   animation-fill-mode: both keeps an element invisible until its own
+   delay elapses, so the stagger reads as sequenced, not just offset. */
+@keyframes landingIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.landing-in { animation: landingIn 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
