@@ -253,32 +253,32 @@ const LAYERS: LayerDef[] = [
   },
   {
     id: 'flood-1in5-real',
-    name: 'Flood 1 in 5 (8 of 9 catchments)',
+    name: 'Flood 1 in 5',
     group: 'hazard',
     kind: 'vector',
     hi: '#1D4ED8',
     unit: 'flood polygons',
-    note: 'Real 1 in 5 flood polygons for eight of the nine catchments. Trimmer is missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: 'Real 1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 5 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
     id: 'flood-1in20-real',
-    name: 'Flood 1 in 20 (3 of 9 catchments)',
+    name: 'Flood 1 in 20',
     group: 'hazard',
     kind: 'vector',
     hi: '#2563EB',
     unit: 'flood polygons',
-    note: 'Real 1 in 20 flood polygons for TRDA, River Torrens and Trimmer only. Six catchments are missing, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: 'Real 1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
     id: 'flood-1in100-real',
-    name: 'Flood 1 in 100 (all 9 catchments)',
+    name: 'Flood 1 in 100',
     group: 'hazard',
     kind: 'vector',
     hi: '#1E3A8A',
     unit: 'flood polygons',
-    note: 'Real 1 in 100 flood polygons for all nine catchments. No depth is shown, the attribute tables were not supplied.',
+    note: 'Real 1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -487,9 +487,6 @@ interface HeatVulnCell {
   svi: number;
 }
 const HEAT_VULNERABILITY = heatVulnerabilityData as HeatVulnCell[];
-
-
-const BEVERLEY_ID = 'beverley';
 
 /** Bounding-box centre and half-extent of a ring, in place of a hand-picked
  *  centroid. Schematic overlays (the heat grid, PT stop scatter, industrial
@@ -2500,7 +2497,7 @@ function IconRail({
   // suburb profile, it doesn't belong nested under one.
   const order: PanelTab[] = ['layers', 'assets', 'place', 'help'];
   return (
-    <nav className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
+    <nav data-tour="rail" className="flex w-14 shrink-0 flex-col items-center border-r border-line bg-white py-2">
       <div
         className="mb-2 flex h-6 w-6 items-center justify-center rounded-[5px] text-base font-bold text-white"
         style={{ background: ACCENT }}
@@ -3512,27 +3509,118 @@ function RealBuildingsRegister({
   );
 }
 
-function InfoSheet({ onClose }: { onClose: () => void }) {
+/** Four real UI regions, each carrying a data-tour attribute, walked in
+ *  this order. Not a modal describing the tool, an actual spotlight over
+ *  the real rail, panel, map and info button as the person lands on them,
+ *  so "how do I use this" gets answered by the interface itself. */
+const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title: string; body: string }[] = [
+  {
+    selector: '[data-tour="rail"]',
+    placement: 'right',
+    title: 'Switch tabs here',
+    body: 'Layers, Assets, Place and Help. The map and the right panel both respond to whichever one is active.',
+  },
+  {
+    selector: '[data-tour="left-panel"]',
+    placement: 'right',
+    title: 'Turn on a layer',
+    body: 'Check a real hazard or network layer, or click a Blueprint card for a ready-made set.',
+  },
+  {
+    selector: '[data-tour="map"]',
+    placement: 'top',
+    title: 'Click into the map',
+    body: 'Click a suburb for the real buildings inside it, or a building dot for its register detail.',
+  },
+  {
+    selector: '[data-tour="info"]',
+    placement: 'left',
+    title: 'Come back anytime',
+    body: 'This button restarts this same guide whenever you need it.',
+  },
+];
+
+/** A real product-tour spotlight, not a text modal: dims everything
+ *  except the live DOM element each step points at, recomputing its
+ *  position on every step and on resize so the highlight always sits on
+ *  the actual rail, panel, map or button, not a guess at where it is. */
+function GuideTour({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const el = document.querySelector(TOUR_STEPS[step].selector);
+      setRect(el ? el.getBoundingClientRect() : null);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [step]);
+
+  const s = TOUR_STEPS[step];
+  const pad = 6;
+  const calloutWidth = 260;
+
+  let calloutStyle: React.CSSProperties = { top: 16, left: 16 };
+  if (rect) {
+    if (s.placement === 'right') {
+      calloutStyle = { top: rect.top, left: rect.right + 16 };
+    } else if (s.placement === 'left') {
+      calloutStyle = { top: rect.top, left: Math.max(16, rect.left - calloutWidth - 16) };
+    } else {
+      calloutStyle = {
+        top: Math.max(16, rect.top - 150),
+        left: Math.min(Math.max(16, rect.left), window.innerWidth - calloutWidth - 16),
+      };
+    }
+  }
+
   return (
-    <div className="absolute inset-0 z-[1000] flex items-start justify-center bg-ink/20 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[2000]">
+      <div className="fixed inset-0" onClick={(e) => e.stopPropagation()} />
+      {rect && (
+        <div
+          className="pointer-events-none fixed rounded-[8px] transition-all duration-200"
+          style={{
+            top: rect.top - pad,
+            left: rect.left - pad,
+            width: rect.width + pad * 2,
+            height: rect.height + pad * 2,
+            boxShadow: '0 0 0 9999px rgba(20,32,31,0.62)',
+            outline: `2px solid ${ACCENT}`,
+            outlineOffset: 1,
+          }}
+        />
+      )}
       <div
-        className="thin-scroll max-h-full w-full max-w-[420px] overflow-y-auto rounded-[8px] border border-line bg-white p-4 shadow-[0_8px_30px_rgba(20,32,31,0.2)]"
-        onClick={(e) => e.stopPropagation()}
+        className="fixed rounded-[8px] border border-line bg-white p-3 shadow-[0_8px_30px_rgba(20,32,31,0.25)] transition-all duration-200"
+        style={{ width: calloutWidth, ...calloutStyle }}
       >
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-2xl font-semibold text-ink">About this tool</span>
-          <button onClick={onClose} className="rounded-[4px] p-[3px] text-ink-3 hover:bg-surface-2 hover:text-ink" aria-label="Close">
-            <IconClose />
+        <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {TOUR_STEPS.length}</div>
+        <div className="text-base font-semibold text-ink">{s.title}</div>
+        <p className="mt-1 text-sm leading-[1.5] text-ink-2">{s.body}</p>
+        <div className="mt-3 flex items-center justify-between">
+          <button onClick={onDone} className="text-xs text-ink-3 transition-colors hover:text-ink">
+            Skip
           </button>
+          <div className="flex gap-1.5">
+            {step > 0 && (
+              <button
+                onClick={() => setStep((v) => v - 1)}
+                className="rounded-[5px] border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
+              >
+                Back
+              </button>
+            )}
+            <button
+              onClick={() => (step < TOUR_STEPS.length - 1 ? setStep((v) => v + 1) : onDone())}
+              className="rounded-[5px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#005963]"
+            >
+              {step < TOUR_STEPS.length - 1 ? 'Next' : 'Done'}
+            </button>
+          </div>
         </div>
-        <p className="text-md leading-[1.6] text-ink-2">
-          A climate risk explorer for City of Charles Sturt. It shows council's
-          own GIS layers and asset register on one map. Where a figure has not
-          been supplied, the tool shows nothing for it rather than an estimate.
-        </p>
-        <p className="mt-2 text-md leading-[1.6] text-ink-2">
-          Sources and what is not shown are on the Help tab.
-        </p>
       </div>
     </div>
   );
@@ -3553,7 +3641,26 @@ export default function App() {
   const [layerOpacity, setLayerOpacityState] = useState<Record<string, number>>({});
   const [hoveredSuburb, setHoveredSuburb] = useState<string | null>(null);
   const [boundsMode, setBoundsMode] = useState<BoundsMode>('sa2');
-  const [showInfo, setShowInfo] = useState(false);
+  // Shown once automatically on a first visit (so landing on the tool
+  // comes with an orientation, not a blank set of tabs to guess at),
+  // and any time after that from the "i" button. A private-browsing tab
+  // or blocked storage just means it shows every time, which is the
+  // safe failure direction, not a crash.
+  const [showInfo, setShowInfo] = useState(() => {
+    try {
+      return localStorage.getItem('cocs-seen-guide') !== '1';
+    } catch {
+      return true;
+    }
+  });
+  const closeInfo = useCallback(() => {
+    setShowInfo(false);
+    try {
+      localStorage.setItem('cocs-seen-guide', '1');
+    } catch {
+      /* storage unavailable, nothing to persist */
+    }
+  }, []);
   // Turning a layer on opens its description on the right. Cleared when
   // that same layer is unchecked.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
@@ -3667,16 +3774,17 @@ export default function App() {
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} />
 
-      <section className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
+      <section data-tour="left-panel" className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
             <div className="text-2xl font-semibold leading-tight text-ink">{meta.title}</div>
             <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button
+            data-tour="info"
             onClick={() => setShowInfo(true)}
             className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-sm font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
-            aria-label="About this tool"
+            aria-label="Open the guide"
           >
             i
           </button>
@@ -3712,10 +3820,10 @@ export default function App() {
           </span>
         </footer>
 
-        {showInfo && <InfoSheet onClose={() => setShowInfo(false)} />}
+        {showInfo && <GuideTour onDone={closeInfo} />}
       </section>
 
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main data-tour="map" className="flex min-w-0 flex-1 flex-col">
         <div className="relative min-h-0 flex-1">
           <MapView
             checkedLayers={checkedLayers}
