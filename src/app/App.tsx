@@ -1714,8 +1714,9 @@ function LayersTab({
   return (
     <div>
       {/* One-click way back to nothing turned on, only shown once there
-          is actually something to clear. No other control here undoes
-          what the others switched on. */}
+          is actually something to clear. A persistent status readout,
+          not a step in the flow below, so it stays pinned at the very
+          top regardless of what else is reordered under it. */}
       {checkedLayers.size > 0 && (
         <div className="flex items-center justify-between border-b border-line bg-surface-2 px-2.5 py-1.5">
           <span className="text-xs text-ink-3">
@@ -1730,30 +1731,42 @@ function LayersTab({
         </div>
       )}
 
-      {/* Global opacity sits above everything it governs, the one
-          control that applies regardless of which section is open. */}
+      {/* Blueprints first: the fastest way into the tab for anyone who
+          doesn't want to pick layers by hand, so it's the first real
+          decision on offer, not a shortcut buried under everything a
+          person would only need once they already know what they want. */}
       <div className="border-b border-line px-2.5 py-2.5">
-        <PanelHeading
-          right={
-            <span className="num text-md font-semibold text-accent">
-              {Math.round(overlayOpacity * 100)}%
-            </span>
-          }
-        >
-          Global opacity
-        </PanelHeading>
-        <input
-          type="range"
-          min={10}
-          max={100}
-          value={Math.round(overlayOpacity * 100)}
-          onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
-          className="w-full"
-        />
+        <PanelHeading>Blueprints</PanelHeading>
+        <div className="grid grid-cols-1 gap-1.5">
+          {BLUEPRINTS.map((b) => {
+            const on = activeBlueprint === b.id;
+            return (
+              <button
+                key={b.id}
+                onClick={() => applyBlueprint(b.id)}
+                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
+                style={{
+                  borderColor: on ? b.accent : '#E2E7E7',
+                  background: on ? withAlpha(b.accent, 0.08) : '#fff',
+                }}
+              >
+                <span className="mb-1 block h-1.5 w-1.5 rounded-full" style={{ background: b.accent }} />
+                <span
+                  className="block text-md font-semibold leading-tight"
+                  style={{ color: on ? b.accent : '#14201F' }}
+                >
+                  {b.title}
+                </span>
+                <span className="num mt-[2px] block text-xs text-ink-3">{b.layers.length} layers</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Category cards: a colour and a live on/total count read faster than
-          a label alone. */}
+          a label alone. The manual path, for picking individual layers
+          rather than a Blueprint's curated set. */}
       <div className="border-b border-line px-2.5 py-2.5">
         <PanelHeading>Layer categories</PanelHeading>
         <div className="grid grid-cols-2 gap-1.5">
@@ -1787,36 +1800,26 @@ function LayersTab({
 
       {renderLayerList(activeTab)}
 
-      {/* Blueprints. A one-click preset for a curated set of real layers,
-          pinned below the sections rather than inside one of them, since
-          picking one is a shortcut, not something to browse. */}
+      {/* Global opacity last: a fine-tune for whatever is already on
+          screen, not a decision to make before anything is showing. */}
       <div className="border-t border-line px-2.5 py-2.5">
-        <PanelHeading>Blueprints</PanelHeading>
-        <div className="grid grid-cols-1 gap-1.5">
-          {BLUEPRINTS.map((b) => {
-            const on = activeBlueprint === b.id;
-            return (
-              <button
-                key={b.id}
-                onClick={() => applyBlueprint(b.id)}
-                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
-                style={{
-                  borderColor: on ? b.accent : '#E2E7E7',
-                  background: on ? withAlpha(b.accent, 0.08) : '#fff',
-                }}
-              >
-                <span className="mb-1 block h-1.5 w-1.5 rounded-full" style={{ background: b.accent }} />
-                <span
-                  className="block text-md font-semibold leading-tight"
-                  style={{ color: on ? b.accent : '#14201F' }}
-                >
-                  {b.title}
-                </span>
-                <span className="num mt-[2px] block text-xs text-ink-3">{b.layers.length} layers</span>
-              </button>
-            );
-          })}
-        </div>
+        <PanelHeading
+          right={
+            <span className="num text-md font-semibold text-accent">
+              {Math.round(overlayOpacity * 100)}%
+            </span>
+          }
+        >
+          Global opacity
+        </PanelHeading>
+        <input
+          type="range"
+          min={10}
+          max={100}
+          value={Math.round(overlayOpacity * 100)}
+          onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
+          className="w-full"
+        />
       </div>
     </div>
   );
