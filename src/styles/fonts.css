@@ -1,3 +1,8 @@
 /* Typeface load for the CoCS Climate Risk Explorer.
-   DM Sans carries body and UI text. JetBrains Mono carries every number and stat. */
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+   Libre Franklin carries body and UI text. JetBrains Mono carries every
+   number and stat. Libre Franklin, not the original Franklin Gothic:
+   the real Franklin Gothic is a licensed commercial typeface with no
+   free webfont distribution, Libre Franklin is Google's open-source
+   typeface explicitly developed as an extension of it, so it's the
+   closest legitimate match available to embed here. */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap');

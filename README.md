@@ -37,7 +37,7 @@ alone with no emit.
     those buildings, geocoded from the register's address field via
     OpenStreetMap Nominatim (see in-app tooltips for the precision caveat).
 - `src/styles/globals.css` — design tokens; `fonts.css` — the Google Fonts
-  import for DM Sans and JetBrains Mono.
+  import for Libre Franklin and JetBrains Mono.
 - `netlify.toml` / `.github/workflows/deploy-pages.yml` — deploy config for
   Netlify and GitHub Pages respectively. Both build with `npm run build`
   and publish `dist`; Pages additionally needs its Source set to

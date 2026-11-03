@@ -3,7 +3,7 @@
 @import 'leaflet/dist/leaflet.css';
 
 @theme {
-  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Libre Franklin', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 
   --color-accent: #006E78;
