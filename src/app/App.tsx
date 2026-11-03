@@ -3568,11 +3568,7 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           City of Charles Sturt
         </div>
         <p className="landing-in mt-4 text-md leading-[1.65] text-ink-2" style={{ animationDelay: '260ms' }}>
-          An integrated view of City of Charles Sturt's climate risk data: real
-          hazard, infrastructure and asset information from council and its
-          project partners, brought together on a single map. Built to grow as
-          further data is supplied, with the source and coverage of every
-          layer shown plainly.
+          Real hazard, infrastructure and asset data from council, on one map.
         </p>
         <div
           className="landing-in mt-7 flex w-full max-w-[260px] flex-col gap-2.5"
