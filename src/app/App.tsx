@@ -2094,13 +2094,13 @@ function BlueprintPanel({
           <>
             {exposedToFlood && (
               <>
-                <PanelHeading>Real buildings inside this flood extent</PanelHeading>
+                <PanelHeading>Buildings inside this flood extent</PanelHeading>
                 <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
                   <div className="num text-stat font-semibold leading-none text-ink">
                     {exposedToFlood.length} <span className="text-base font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
                   <div className="mt-1 text-xs leading-[1.5] text-ink-3">
-                    Real buildings whose geocoded point falls inside at least one of the
+                    Buildings whose geocoded point falls inside at least one of the
                     mapped flood polygons this preset turns on. A point either sits
                     inside a mapped extent or it doesn't, no severity is implied.
                   </div>
@@ -2128,7 +2128,7 @@ function BlueprintPanel({
 
             {heatData && (
               <>
-                <PanelHeading>Real buildings by UHI category</PanelHeading>
+                <PanelHeading>Buildings by UHI category</PanelHeading>
                 <div className="mb-3 rounded-[6px] border border-line bg-white px-3 py-2.5">
                   <div className="space-y-1.5">
                     {[...heatData.byCategory.keys()]
@@ -2481,12 +2481,12 @@ const TAB_META: Record<
 > = {
   layers: {
     title: 'Layers',
-    subtitle: 'Hazards, real buildings and the network behind them',
+    subtitle: 'Hazards, buildings and the network behind them',
     icon: IconLayers,
   },
   assets: {
     title: 'Assets',
-    subtitle: 'The real council buildings register, LGA-wide',
+    subtitle: 'The council buildings register, LGA-wide',
     icon: IconAssets,
   },
   place: {
@@ -3245,66 +3245,57 @@ function RealBuildingsRegister({
   return (
     <div className="mb-4 border-b border-line pb-4">
       <p className="mb-4 text-md leading-[1.6] text-ink-2">
-        Every real building from council's own asset register
-        (<span className="num">{`CCS_Buildings.xlsx`}</span>), one row per
-        building rather than per fitout or meter.
+        Council's asset register (<span className="num">CCS_Buildings.xlsx</span>):
+        one row per building, not per fitout or meter.
       </p>
 
-      {/* Level 1, whose buildings: the register's own Ward field, so
-          someone asking about their ward starts there, not in a list. */}
-      <PanelHeading>Show</PanelHeading>
-      <div className="mb-4 flex flex-wrap gap-1.5">
-        {[{ key: null as string | null, count: REAL_BUILDINGS.length }, ...REAL_WARDS].map((w) => {
-          const on = ward === w.key;
-          return (
-            <button
-              key={w.key ?? 'all'}
-              onClick={() => {
-                setWard(w.key);
-                setListScope(null);
-                setOpenId(null);
-              }}
-              aria-pressed={on}
-              className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
-            >
-              {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
-              <span className="num text-xs text-ink-3">{w.count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Level 1, the headline: what the register says about the scope
-          above, purely read-only. */}
-      <PanelHeading>{scopeLabel}</PanelHeading>
-      <div className="mb-3 grid grid-cols-2 gap-2.5">
-        <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-          <div className="text-base font-medium uppercase tracking-[0.06em] text-ink-3">
-            Buildings
-          </div>
-          <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
-            {scoped.length}
-          </div>
-          <div className="mt-1 text-base text-ink-3">{typeCount} types</div>
+      {/* Filter and headline share one card, so the number you're reading
+          and the scope that produced it are never more than a glance
+          apart. */}
+      <div className="mb-4 rounded-[8px] border border-line bg-white p-3">
+        <PanelHeading>Ward</PanelHeading>
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {[{ key: null as string | null, count: REAL_BUILDINGS.length }, ...REAL_WARDS].map((w) => {
+            const on = ward === w.key;
+            return (
+              <button
+                key={w.key ?? 'all'}
+                onClick={() => {
+                  setWard(w.key);
+                  setListScope(null);
+                  setOpenId(null);
+                }}
+                aria-pressed={on}
+                className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
+              >
+                {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
+                <span className="num text-xs text-ink-3">{w.count}</span>
+              </button>
+            );
+          })}
         </div>
-        <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-          <div className="text-base font-medium uppercase tracking-[0.06em] text-ink-3">
-            Insured value
+        <div className="grid grid-cols-2 gap-3 border-t border-line pt-3">
+          <div>
+            <div className="text-base text-ink-3">Buildings</div>
+            <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
+            <div className="mt-1 text-base text-ink-3">{typeCount} types</div>
           </div>
-          <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
-            ${(totalInsured / 1e6).toFixed(1)}M
-          </div>
-          <div className="mt-1 text-base text-ink-3">
-            {scoped.filter((b) => b.insuredValue > 0).length} valued
+          <div>
+            <div className="text-base text-ink-3">Insured value</div>
+            <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
+              ${(totalInsured / 1e6).toFixed(1)}M
+            </div>
+            <div className="mt-1 text-base text-ink-3">
+              {scoped.filter((b) => b.insuredValue > 0).length} valued
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Browse and manage: the things you can actually do here,
-          grouped under their own heading so they read as actions, not
-          more stats. One of two destinations at a time, not two
-          independent accordions that can both be open and push each
-          other down. */}
+      {/* What you can do here, as a grid of equal cards (the same visual
+          language Layers uses for its own category and Blueprint cards),
+          so all four are read in one glance instead of scanned top to
+          bottom as a list. */}
       <PanelHeading
         right={
           <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
@@ -3314,67 +3305,44 @@ function RealBuildingsRegister({
           </Tip>
         }
       >
-        Browse the register
+        What do you want to do?
       </PanelHeading>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => selectView('types')}
-              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
             >
-              <span>
-                <span className="block text-lg font-medium text-ink">
-                  Manage building types
-                </span>
-                <span className="mt-[2px] block text-sm text-ink-3">
-                  <span className="num font-semibold text-ink-2">{onCount}</span> of{' '}
-                  {ALL_BUILDING_TYPES.size} types shown on the map
-                </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-1 text-base text-accent">
-                Manage
-                <IconChevron size={13} />
+              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="block text-base font-semibold leading-tight text-ink">Building types</span>
+              <span className="num mt-[2px] block text-xs text-ink-3">
+                {onCount} of {ALL_BUILDING_TYPES.size} shown on map
               </span>
             </button>
             <button
               onClick={() => selectView('list')}
-              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
             >
-              <span>
-                <span className="block text-lg font-medium text-ink">
-                  List {ward === null ? 'all ' : ''}{scoped.length} buildings
-                </span>
-                <span className="mt-[2px] block text-sm text-ink-3">
-                  {ward === null ? 'Every real building' : `In ${scopeLabel}`}, by category or all at once
-                </span>
-              </span>
-              <span className="flex shrink-0 items-center gap-1 text-base text-accent">
-                <span className="num">${(totalInsured / 1e6).toFixed(1)}M</span>
-                <IconChevron size={13} />
-              </span>
+              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="block text-base font-semibold leading-tight text-ink">Browse buildings</span>
+              <span className="text-xs text-ink-3">By category or all at once</span>
             </button>
             <button
               onClick={() => selectView('condition')}
-              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
             >
-              <span>
-                <span className="block text-lg font-medium text-ink">Condition breakdown</span>
-                <span className="mt-[2px] block text-sm text-ink-3">How the register rates these buildings</span>
-              </span>
-              <IconChevron size={13} className="shrink-0 text-accent" />
+              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="block text-base font-semibold leading-tight text-ink">Condition</span>
+              <span className="text-xs text-ink-3">How the register rates them</span>
             </button>
             <button
               onClick={() => selectView('about')}
-              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
             >
-              <span>
-                <span className="block text-lg font-medium text-ink">Register info</span>
-                <span className="mt-[2px] block text-sm text-ink-3">
-                  Last modified {formatRegisterDate(ccsRegisterDates.lastModified)}, and map coverage
-                </span>
-              </span>
-              <IconChevron size={13} className="shrink-0 text-accent" />
+              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="block text-base font-semibold leading-tight text-ink">Data sources</span>
+              <span className="text-xs text-ink-3">Dates and map coverage</span>
             </button>
           </div>
         )}
@@ -3590,7 +3558,7 @@ const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title
     selector: '[data-tour="map"]',
     placement: 'top',
     title: 'Click into the map',
-    body: 'Click a suburb for the real buildings inside it, or a building dot for its register detail.',
+    body: 'Click a suburb for the buildings inside it, or a building dot for its register detail.',
   },
   {
     selector: '[data-tour="info"]',
