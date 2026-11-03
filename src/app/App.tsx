@@ -764,6 +764,27 @@ const IconFocus = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
+const IconHeat = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0Z" />
+    <path d="M12 9v6" />
+  </svg>
+);
+
+const IconFlood = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M12 3.5s5 5.6 5 9.2a5 5 0 0 1-10 0c0-3.6 5-9.2 5-9.2Z" />
+    <path d="M3 20c1.5 0 1.5-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1" />
+  </svg>
+);
+
+const IconTransport = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <rect x="6" y="3.5" width="12" height="13" rx="3" />
+    <path d="M6 11h12M9.5 14h.01M14.5 14h.01M8.5 20l1.5-3.5M15.5 20 14 16.5" />
+  </svg>
+);
+
 /** Recentre on the LGA. */
 const IconLocate = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
@@ -1883,92 +1904,107 @@ function LayersTab({
 
   return (
     <div>
-      {/* One-click way back to nothing turned on, only shown once there
-          is actually something to clear. A persistent status readout,
-          not a step in the flow below, so it stays pinned at the very
-          top regardless of what else is reordered under it. */}
+      {/* Four kinds of control here, each with its own look, so what a
+          thing does is readable before you click it:
+            status   a pill that reports, with one quiet text action
+            apply    Blueprint tiles, coloured, with an Apply button
+            navigate the category list, rows with a chevron
+            toggle   the layer rows inside a category, with switches */}
+
+      {/* Status. Reports what's on; not a control in its own right. */}
       {checkedLayers.size > 0 && (
-        <div className="flex items-center justify-between border-b border-line bg-surface-2 px-2.5 py-1.5">
-          <span className="text-xs text-ink-3">
-            {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on
+        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-full bg-accent-soft py-1 pl-2.5 pr-1">
+          <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-accent" />
+          <span className="flex-1 text-sm font-medium text-accent">
+            {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on the map
           </span>
           <button
             onClick={clearAllLayers}
-            className="text-xs font-medium text-accent underline decoration-dotted hover:text-ink"
+            className="rounded-full px-2 py-[2px] text-xs font-semibold text-accent transition-colors hover:bg-white"
           >
-            Clear all
+            Clear
           </button>
         </div>
       )}
 
-      {/* Blueprints first: the fastest way into the tab for anyone who
-          doesn't want to pick layers by hand, so it's the first real
-          decision on offer, not a shortcut buried under everything a
-          person would only need once they already know what they want. */}
-      <div className="border-b border-line px-2.5 py-2.5">
+      {/* Apply. The quickest start, so it leads, and it looks like the
+          one thing here that sets several layers at once. */}
+      <div className="px-2.5 pb-1 pt-3">
         <PanelHeading>Blueprints</PanelHeading>
-        <div className="grid grid-cols-1 gap-1.5">
+        <div className="space-y-2">
           {BLUEPRINTS.map((b) => {
             const on = activeBlueprint === b.id;
+            const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
             return (
-              <button
+              <div
                 key={b.id}
-                onClick={() => applyBlueprint(b.id)}
-                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
-                style={{
-                  borderColor: on ? b.accent : '#E2E7E7',
-                  background: on ? withAlpha(b.accent, 0.08) : '#fff',
-                }}
+                className="flex items-center gap-2.5 rounded-[10px] p-2 transition-colors"
+                style={{ background: withAlpha(b.accent, on ? 0.16 : 0.08) }}
               >
-                <span className="mb-1 block h-1.5 w-1.5 rounded-full" style={{ background: b.accent }} />
                 <span
-                  className="block text-md font-semibold leading-tight"
-                  style={{ color: on ? b.accent : '#14201F' }}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] text-white"
+                  style={{ background: b.accent }}
                 >
-                  {b.title}
+                  <Icon size={19} />
                 </span>
-                <span className="num mt-[2px] block text-xs text-ink-3">{b.layers.length} layers</span>
-              </button>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-semibold text-ink">{b.title}</span>
+                  <span className="num block text-xs text-ink-3">{b.layers.length} layers</span>
+                </span>
+                <button
+                  onClick={() => applyBlueprint(b.id)}
+                  className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                  style={
+                    on
+                      ? { background: b.accent, color: '#fff' }
+                      : { background: '#fff', color: b.accent, boxShadow: `inset 0 0 0 1px ${withAlpha(b.accent, 0.4)}` }
+                  }
+                  aria-pressed={on}
+                >
+                  {on ? 'Applied' : 'Apply'}
+                </button>
+              </div>
             );
           })}
         </div>
       </div>
 
-      {/* A real drill-down, one level showing at a time: the category
-          grid, or a single category's layer list, never both stacked
-          together at the same visual weight. */}
-      <div style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+      {/* Navigate, then toggle. One level at a time: the category list,
+          or one category's layers. */}
+      <div className="px-2.5 pb-3 pt-3" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
         {activeTab === null ? (
-          <div className="border-b border-line px-2.5 py-2.5">
-            <PanelHeading>Layer categories</PanelHeading>
-            <div className="grid grid-cols-2 gap-1.5">
-              {categories.map((c) => (
+          <>
+            <PanelHeading>Browse layers</PanelHeading>
+            <div className="overflow-hidden rounded-[10px] border border-line bg-white">
+              {categories.map((c, i) => (
                 <button
                   key={c.value}
                   onClick={() => selectTab(c.value)}
-                  className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
-                  style={{ borderColor: '#E2E7E7', background: '#fff' }}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2 ${i > 0 ? 'border-t border-line' : ''}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
-                    <span className="num text-2xs text-ink-3">{c.on}/{c.total}</span>
-                  </div>
-                  <span className="mt-1 block text-base font-semibold leading-tight text-ink">
-                    {c.label}
-                  </span>
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                  <span className="flex-1 text-base font-medium text-ink">{c.label}</span>
+                  {c.on > 0 ? (
+                    <span className="num rounded-full bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
+                      {c.on} on
+                    </span>
+                  ) : (
+                    <span className="num text-xs text-ink-3">{c.total}</span>
+                  )}
+                  <IconChevron size={14} className="shrink-0 text-ink-3" />
                 </button>
               ))}
             </div>
-          </div>
+          </>
         ) : (
-          <div>
-            <div className="px-2.5 pt-2">
+          <div className="-mx-2.5">
+            <div className="px-2.5">
               <button
                 onClick={() => selectTab(null)}
-                className="mb-1.5 flex items-center gap-[3px] text-xs text-ink-3 transition-colors hover:text-accent"
+                className="mb-1 flex items-center gap-1 rounded-full py-1 pl-1 pr-2.5 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
               >
-                <IconChevron size={13} className="rotate-180" />
-                All categories
+                <IconChevron size={14} className="rotate-180" />
+                All layers
               </button>
             </div>
             {renderLayerList(activeTab)}
@@ -1976,26 +2012,20 @@ function LayersTab({
         )}
       </div>
 
-      {/* Global opacity last: a fine-tune for whatever is already on
-          screen, not a decision to make before anything is showing. */}
-      <div className="border-t border-line px-2.5 py-2.5">
-        <PanelHeading
-          right={
-            <span className="num text-md font-semibold text-accent">
-              {Math.round(overlayOpacity * 100)}%
-            </span>
-          }
-        >
-          Global opacity
-        </PanelHeading>
+      {/* Display setting. A utility, so it's quiet and last. */}
+      <div className="mx-2.5 mb-3 flex items-center gap-2.5 rounded-[10px] bg-surface-2 px-3 py-2">
+        <span className="text-xs font-medium text-ink-3">Layer opacity</span>
         <input
           type="range"
           min={10}
           max={100}
           value={Math.round(overlayOpacity * 100)}
           onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
-          className="w-full"
+          className="flex-1"
         />
+        <span className="num w-[34px] text-right text-xs font-semibold text-ink-2">
+          {Math.round(overlayOpacity * 100)}%
+        </span>
       </div>
     </div>
   );
@@ -2509,8 +2539,8 @@ function HelpTab() {
         'Quick start',
         <>
           <p>
-            Turn on a layer in the Layers tab, or click a Blueprint card for a
-            ready-made set of real layers. Click a suburb on the map, or pick
+            Switch on a layer in the Layers tab, or apply a Blueprint for a
+            ready-made set. Click a suburb on the map, or pick
             one in Place, to see the council buildings inside it. Turn on
             building types in Assets to show buildings on the map, then click
             a dot to read its register detail.
@@ -3718,7 +3748,7 @@ const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title
     selector: '[data-tour="left-panel"]',
     placement: 'right',
     title: 'Turn on a layer',
-    body: 'Check a real hazard or network layer, or click a Blueprint card for a ready-made set.',
+    body: 'Apply a Blueprint for a ready-made set, or browse by category and switch layers on one at a time.',
   },
   {
     selector: '[data-tour="map"]',
