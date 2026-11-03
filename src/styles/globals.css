@@ -9,12 +9,14 @@
   --color-accent: #006E78;
   --color-accent-soft: #E3F1F2;
   --color-accent-line: #B6DADD;
-  --color-ink: #14201F;
-  --color-ink-2: #4A5A59;
-  --color-ink-3: #7E8D8C;
-  --color-line: #E2E7E7;
+  /* Neutral greys, not grey-greens: the accent carries the brand, the
+     greys stay out of its way, so only actions and states read as teal. */
+  --color-ink: #15171B;
+  --color-ink-2: #4A4F57;
+  --color-ink-3: #8A8F98;
+  --color-line: #E6E8EB;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F6F8F8;
+  --color-surface-2: #F4F5F7;
 
   --color-haz-heat: #DC2626;
   --color-haz-flooding: #2563EB;
@@ -43,6 +45,7 @@
   --text-lg: 13px;
   --text-xl: 14px;
   --text-2xl: 17px;
+  --text-3xl: 22px;
   /* A deliberate step above the in-app scale, for the one hero moment
      (the landing screen's title) that genuinely is a splash, not dense
      panel UI. Not a one-off: it's a named rung on the same ladder. */

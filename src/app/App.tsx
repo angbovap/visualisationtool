@@ -785,6 +785,12 @@ const IconTransport = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
+const IconArrowUpRight = ({ size = 15, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M7 17 17 7M9 7h8v8" />
+  </svg>
+);
+
 /** Recentre on the LGA. */
 const IconLocate = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
@@ -834,7 +840,7 @@ function Tip({
         <span
           className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
         >
-          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-xs mb-1">
+          <span className="block font-semibold text-white text-base mb-1">
             {label}
           </span>
           <span className="block text-[#C2D2D1]">{body}</span>
@@ -938,7 +944,7 @@ function Segmented<T extends string | number>({
   dense?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-[2px] rounded-[5px] border border-line bg-surface-2 p-[2px]">
+    <div className="flex w-full items-center gap-[2px] rounded-[10px] bg-surface-2 p-[3px]">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -946,12 +952,7 @@ function Segmented<T extends string | number>({
             key={String(o.value)}
             disabled={o.disabled}
             onClick={() => onChange(o.value)}
-            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
-            style={
-              on
-                ? { background: accent, color: '#fff' }
-                : { background: 'transparent', color: '#5B6B6A' }
-            }
+            className={`flex-1 rounded-[8px] ${dense ? 'px-1.5 py-[3px]' : 'px-2.5 py-[5px]'} text-base font-medium transition-all disabled:cursor-not-allowed disabled:opacity-35 ${on ? 'bg-white text-ink shadow-[0_1px_3px_rgba(21,23,27,0.12)]' : 'text-ink-3 hover:text-ink'}`}
           >
             {o.label}
           </button>
@@ -961,7 +962,6 @@ function Segmented<T extends string | number>({
   );
 }
 
-/** Small all-caps heading used inside panels. */
 /** The one section-heading style, used everywhere a panel needs to say
  *  what a block of content is before showing it. Bumped up from 11.5px
  *  once too many stacked sections started reading as one undifferentiated
@@ -975,10 +975,8 @@ function PanelHeading({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between">
-      <span className="text-lg font-semibold uppercase tracking-[0.07em] text-ink-3">
-        {children}
-      </span>
+    <div className="mb-2.5 flex items-center justify-between">
+      <span className="text-xl font-semibold text-ink">{children}</span>
       {right}
     </div>
   );
@@ -1620,7 +1618,7 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${open ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
+                className={`flex h-9 w-9 items-center justify-center rounded-[10px] text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] transition-colors ${open ? 'bg-accent' : 'bg-[#15171B] hover:bg-[#2B2E34]'}`}
                 aria-label={c.label}
                 aria-expanded={open}
                 title={c.label}
@@ -1629,9 +1627,7 @@ function MapView(props: MapViewProps) {
               </button>
               {open && (
                 <div className="fade-up absolute right-[calc(100%+8px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
-                  <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
-                    {c.label}
-                  </div>
+                  <div className="px-2 pb-1 pt-0.5 text-sm font-semibold text-ink">{c.label}</div>
                   {c.options.map((o) => {
                     const on = c.value === o.value;
                     return (
@@ -1658,7 +1654,7 @@ function MapView(props: MapViewProps) {
           aria-pressed={dimOutside}
           aria-label="Focus on the council area"
           title={dimOutside ? 'Focus on the council area: on' : 'Focus on the council area: off'}
-          className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${dimOutside ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-[10px] text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] transition-colors ${dimOutside ? 'bg-accent' : 'bg-[#15171B] hover:bg-[#2B2E34]'}`}
         >
           <IconFocus size={18} />
         </button>
@@ -1694,30 +1690,30 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white text-ink-2 shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#15171B] text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] transition-colors hover:bg-[#2B2E34]"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[10px] bg-white py-1 shadow-[0_2px_10px_rgba(20,32,31,0.16)]">
+        <div className="flex w-9 flex-col items-center rounded-[10px] bg-[#15171B] py-1 shadow-[0_2px_8px_rgba(0,0,0,0.25)]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-white transition-colors hover:bg-white/10"
             aria-label="Zoom in"
           >
             <IconPlus size={16} />
           </button>
           {/* Where the current zoom sits between fully out and fully in. */}
-          <div className="relative my-1 h-[52px] w-[3px] rounded-full bg-line">
+          <div className="relative my-1 h-[52px] w-[3px] bg-[radial-gradient(circle,rgba(255,255,255,0.45)_1px,transparent_1.5px)] bg-[length:3px_6px]">
             <span
-              className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white bg-accent shadow-[0_0_0_1px_rgba(0,110,120,0.35)] transition-all duration-200"
+              className="absolute left-1/2 h-[4px] w-[14px] -translate-x-1/2 translate-y-1/2 rounded-full bg-white transition-all duration-200"
               style={{ bottom: `${(Math.min(Math.max(zoomLevel - 10, 0), 9) / 9) * 100}%` }}
             />
           </div>
           <button
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[6px] text-white transition-colors hover:bg-white/10"
             aria-label="Zoom out"
           >
             <IconMinus size={16} />
@@ -1830,10 +1826,10 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
-            <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#A7D9C2]" />
-            <span className="flex-1 truncate text-base text-ink-3">Development Zones</span>
-            <span className="text-2xs text-ink-3">not yet supplied</span>
+          <div className="mx-2.5 flex items-center gap-2.5 rounded-[10px] border border-dashed border-line px-3 py-2.5">
+            <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2]" />
+            <span className="flex-1 truncate text-base font-medium text-ink-3">Development Zones</span>
+            <span className="rounded-[6px] border border-line px-1.5 py-[1px] text-xs text-ink-3">Not supplied yet</span>
           </div>
         </div>
       );
@@ -1842,156 +1838,150 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        {layers.map((l) => {
-          const checked = checkedLayers.has(l.id);
-          const op = layerOpacity[l.id] ?? 1;
-          return (
-            <div
-              key={l.id}
-              className={`mx-2.5 mb-1.5 rounded-[8px] border px-2.5 py-2 transition-colors ${checked ? 'border-accent-line bg-accent-soft/40' : 'border-line bg-white hover:border-accent-line'}`}
-            >
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleLayer(l.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                  aria-pressed={checked}
-                >
-                  <span
-                    className="h-[14px] w-[14px] shrink-0 rounded-[4px]"
-                    style={{
-                      background:
-                        l.kind === 'vector'
-                          ? l.hi
-                          : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
-                    }}
-                  />
-                  <span className={`flex-1 truncate text-base ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}>
-                    {l.name}
-                  </span>
-                </button>
-                <Tip label={l.name} body={l.note} source={l.source} side="left">
-                  <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent">
-                    <IconInfo size={14} />
-                  </span>
-                </Tip>
-                <button
-                  onClick={() => toggleLayer(l.id)}
-                  aria-label={`${checked ? 'Turn off' : 'Turn on'} ${l.name}`}
-                >
-                  <Switch on={checked} />
-                </button>
-              </div>
-              {checked && (
-                <div className="fade-up mt-2 flex items-center gap-2 pl-[22px]">
-                  <span className="text-2xs uppercase tracking-[0.06em] text-ink-3">Opacity</span>
-                  <input
-                    type="range"
-                    min={10}
-                    max={100}
-                    value={Math.round(op * 100)}
-                    onChange={(e) => setLayerOpacity(l.id, Number(e.target.value) / 100)}
-                    className="h-3 flex-1"
-                  />
-                  <span className="num w-[32px] text-right text-xs text-ink-3">{Math.round(op * 100)}%</span>
+        <div className="mx-2.5 overflow-hidden rounded-[10px] border border-line bg-white">
+          {layers.map((l, i) => {
+            const checked = checkedLayers.has(l.id);
+            const op = layerOpacity[l.id] ?? 1;
+            return (
+              <div key={l.id} className={`px-3 py-2.5 ${i > 0 ? 'border-t border-line' : ''}`}>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => toggleLayer(l.id)}
+                    className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+                    aria-pressed={checked}
+                  >
+                    <span
+                      className="h-[12px] w-[12px] shrink-0 rounded-[3px]"
+                      style={{
+                        background:
+                          l.kind === 'vector' ? l.hi : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
+                      }}
+                    />
+                    <span className="flex-1 truncate text-base font-medium text-ink">{l.name}</span>
+                  </button>
+                  <Tip label={l.name} body={l.note} source={l.source} side="left">
+                    <span className="flex h-[20px] w-[20px] cursor-help items-center justify-center rounded-full text-ink-3 transition-colors hover:text-ink">
+                      <IconInfo size={15} />
+                    </span>
+                  </Tip>
+                  <button onClick={() => toggleLayer(l.id)} aria-label={`${checked ? 'Turn off' : 'Turn on'} ${l.name}`}>
+                    <Switch on={checked} />
+                  </button>
                 </div>
-              )}
-            </div>
-          );
-        })}
+                {checked && (
+                  <div className="fade-up mt-2 flex items-center gap-2.5 pl-[22px]">
+                    <span className="text-xs text-ink-3">Opacity</span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={100}
+                      value={Math.round(op * 100)}
+                      onChange={(e) => setLayerOpacity(l.id, Number(e.target.value) / 100)}
+                      className="h-3 flex-1"
+                    />
+                    <span className="num w-[34px] text-right text-xs font-medium text-ink-2">{Math.round(op * 100)}%</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   };
 
   return (
     <div>
-      {/* Four kinds of control here, each with its own look, so what a
-          thing does is readable before you click it:
-            status   a pill that reports, with one quiet text action
-            apply    Blueprint tiles, coloured, with an Apply button
-            navigate the category list, rows with a chevron
-            toggle   the layer rows inside a category, with switches */}
+      {/* Each kind of control has its own form, so what something does is
+          readable before you click it: a status line that reports, cards
+          that apply a preset, a table that navigates, switches that toggle. */}
 
-      {/* Status. Reports what's on; not a control in its own right. */}
+      {/* Status line: reports what's on, with one text action. */}
       {checkedLayers.size > 0 && (
-        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-full bg-accent-soft py-1 pl-2.5 pr-1">
-          <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-accent" />
-          <span className="flex-1 text-sm font-medium text-accent">
-            {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on the map
-          </span>
+        <div className="flex items-center justify-between px-2.5 pt-3">
+          <div className="flex items-center gap-2 text-sm text-ink-3">
+            On the map
+            <span className="num rounded-[6px] border border-line px-1.5 py-[1px] text-sm font-medium text-ink">
+              {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'}
+            </span>
+          </div>
           <button
             onClick={clearAllLayers}
-            className="rounded-full px-2 py-[2px] text-xs font-semibold text-accent transition-colors hover:bg-white"
+            className="flex items-center gap-1 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
           >
+            <IconClose size={13} />
             Clear
           </button>
         </div>
       )}
 
-      {/* Apply. The quickest start, so it leads, and it looks like the
-          one thing here that sets several layers at once. */}
-      <div className="px-2.5 pb-1 pt-3">
+      {/* Blueprints: cards that apply a whole set at once. */}
+      <div className="px-2.5 pb-1 pt-4">
         <PanelHeading>Blueprints</PanelHeading>
         <div className="space-y-2">
           {BLUEPRINTS.map((b) => {
             const on = activeBlueprint === b.id;
             const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
             return (
-              <div
+              <button
                 key={b.id}
-                className="flex items-center gap-2.5 rounded-[10px] p-2 transition-colors"
-                style={{ background: withAlpha(b.accent, on ? 0.16 : 0.08) }}
+                onClick={() => applyBlueprint(b.id)}
+                aria-pressed={on}
+                className={`flex w-full items-center gap-3 rounded-[10px] px-2.5 py-2.5 text-left transition-colors ${on ? 'bg-white' : 'bg-surface-2 hover:bg-[#ECEEF1]'}`}
+                style={on ? { boxShadow: `inset 0 0 0 1.5px ${b.accent}` } : undefined}
               >
                 <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] text-white"
-                  style={{ background: b.accent }}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] ${on ? 'bg-surface-2' : 'bg-white'}`}
+                  style={{ color: b.accent }}
                 >
                   <Icon size={19} />
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-semibold text-ink">{b.title}</span>
-                  <span className="num block text-xs text-ink-3">{b.layers.length} layers</span>
+                  <span className="num block text-sm text-ink-3">{b.layers.length} layers</span>
                 </span>
-                <button
-                  onClick={() => applyBlueprint(b.id)}
-                  className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
-                  style={
-                    on
-                      ? { background: b.accent, color: '#fff' }
-                      : { background: '#fff', color: b.accent, boxShadow: `inset 0 0 0 1px ${withAlpha(b.accent, 0.4)}` }
-                  }
-                  aria-pressed={on}
-                >
-                  {on ? 'Applied' : 'Apply'}
-                </button>
-              </div>
+                {on ? (
+                  <span className="shrink-0 rounded-[6px] bg-[#15171B] px-2 py-[2px] text-xs font-semibold text-white">On</span>
+                ) : (
+                  <IconArrowUpRight size={16} className="shrink-0 text-ink-3" />
+                )}
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Navigate, then toggle. One level at a time: the category list,
-          or one category's layers. */}
-      <div className="px-2.5 pb-3 pt-3" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+      {/* Browse: a table to navigate by category, then switches inside. */}
+      <div className="px-2.5 pb-3 pt-4" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
         {activeTab === null ? (
           <>
             <PanelHeading>Browse layers</PanelHeading>
-            <div className="overflow-hidden rounded-[10px] border border-line bg-white">
-              {categories.map((c, i) => (
+            <div className="overflow-hidden rounded-[10px] border border-line">
+              <div className="grid grid-cols-[1fr_48px_32px_14px] items-center gap-2 bg-surface-2 px-3 py-1.5 text-xs text-ink-3">
+                <span>Category</span>
+                <span className="text-right">Layers</span>
+                <span className="text-right">On</span>
+                <span />
+              </div>
+              {categories.map((c) => (
                 <button
                   key={c.value}
                   onClick={() => selectTab(c.value)}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2 ${i > 0 ? 'border-t border-line' : ''}`}
+                  className="grid w-full grid-cols-[1fr_48px_32px_14px] items-center gap-2 border-t border-line bg-white px-3 py-2 text-left transition-colors hover:bg-surface-2"
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                  <span className="flex-1 text-base font-medium text-ink">{c.label}</span>
-                  {c.on > 0 ? (
-                    <span className="num rounded-full bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
-                      {c.on} on
+                  <span className="min-w-0">
+                    <span
+                      className="inline-block max-w-full truncate rounded-[6px] px-2 py-[3px] text-xs font-semibold text-white"
+                      style={{ background: c.color }}
+                    >
+                      {c.label}
                     </span>
-                  ) : (
-                    <span className="num text-xs text-ink-3">{c.total}</span>
-                  )}
-                  <IconChevron size={14} className="shrink-0 text-ink-3" />
+                  </span>
+                  <span className="num text-right text-base text-ink-2">{c.value === 'planning' ? '–' : c.total}</span>
+                  <span className={`num text-right text-base ${c.on > 0 ? 'font-semibold text-ink' : 'text-ink-3'}`}>
+                    {c.on}
+                  </span>
+                  <IconChevron size={14} className="text-ink-3" />
                 </button>
               ))}
             </div>
@@ -2001,7 +1991,7 @@ function LayersTab({
             <div className="px-2.5">
               <button
                 onClick={() => selectTab(null)}
-                className="mb-1 flex items-center gap-1 rounded-full py-1 pl-1 pr-2.5 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+                className="mb-1.5 flex items-center gap-1 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
               >
                 <IconChevron size={14} className="rotate-180" />
                 All layers
@@ -2099,11 +2089,11 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
       <PanelHeading>At a glance</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Buildings</div>
+          <div className="text-xs font-medium text-ink-3">Buildings</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
         </div>
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Insured value</div>
+          <div className="text-xs font-medium text-ink-3">Insured value</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
         </div>
       </div>
@@ -2137,7 +2127,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-1 first:mt-0">
-      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">
+      <div className="text-xs font-semibold text-ink-3">
         {label}
       </div>
       <div className="mt-[1px] text-base leading-[1.5] text-ink-2">{value}</div>
@@ -2163,24 +2153,20 @@ function RightPanelShell({
   children: React.ReactNode;
 }) {
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
-      <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
-        <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
+    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white">
+      <header className="flex items-start gap-2.5 border-b border-line px-3 py-3">
+        <span className="mt-[3px] h-[18px] w-[4px] shrink-0 rounded-full" style={{ background: accent }} />
         <div className="min-w-0 flex-1">
-          <div className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-3">
-            {eyebrow}
-          </div>
-          <div className="truncate text-xl font-semibold leading-tight" style={{ color: accent }}>
-            {title}
-          </div>
+          <div className="truncate text-3xl font-semibold leading-tight text-ink">{title}</div>
+          <div className="mt-[2px] text-sm text-ink-3">{eyebrow}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="mt-[2px] shrink-0 rounded-[4px] p-[3px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+            className="shrink-0 rounded-[8px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Close"
           >
-            <IconClose />
+            <IconClose size={17} />
           </button>
         )}
       </header>
@@ -2657,7 +2643,7 @@ function HelpTab() {
 function SourceYears({ snapshot }: { snapshot: string | null }) {
   return (
     <div className="flex h-[40px] shrink-0 items-center justify-between border-t border-line bg-white px-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
+      <span className="text-xs font-semibold text-ink-3">
         Source years
       </span>
       <span className="num text-base text-ink-2">{snapshot ?? 'No dated layer on the map'}</span>
@@ -2712,7 +2698,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
           aria-label="Home"
         >
           <IconHome size={23} />
@@ -2730,7 +2716,7 @@ function IconRail({
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 onClick={() => setTab(t)}
-                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-accent text-white shadow-[0_4px_12px_rgba(0,110,120,0.3)]' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
+                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-surface-2 text-ink' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -3140,11 +3126,11 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
             <PanelHeading>At this point</PanelHeading>
             <div className="mb-3 grid grid-cols-2 gap-1.5">
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Buildings</div>
+                <div className="text-xs text-ink-3">Buildings</div>
                 <div className="num text-stat-sm font-semibold text-ink">{buildings.length}</div>
               </div>
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Insured value</div>
+                <div className="text-xs text-ink-3">Insured value</div>
                 <div className="num text-stat-sm font-semibold text-ink">
                   ${(totalInsured / 1e6).toFixed(1)}M
                 </div>
@@ -3462,7 +3448,7 @@ function RealBuildingsRegister({
                   setOpenId(null);
                 }}
                 aria-pressed={on}
-                className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
+                className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-[#15171B] bg-[#15171B] font-medium text-white' : 'border-line bg-white text-ink-2 hover:border-ink-3'}`}
               >
                 {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
                 <span className="num text-xs text-ink-3">{w.count}</span>
@@ -3508,9 +3494,9 @@ function RealBuildingsRegister({
           <div className="grid grid-cols-2 gap-1.5">
             <button
               onClick={() => selectView('types')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
+              className="relative rounded-[10px] bg-surface-2 pb-2.5 pl-2.5 pr-6 pt-2 text-left transition-colors hover:bg-[#ECEEF1]"
             >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <IconArrowUpRight size={14} className="absolute right-2 top-2 text-ink-3" />
               <span className="block text-base font-semibold leading-tight text-ink">Building types</span>
               <span className="num mt-[2px] block text-xs text-ink-3">
                 {onCount} of {ALL_BUILDING_TYPES.size} shown on map
@@ -3518,25 +3504,25 @@ function RealBuildingsRegister({
             </button>
             <button
               onClick={() => selectView('list')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
+              className="relative rounded-[10px] bg-surface-2 pb-2.5 pl-2.5 pr-6 pt-2 text-left transition-colors hover:bg-[#ECEEF1]"
             >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <IconArrowUpRight size={14} className="absolute right-2 top-2 text-ink-3" />
               <span className="block text-base font-semibold leading-tight text-ink">Browse buildings</span>
               <span className="text-xs text-ink-3">By category or all at once</span>
             </button>
             <button
               onClick={() => selectView('condition')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
+              className="relative rounded-[10px] bg-surface-2 pb-2.5 pl-2.5 pr-6 pt-2 text-left transition-colors hover:bg-[#ECEEF1]"
             >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <IconArrowUpRight size={14} className="absolute right-2 top-2 text-ink-3" />
               <span className="block text-base font-semibold leading-tight text-ink">Condition</span>
               <span className="text-xs text-ink-3">How the register rates them</span>
             </button>
             <button
               onClick={() => selectView('about')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
+              className="relative rounded-[10px] bg-surface-2 pb-2.5 pl-2.5 pr-6 pt-2 text-left transition-colors hover:bg-[#ECEEF1]"
             >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
+              <IconArrowUpRight size={14} className="absolute right-2 top-2 text-ink-3" />
               <span className="block text-base font-semibold leading-tight text-ink">Data sources</span>
               <span className="text-xs text-ink-3">Dates and map coverage</span>
             </button>
@@ -3553,7 +3539,7 @@ function RealBuildingsRegister({
               Back
             </button>
             <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-              <div className="mb-1.5 text-base font-medium uppercase tracking-[0.06em] text-ink-3">
+              <div className="mb-1.5 text-base font-medium text-ink-3">
                 Condition, as rated in the register
               </div>
               <div className="space-y-1.5">
@@ -3936,7 +3922,7 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           CoCS Climate Risk Explorer
         </div>
         <div
-          className="landing-in num mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-3"
+          className="landing-in num mt-2 text-xs font-semibold text-ink-3"
           style={{ animationDelay: '200ms' }}
         >
           City of Charles Sturt
@@ -4240,31 +4226,35 @@ export default function App() {
       <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
       <section data-tour="left-panel" className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
-        <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
+        {/* App header, then the page title, the way a dashboard names the
+            product once and the current page large. */}
+        <header className="flex items-center justify-between gap-2 px-2.5 pb-1 pt-3">
           <div className="min-w-0">
-            <div className="text-2xl font-semibold leading-tight text-ink">{meta.title}</div>
-            <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
+            <div className="truncate text-xl font-semibold leading-tight text-ink">Climate Risk Explorer</div>
+            <div className="text-sm text-ink-3">City of Charles Sturt</div>
           </div>
-          <button
-            data-tour="info"
-            onClick={() => setScreen('tour')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
-            aria-label="Take the guide"
-            title="Take the guide"
-          >
-            <IconInfo size={17} />
-          </button>
+          <div className="flex shrink-0 items-center">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+              aria-label="Search"
+              title="Search  ( / )"
+            >
+              <IconSearch size={18} />
+            </button>
+            <button
+              data-tour="info"
+              onClick={() => setScreen('tour')}
+              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+              aria-label="Take the guide"
+              title="Take the guide"
+            >
+              <IconInfo size={18} />
+            </button>
+          </div>
         </header>
-
-        <div className="border-b border-line px-2.5 py-2">
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2 rounded-[6px] border border-line bg-surface-2 px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent hover:text-ink-2"
-          >
-            <IconSearch size={14} className="shrink-0" />
-            <span className="flex-1">Search suburbs, layers, buildings</span>
-            <span className="num rounded-[4px] border border-line bg-white px-1.5 text-2xs">/</span>
-          </button>
+        <div className="border-b border-line px-2.5 pb-3 pt-2.5">
+          <h1 className="text-3xl font-semibold leading-tight text-ink">{meta.title}</h1>
         </div>
 
         <div className="thin-scroll flex-1 overflow-y-auto">
@@ -4289,10 +4279,6 @@ export default function App() {
           {panelTab === 'place' && <PlaceTab selectedId={selectedId} setSelectedId={setSelectedId} />}
           {panelTab === 'help' && <HelpTab />}
         </div>
-
-        <footer className="border-t border-line px-2.5 py-1.5">
-          <span className="text-xs uppercase tracking-[0.08em] text-ink-3">City of Charles Sturt</span>
-        </footer>
 
         {screen === 'landing' && (
           <LandingScreen onGuide={() => setScreen('tour')} onSkip={() => setScreen(null)} />
