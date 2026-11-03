@@ -699,6 +699,13 @@ const IconClose = ({ size = 15, className }: IconProps) => (
   </svg>
 );
 
+const IconSearch = ({ size = 15, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" />
+  </svg>
+);
+
 const IconChevron = ({ size = 14, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <path d="M9 6l6 6-6 6" />
@@ -922,6 +929,9 @@ interface MapViewProps {
    *  every real building in that SA2, otherwise only these ids. */
   focusSuburbId: string | null;
   focusBuildingIds: string[] | null;
+  /** Where a search result asked the map to go. key changes on every
+   *  search pick, so choosing the same place twice still moves the map. */
+  flyTarget: { lat: number; lng: number; zoom: number; key: number } | null;
 }
 
 
@@ -945,6 +955,7 @@ function MapView(props: MapViewProps) {
     onSelectBuildingPoint,
     focusSuburbId,
     focusBuildingIds,
+    flyTarget,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -955,6 +966,7 @@ function MapView(props: MapViewProps) {
   const [ready, setReady] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(MAP_ZOOM);
   const [basemap, setBasemap] = useState(BASEMAPS[0].id);
+  const [dimOutside, setDimOutside] = useState(true);
   const baseDef = BASEMAP_BY_ID[basemap] ?? BASEMAPS[0];
   const darkBase = !!baseDef.dark;
 
@@ -1218,6 +1230,27 @@ function MapView(props: MapViewProps) {
 
 
 
+    /* Everything outside the council boundary dimmed, so the LGA reads as
+       the subject and the rest of Adelaide as context. A polygon with the
+       LGA ring cut out as a hole, drawn over every data layer (flood
+       catchments spill past the boundary) but under the outlines. */
+    if (dimOutside) {
+      const outer: LatLngTuple[] = [
+        [-36.5, 136.5],
+        [-36.5, 141],
+        [-33, 141],
+        [-33, 136.5],
+      ];
+      push(
+        L.polygon([outer, LGA_BOUNDARY.ring], {
+          stroke: false,
+          fillColor: darkBase ? '#0B1211' : '#F6F8F8',
+          fillOpacity: darkBase ? 0.6 : 0.72,
+          interactive: false,
+        }),
+      );
+    }
+
     /* Boundary outlines sit above every fill so they stay legible. The
        real council LGA shape (from council's own GIS, not an ABS
        statistical approximation) draws as the bold outer edge; the 8
@@ -1421,7 +1454,14 @@ function MapView(props: MapViewProps) {
     onSelectBuildingPoint,
     focusSuburbId,
     focusBuildingIds,
+    dimOutside,
   ]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !flyTarget) return;
+    map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
+  }, [ready, flyTarget]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
   useEffect(() => {
@@ -1490,6 +1530,14 @@ function MapView(props: MapViewProps) {
               { value: 'sa1' as BoundsMode, label: 'SA1' },
             ]}
           />
+          <button
+            onClick={() => setDimOutside((v) => !v)}
+            aria-pressed={dimOutside}
+            className={`mt-1 flex w-full items-center justify-between rounded-[4px] px-1.5 py-[3px] text-xs font-medium transition-colors ${dimOutside ? 'bg-accent-soft text-accent' : 'text-ink-3 hover:text-ink'}`}
+          >
+            Focus on LGA
+            <span className={`h-[7px] w-[7px] rounded-full ${dimOutside ? 'bg-accent' : 'bg-line'}`} />
+          </button>
         </div>
       </div>
 
@@ -2709,6 +2757,12 @@ for (const b of REAL_BUILDINGS) {
   (REAL_BUILDINGS_BY_SUBURB[suburbId] ??= []).push(b);
 }
 
+/** The reverse of the above: which SA2 a mapped building sits in. */
+const BUILDING_SUBURB_ID: Record<string, string> = {};
+for (const [suburbId, list] of Object.entries(REAL_BUILDINGS_BY_SUBURB)) {
+  for (const b of list) BUILDING_SUBURB_ID[b.id] = suburbId;
+}
+
 /* ------------------------------------------------------------------ *
  * Real asset exposure
  *
@@ -3568,6 +3622,156 @@ const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title
   },
 ];
 
+/* ------------------------------------------------------------------ *
+ * Search
+ *
+ * One box for the three things a person looks for by name: a suburb, a
+ * layer, or a building (by name or address). Picking a result takes you
+ * to it, the right tab, the map moved there, instead of leaving you to
+ * work out which tab holds it.
+ * ------------------------------------------------------------------ */
+
+type SearchKind = 'suburb' | 'layer' | 'building';
+
+interface SearchHit {
+  kind: SearchKind;
+  id: string;
+  label: string;
+  meta: string;
+}
+
+const SEARCH_KIND: Record<SearchKind, { label: string; color: string }> = {
+  suburb: { label: 'Suburb', color: '#006E78' },
+  layer: { label: 'Layer', color: '#2563EB' },
+  building: { label: 'Building', color: '#B45309' },
+};
+
+function searchAll(query: string): SearchHit[] {
+  const q = query.trim().toLowerCase();
+  if (q.length === 0) return [];
+  // Matches at the start of a name rank above matches in the middle.
+  const rank = (text: string) => {
+    const t = text.toLowerCase();
+    if (t.startsWith(q)) return 0;
+    if (t.includes(` ${q}`)) return 1;
+    if (t.includes(q)) return 2;
+    return -1;
+  };
+  const byRank = <T,>(items: T[], text: (x: T) => string) =>
+    items
+      .map((x) => ({ x, r: rank(text(x)) }))
+      .filter((m) => m.r >= 0)
+      .sort((a, b) => a.r - b.r)
+      .map((m) => m.x);
+
+  const suburbs = byRank(SUBURBS, (s) => s.name).map<SearchHit>((s) => ({
+    kind: 'suburb',
+    id: s.id,
+    label: s.name,
+    meta: `SA2 ${s.sa2}`,
+  }));
+  const layers = byRank(
+    LAYERS.filter((l) => WORKSHOP_LAYER_IDS.has(l.id)),
+    (l) => l.name,
+  ).map<SearchHit>((l) => ({ kind: 'layer', id: l.id, label: l.name, meta: GROUP_LABEL[l.group] }));
+  const buildings = byRank(
+    REAL_BUILDINGS.filter((b) => BUILDING_SUBURB_ID[b.id]),
+    (b) => `${b.name} ${b.address ?? ''}`,
+  )
+    .slice(0, 8)
+    .map<SearchHit>((b) => ({
+      kind: 'building',
+      id: b.id,
+      label: b.name,
+      meta: [b.buildingType, b.address, SUBURB_BY_ID[BUILDING_SUBURB_ID[b.id]]?.name].filter(Boolean).join(' · '),
+    }));
+  return [...suburbs, ...layers, ...buildings];
+}
+
+function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; onClose: () => void }) {
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState(0);
+  const hits = useMemo(() => searchAll(query), [query]);
+  useEffect(() => setActive(0), [query]);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') onClose();
+    else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, hits.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && hits[active]) onPick(hits[active]);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[2100] flex items-start justify-center bg-ink/25 px-4 pt-[12vh] backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_16px_48px_rgba(20,32,31,0.28)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
+          <IconSearch size={16} className="shrink-0 text-ink-3" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder="Search suburbs, layers or buildings"
+            className="flex-1 bg-transparent text-lg text-ink outline-none placeholder:text-ink-3"
+          />
+          <span className="num rounded-[4px] border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
+        </div>
+
+        <div className="thin-scroll max-h-[360px] overflow-y-auto py-1">
+          {query.trim() === '' && (
+            <div className="px-3 py-3 text-sm text-ink-3">
+              Type a suburb such as <span className="font-semibold text-ink-2">Henley Beach</span>, a layer such as{' '}
+              <span className="font-semibold text-ink-2">Flood</span>, or a building name or street.
+            </div>
+          )}
+          {query.trim() !== '' && hits.length === 0 && (
+            <div className="px-3 py-3 text-sm text-ink-3">No match for "{query.trim()}".</div>
+          )}
+          {hits.map((h, i) => {
+            const kind = SEARCH_KIND[h.kind];
+            return (
+              <button
+                key={`${h.kind}-${h.id}`}
+                onMouseEnter={() => setActive(i)}
+                onClick={() => onPick(h)}
+                className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors ${i === active ? 'bg-surface-2' : ''}`}
+              >
+                <span
+                  className="w-[62px] shrink-0 rounded-[4px] px-1.5 py-[2px] text-center text-2xs font-semibold"
+                  style={{ background: withAlpha(kind.color, 0.1), color: kind.color }}
+                >
+                  {kind.label}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-medium text-ink">{h.label}</span>
+                  {h.meta && <span className="block truncate text-xs text-ink-3">{h.meta}</span>}
+                </span>
+                {i === active && <IconChevron size={13} className="shrink-0 text-ink-3" />}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex items-center gap-3 border-t border-line bg-surface-2 px-3 py-1.5 text-2xs text-ink-3">
+          <span><span className="num font-semibold">↑↓</span> move</span>
+          <span><span className="num font-semibold">Enter</span> open</span>
+          <span className="ml-auto">Press <span className="num font-semibold">/</span> anywhere to search</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** The tool's actual first screen, shown on every load, not a popup that
  *  depends on remembering whether this browser has seen it before. Two
  *  explicit choices rather than a silent auto-start, so landing here is
@@ -3731,6 +3935,11 @@ export default function App() {
   // shows first and always, so the orientation is never skipped just
   // because some earlier visit set a flag.
   const [screen, setScreen] = useState<'landing' | 'tour' | null>('landing');
+  const [searchOpen, setSearchOpen] = useState(false);
+  // A building picked from search, labelled on its own once Place opens
+  // its suburb, rather than every building in that suburb.
+  const [searchFocusId, setSearchFocusId] = useState<string | null>(null);
+  const [flyTarget, setFlyTarget] = useState<{ lat: number; lng: number; zoom: number; key: number } | null>(null);
   // Turning a layer on opens its description on the right. Cleared when
   // that same layer is unchecked.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
@@ -3832,13 +4041,58 @@ export default function App() {
     setPanelTab('place');
   }, []);
 
+  const handleSearchPick = useCallback(
+    (hit: SearchHit) => {
+      setSearchOpen(false);
+      setScreen(null);
+      if (hit.kind === 'suburb') {
+        const s = SUBURB_BY_ID[hit.id];
+        setSearchFocusId(null);
+        handleSelectSuburb(hit.id);
+        if (s) setFlyTarget({ lat: s.centroid[0], lng: s.centroid[1], zoom: 14, key: Date.now() });
+      } else if (hit.kind === 'layer') {
+        if (!checkedLayers.has(hit.id)) toggleLayer(hit.id);
+        else setLayerInfoId(hit.id);
+        setPanelTab('layers');
+      } else {
+        const suburbId = BUILDING_SUBURB_ID[hit.id];
+        const loc = BUILDING_LOCATION[hit.id];
+        setSearchFocusId(hit.id);
+        if (suburbId) handleSelectSuburb(suburbId);
+        if (loc) setFlyTarget({ lat: loc.lat, lng: loc.lng, zoom: 16, key: Date.now() });
+      }
+    },
+    [checkedLayers, toggleLayer, handleSelectSuburb],
+  );
+
+  // '/' or Ctrl/Cmd+K opens search from anywhere, unless the person is
+  // already typing in a field.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      const typing = !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+      if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const meta = TAB_META[panelTab];
 
   // What the map should label at its real location: a Blueprint's
   // drilled-into SA2 takes priority (and its exact filtered buildings),
   // otherwise Place's selected SA2 labels every real building inside it.
   const focusSuburbId = blueprintFocus?.suburbId ?? (panelTab === 'place' ? selectedId : null);
-  const focusBuildingIds = blueprintFocus ? blueprintFocus.buildingIds : null;
+  const searchFocusActive =
+    !!searchFocusId && panelTab === 'place' && selectedId === BUILDING_SUBURB_ID[searchFocusId];
+  const focusBuildingIds = blueprintFocus
+    ? blueprintFocus.buildingIds
+    : searchFocusActive
+      ? [searchFocusId!]
+      : null;
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
@@ -3859,6 +4113,17 @@ export default function App() {
             i
           </button>
         </header>
+
+        <div className="border-b border-line px-2.5 py-2">
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex w-full items-center gap-2 rounded-[6px] border border-line bg-surface-2 px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent hover:text-ink-2"
+          >
+            <IconSearch size={14} className="shrink-0" />
+            <span className="flex-1">Search suburbs, layers, buildings</span>
+            <span className="num rounded-[4px] border border-line bg-white px-1.5 text-2xs">/</span>
+          </button>
+        </div>
 
         <div className="thin-scroll flex-1 overflow-y-auto">
           {panelTab === 'layers' && (
@@ -3894,6 +4159,7 @@ export default function App() {
           <LandingScreen onGuide={() => setScreen('tour')} onSkip={() => setScreen(null)} />
         )}
         {screen === 'tour' && <GuideTour onDone={() => setScreen(null)} />}
+        {searchOpen && <SearchPalette onPick={handleSearchPick} onClose={() => setSearchOpen(false)} />}
       </section>
 
       <main data-tour="map" className="flex min-w-0 flex-1 flex-col">
@@ -3916,6 +4182,7 @@ export default function App() {
             onSelectBuildingPoint={handleSelectBuildingPoint}
             focusSuburbId={focusSuburbId}
             focusBuildingIds={focusBuildingIds}
+            flyTarget={flyTarget}
           />
         </div>
 
