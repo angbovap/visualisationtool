@@ -3540,6 +3540,49 @@ const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title
   },
 ];
 
+/** The tool's actual first screen, shown on every load, not a popup that
+ *  depends on remembering whether this browser has seen it before. Two
+ *  explicit choices rather than a silent auto-start, so landing here is
+ *  never ambiguous about whether anything happened. */
+function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white px-6">
+      <div className="flex w-full max-w-[400px] flex-col items-center text-center">
+        <img src={vapLogo} alt="Value Advisory Partners" className="h-16 w-16 object-contain" />
+        <div className="mt-6 h-px w-10 bg-line" />
+        <div className="mt-6 text-display font-semibold leading-tight text-ink">
+          CoCS Climate Risk Explorer
+        </div>
+        <div className="num mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-3">
+          City of Charles Sturt
+        </div>
+        <p className="mt-4 text-md leading-[1.65] text-ink-2">
+          Council's own GIS layers and asset register, on one map. Where a
+          figure has not been supplied, the tool shows nothing for it rather
+          than an estimate.
+        </p>
+        <div className="mt-7 flex w-full max-w-[260px] flex-col gap-2.5">
+          <button
+            onClick={onGuide}
+            className="w-full rounded-[6px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#005963]"
+          >
+            Take the guide
+          </button>
+          <button
+            onClick={onSkip}
+            className="w-full rounded-[6px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+          >
+            View the tool
+          </button>
+        </div>
+      </div>
+      <div className="absolute bottom-6 text-xs text-ink-3">
+        Prepared by Value Advisory Partners
+      </div>
+    </div>
+  );
+}
+
 /** A real product-tour spotlight, not a text modal: dims everything
  *  except the live DOM element each step points at, recomputing its
  *  position on every step and on resize so the highlight always sits on
@@ -3641,26 +3684,11 @@ export default function App() {
   const [layerOpacity, setLayerOpacityState] = useState<Record<string, number>>({});
   const [hoveredSuburb, setHoveredSuburb] = useState<string | null>(null);
   const [boundsMode, setBoundsMode] = useState<BoundsMode>('sa2');
-  // Shown once automatically on a first visit (so landing on the tool
-  // comes with an orientation, not a blank set of tabs to guess at),
-  // and any time after that from the "i" button. A private-browsing tab
-  // or blocked storage just means it shows every time, which is the
-  // safe failure direction, not a crash.
-  const [showInfo, setShowInfo] = useState(() => {
-    try {
-      return localStorage.getItem('cocs-seen-guide') !== '1';
-    } catch {
-      return true;
-    }
-  });
-  const closeInfo = useCallback(() => {
-    setShowInfo(false);
-    try {
-      localStorage.setItem('cocs-seen-guide', '1');
-    } catch {
-      /* storage unavailable, nothing to persist */
-    }
-  }, []);
+  // An explicit choice every time the tool loads, rather than a silently
+  // auto-triggered popup gated on remembering a past visit: 'landing'
+  // shows first and always, so the orientation is never skipped just
+  // because some earlier visit set a flag.
+  const [screen, setScreen] = useState<'landing' | 'tour' | null>('landing');
   // Turning a layer on opens its description on the right. Cleared when
   // that same layer is unchecked.
   const [layerInfoId, setLayerInfoId] = useState<string | null>(null);
@@ -3782,7 +3810,7 @@ export default function App() {
           </div>
           <button
             data-tour="info"
-            onClick={() => setShowInfo(true)}
+            onClick={() => setScreen('landing')}
             className="mt-[2px] flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line text-sm font-semibold text-ink-3 transition-colors hover:border-accent hover:text-accent"
             aria-label="Open the guide"
           >
@@ -3820,7 +3848,10 @@ export default function App() {
           </span>
         </footer>
 
-        {showInfo && <GuideTour onDone={closeInfo} />}
+        {screen === 'landing' && (
+          <LandingScreen onGuide={() => setScreen('tour')} onSkip={() => setScreen(null)} />
+        )}
+        {screen === 'tour' && <GuideTour onDone={() => setScreen(null)} />}
       </section>
 
       <main data-tour="map" className="flex min-w-0 flex-1 flex-col">

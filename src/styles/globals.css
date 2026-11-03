@@ -43,6 +43,10 @@
   --text-lg: 13px;
   --text-xl: 14px;
   --text-2xl: 17px;
+  /* A deliberate step above the in-app scale, for the one hero moment
+     (the landing screen's title) that genuinely is a splash, not dense
+     panel UI. Not a one-off: it's a named rung on the same ladder. */
+  --text-display: 28px;
   --text-stat-sm: 16px;
   --text-stat: 20px;
   --text-stat-lg: 26px;
