@@ -834,7 +834,7 @@ function Tip({
         <span
           className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
         >
-          <span className="block font-semibold tracking-[0.04em] text-white uppercase text-xs mb-1">
+          <span className="block font-semibold text-white text-base mb-1">
             {label}
           </span>
           <span className="block text-[#C2D2D1]">{body}</span>
@@ -976,7 +976,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <span className="text-lg font-semibold uppercase tracking-[0.07em] text-ink-3">
+      <span className="text-xl font-semibold text-ink-2">
         {children}
       </span>
       {right}
@@ -1629,7 +1629,7 @@ function MapView(props: MapViewProps) {
               </button>
               {open && (
                 <div className="fade-up absolute right-[calc(100%+8px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
-                  <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold uppercase tracking-[0.08em] text-ink-3">
+                  <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
                   {c.options.map((o) => {
@@ -1667,7 +1667,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-full border bg-white px-2.5 py-1 shadow-[0_2px_10px_rgba(20,32,31,0.12)]"
+            className="fade-up flex items-center gap-1.5 rounded-[8px] border bg-white px-2.5 py-1 shadow-[0_2px_10px_rgba(20,32,31,0.12)]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: rightPanelAccent }} />
@@ -1883,7 +1883,7 @@ function LayersTab({
               </div>
               {checked && (
                 <div className="fade-up mt-2 flex items-center gap-2 pl-[22px]">
-                  <span className="text-2xs uppercase tracking-[0.06em] text-ink-3">Opacity</span>
+                  <span className="text-2xs text-ink-3">Opacity</span>
                   <input
                     type="range"
                     min={10}
@@ -1913,14 +1913,14 @@ function LayersTab({
 
       {/* Status. Reports what's on; not a control in its own right. */}
       {checkedLayers.size > 0 && (
-        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-full bg-accent-soft py-1 pl-2.5 pr-1">
+        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-[8px] bg-accent-soft py-1.5 pl-2.5 pr-1.5">
           <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-accent" />
           <span className="flex-1 text-sm font-medium text-accent">
             {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on the map
           </span>
           <button
             onClick={clearAllLayers}
-            className="rounded-full px-2 py-[2px] text-xs font-semibold text-accent transition-colors hover:bg-white"
+            className="rounded-[6px] px-2 py-[2px] text-xs font-semibold text-accent transition-colors hover:bg-white"
           >
             Clear
           </button>
@@ -1953,7 +1953,7 @@ function LayersTab({
                 </span>
                 <button
                   onClick={() => applyBlueprint(b.id)}
-                  className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                  className="shrink-0 rounded-[6px] px-3 py-1 text-xs font-semibold transition-colors"
                   style={
                     on
                       ? { background: b.accent, color: '#fff' }
@@ -1985,7 +1985,7 @@ function LayersTab({
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
                   <span className="flex-1 text-base font-medium text-ink">{c.label}</span>
                   {c.on > 0 ? (
-                    <span className="num rounded-full bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
+                    <span className="num rounded-[5px] bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
                       {c.on} on
                     </span>
                   ) : (
@@ -2001,7 +2001,7 @@ function LayersTab({
             <div className="px-2.5">
               <button
                 onClick={() => selectTab(null)}
-                className="mb-1 flex items-center gap-1 rounded-full py-1 pl-1 pr-2.5 text-sm font-medium text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+                className="mb-1 flex items-center gap-1 py-1 text-sm font-medium text-ink-2 transition-colors hover:text-accent"
               >
                 <IconChevron size={14} className="rotate-180" />
                 All layers
@@ -2099,11 +2099,11 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
       <PanelHeading>At a glance</PanelHeading>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Buildings</div>
+          <div className="text-xs font-medium text-ink-3">Buildings</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
         </div>
         <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium uppercase tracking-[0.06em] text-ink-3">Insured value</div>
+          <div className="text-xs font-medium text-ink-3">Insured value</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
         </div>
       </div>
@@ -2137,7 +2137,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-1 first:mt-0">
-      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-ink-3">
+      <div className="text-xs font-semibold text-ink-3">
         {label}
       </div>
       <div className="mt-[1px] text-base leading-[1.5] text-ink-2">{value}</div>
@@ -2167,7 +2167,7 @@ function RightPanelShell({
       <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
         <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
         <div className="min-w-0 flex-1">
-          <div className="text-2xs font-semibold uppercase tracking-[0.1em] text-ink-3">
+          <div className="text-2xs font-semibold text-ink-3">
             {eyebrow}
           </div>
           <div className="truncate text-xl font-semibold leading-tight" style={{ color: accent }}>
@@ -2657,7 +2657,7 @@ function HelpTab() {
 function SourceYears({ snapshot }: { snapshot: string | null }) {
   return (
     <div className="flex h-[40px] shrink-0 items-center justify-between border-t border-line bg-white px-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.09em] text-ink-3">
+      <span className="text-xs font-semibold text-ink-3">
         Source years
       </span>
       <span className="num text-base text-ink-2">{snapshot ?? 'No dated layer on the map'}</span>
@@ -2730,7 +2730,7 @@ function IconRail({
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 onClick={() => setTab(t)}
-                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-accent text-white shadow-[0_4px_12px_rgba(0,110,120,0.3)]' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
+                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-accent text-white' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -3140,11 +3140,11 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
             <PanelHeading>At this point</PanelHeading>
             <div className="mb-3 grid grid-cols-2 gap-1.5">
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Buildings</div>
+                <div className="text-xs text-ink-3">Buildings</div>
                 <div className="num text-stat-sm font-semibold text-ink">{buildings.length}</div>
               </div>
               <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs uppercase tracking-[0.05em] text-ink-3">Insured value</div>
+                <div className="text-xs text-ink-3">Insured value</div>
                 <div className="num text-stat-sm font-semibold text-ink">
                   ${(totalInsured / 1e6).toFixed(1)}M
                 </div>
@@ -3553,7 +3553,7 @@ function RealBuildingsRegister({
               Back
             </button>
             <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-              <div className="mb-1.5 text-base font-medium uppercase tracking-[0.06em] text-ink-3">
+              <div className="mb-1.5 text-base font-medium text-ink-3">
                 Condition, as rated in the register
               </div>
               <div className="space-y-1.5">
@@ -3936,7 +3936,7 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           CoCS Climate Risk Explorer
         </div>
         <div
-          className="landing-in num mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-ink-3"
+          className="landing-in num mt-2 text-xs font-semibold text-ink-3"
           style={{ animationDelay: '200ms' }}
         >
           City of Charles Sturt
@@ -4291,7 +4291,7 @@ export default function App() {
         </div>
 
         <footer className="border-t border-line px-2.5 py-1.5">
-          <span className="text-xs uppercase tracking-[0.08em] text-ink-3">City of Charles Sturt</span>
+          <span className="text-xs text-ink-3">City of Charles Sturt</span>
         </footer>
 
         {screen === 'landing' && (
