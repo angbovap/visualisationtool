@@ -3197,8 +3197,8 @@ function RealBuildingsRegister({
   // "manage types" or "browse the list" showing at a time, not two
   // independent accordions that can both be open and push each other
   // down the page.
-  const [view, setView] = useState<'types' | 'list' | null>(null);
-  const selectView = (v: 'types' | 'list' | null) => withViewTransition(() => setView(v));
+  const [view, setView] = useState<'types' | 'list' | 'condition' | 'about' | null>(null);
+  const selectView = (v: typeof view) => withViewTransition(() => setView(v));
   const [openId, setOpenId] = useState<string | null>(null);
   // Browsing by category lives here, not in Manage types: that's a map
   // declutter control, this is exploring the register itself. null means
@@ -3294,27 +3294,7 @@ function RealBuildingsRegister({
         </div>
       </div>
 
-      <div className="mb-4 rounded-[6px] border border-line bg-white px-3 py-2.5">
-        <div className="mb-1.5 text-base font-medium uppercase tracking-[0.06em] text-ink-3">
-          Condition, as rated in the register
-        </div>
-        <div className="space-y-1.5">
-          {conditionRows.map((r) => (
-            <div key={r.label} className="flex items-center gap-2">
-              <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-              <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
-                <span
-                  className="block h-full rounded-[3px]"
-                  style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
-                />
-              </span>
-              <span className="num w-7 shrink-0 text-right text-sm font-semibold text-ink">{r.n}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Browse and manage: the two things you can actually do here,
+      {/* Browse and manage: the things you can actually do here,
           grouped under their own heading so they read as actions, not
           more stats. One of two destinations at a time, not two
           independent accordions that can both be open and push each
@@ -3368,6 +3348,113 @@ function RealBuildingsRegister({
                 <IconChevron size={13} />
               </span>
             </button>
+            <button
+              onClick={() => selectView('condition')}
+              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+            >
+              <span>
+                <span className="block text-lg font-medium text-ink">Condition breakdown</span>
+                <span className="mt-[2px] block text-sm text-ink-3">How the register rates these buildings</span>
+              </span>
+              <IconChevron size={13} className="shrink-0 text-accent" />
+            </button>
+            <button
+              onClick={() => selectView('about')}
+              className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-accent"
+            >
+              <span>
+                <span className="block text-lg font-medium text-ink">Register info</span>
+                <span className="mt-[2px] block text-sm text-ink-3">
+                  Last modified {formatRegisterDate(ccsRegisterDates.lastModified)}, and map coverage
+                </span>
+              </span>
+              <IconChevron size={13} className="shrink-0 text-accent" />
+            </button>
+          </div>
+        )}
+
+        {view === 'condition' && (
+          <div>
+            <button
+              onClick={() => selectView(null)}
+              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
+            >
+              <IconChevron size={13} className="rotate-180" />
+              Back
+            </button>
+            <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
+              <div className="mb-1.5 text-base font-medium uppercase tracking-[0.06em] text-ink-3">
+                Condition, as rated in the register
+              </div>
+              <div className="space-y-1.5">
+                {conditionRows.map((r) => (
+                  <div key={r.label} className="flex items-center gap-2">
+                    <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                      <span
+                        className="block h-full rounded-[3px]"
+                        style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
+                      />
+                    </span>
+                    <span className="num w-7 shrink-0 text-right text-sm font-semibold text-ink">{r.n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {view === 'about' && (
+          <div>
+            <button
+              onClick={() => selectView(null)}
+              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
+            >
+              <IconChevron size={13} className="rotate-180" />
+              Back
+            </button>
+            <PanelHeading>Register dates</PanelHeading>
+            <div className="mb-3 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+              <div>
+                Last modified{' '}
+                <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
+              </div>
+              <div>
+                Condition inspection dates are recorded on only{' '}
+                <span className="num font-semibold text-ink">
+                  {ccsRegisterDates.conditionInspection.componentRowsRecorded}
+                </span>{' '}
+                register rows ({formatRegisterDate(ccsRegisterDates.conditionInspection.earliest)} to{' '}
+                {formatRegisterDate(ccsRegisterDates.conditionInspection.latest)}), so most ratings above have no
+                date attached and can't be read as current.
+              </div>
+            </div>
+            <PanelHeading
+              right={
+                <Tip
+                  label="Map coverage"
+                  body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${scoped.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
+                  side="left"
+                >
+                  <span className="num cursor-help text-base text-ink-3 underline decoration-dotted">
+                    {mappedCount} of {scoped.length} on map
+                  </span>
+                </Tip>
+              }
+            >
+              Map coverage
+            </PanelHeading>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-sm text-ink-3">
+              <span className="flex items-center gap-1.5">
+                <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
+                {preciseCount} precise
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-[10px] w-[10px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
+                {approxCount} street-level only
+              </span>
+              <span>{scoped.length - mappedCount} not mapped</span>
+            </div>
           </div>
         )}
 
@@ -3471,54 +3558,6 @@ function RealBuildingsRegister({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Level 3, provenance: how far the map dots can be trusted. Last
-          because it qualifies the figures above rather than answering
-          a question of its own. */}
-      <div className="mt-4">
-        <PanelHeading>Register dates</PanelHeading>
-        <div className="mb-4 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-base leading-[1.5] text-ink-2">
-          <div>
-            Last modified{' '}
-            <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
-          </div>
-          <div>
-            Condition inspection dates are recorded on only{' '}
-            <span className="num font-semibold text-ink">
-              {ccsRegisterDates.conditionInspection.componentRowsRecorded}
-            </span>{' '}
-            register rows ({formatRegisterDate(ccsRegisterDates.conditionInspection.earliest)} to{' '}
-            {formatRegisterDate(ccsRegisterDates.conditionInspection.latest)}), so most ratings above have no
-            date attached and can't be read as current.
-          </div>
-        </div>
-        <PanelHeading
-          right={
-            <Tip
-              label="Map coverage"
-              body={`${preciseCount} geocoded to an actual building or named place. ${approxCount} only matched the street they sit on, most register addresses have no house number, so the point is somewhere along that road, not at the building. ${scoped.length - mappedCount} have no address the geocoder could resolve, and are not on the map at all.`}
-              side="left"
-            >
-              <span className="num cursor-help text-base text-ink-3 underline decoration-dotted">
-                {mappedCount} of {scoped.length} on map
-              </span>
-            </Tip>
-          }
-        >
-          Map coverage
-        </PanelHeading>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-sm text-ink-3">
-          <span className="flex items-center gap-1.5">
-            <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
-            {preciseCount} precise
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-[10px] w-[10px] rounded-full border-2" style={{ borderColor: ACCENT, background: '#fff' }} />
-            {approxCount} street-level only
-          </span>
-          <span>{scoped.length - mappedCount} not mapped</span>
-        </div>
       </div>
     </div>
   );
