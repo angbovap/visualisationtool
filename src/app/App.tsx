@@ -3571,7 +3571,9 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           City of Charles Sturt
         </div>
         <p className="landing-in mt-4 text-md leading-[1.65] text-ink-2" style={{ animationDelay: '260ms' }}>
-          Real hazard, infrastructure and asset data from council, on one map.
+          This tool puts council's hazard, infrastructure and asset
+          information on one working map, instead of leaving each in its
+          own separate system.
         </p>
         <div
           className="landing-in mt-7 flex w-full max-w-[260px] flex-col gap-2.5"
