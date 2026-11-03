@@ -1822,7 +1822,7 @@ function LayersTab({
     // A heading here, not just the category card above, so which group
     // is showing stays clear once you've scrolled past the card grid.
     const heading = (
-      <div className="px-2.5 pt-2">
+      <div className="px-3 pt-2">
         <PanelHeading>{GROUP_LABEL[g]}</PanelHeading>
       </div>
     );
@@ -1830,10 +1830,10 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-2.5 flex items-center gap-1.5 rounded-[5px] border border-dashed border-line px-2 py-1.5 opacity-70">
-            <span className="h-[9px] w-[9px] shrink-0 rounded-[2px] bg-[#A7D9C2]" />
-            <span className="flex-1 truncate text-base text-ink-3">Development Zones</span>
-            <span className="text-2xs text-ink-3">not yet supplied</span>
+          <div className="flex items-center gap-2.5 border-y border-line px-3 py-2.5">
+            <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2] opacity-60" />
+            <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
+            <span className="text-xs text-ink-3">Not supplied yet</span>
           </div>
         </div>
       );
@@ -1842,15 +1842,13 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
+        <div className="divide-y divide-line border-y border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
           return (
-            <div
-              key={l.id}
-              className={`mx-2.5 mb-1.5 rounded-[8px] border px-2.5 py-2 transition-colors ${checked ? 'border-accent-line bg-accent-soft/40' : 'border-line bg-white hover:border-accent-line'}`}
-            >
-              <div className="flex items-center gap-2">
+            <div key={l.id} className="px-3 py-2.5">
+              <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => toggleLayer(l.id)}
                   className="flex min-w-0 flex-1 items-center gap-2 text-left"
@@ -1865,12 +1863,12 @@ function LayersTab({
                           : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
                     }}
                   />
-                  <span className={`flex-1 truncate text-base ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}>
+                  <span className={`flex-1 truncate text-lg ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}>
                     {l.name}
                   </span>
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
-                  <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center rounded-full text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent">
+                  <span className="flex h-[18px] w-[18px] cursor-help items-center justify-center text-ink-3 transition-colors hover:text-ink">
                     <IconInfo size={14} />
                   </span>
                 </Tip>
@@ -1882,8 +1880,8 @@ function LayersTab({
                 </button>
               </div>
               {checked && (
-                <div className="fade-up mt-2 flex items-center gap-2 pl-[22px]">
-                  <span className="text-2xs text-ink-3">Opacity</span>
+                <div className="fade-up mt-2 flex items-center gap-2.5 pl-[24px]">
+                  <span className="text-xs text-ink-3">Opacity</span>
                   <input
                     type="range"
                     min={10}
@@ -1898,110 +1896,94 @@ function LayersTab({
             </div>
           );
         })}
+        </div>
       </div>
     );
   };
 
   return (
     <div>
-      {/* Four kinds of control here, each with its own look, so what a
-          thing does is readable before you click it:
-            status   a pill that reports, with one quiet text action
-            apply    Blueprint tiles, coloured, with an Apply button
-            navigate the category list, rows with a chevron
-            toggle   the layer rows inside a category, with switches */}
+      {/* Editorial layout: no boxes or tinted fills around items. Names in
+          weight, details in grey, hairlines between rows, space between
+          sections. What differs between controls is the action on the
+          right: a text action applies, a chevron opens, a switch toggles. */}
 
-      {/* Status. Reports what's on; not a control in its own right. */}
       {checkedLayers.size > 0 && (
-        <div className="mx-2.5 mt-2.5 flex items-center gap-2 rounded-[8px] bg-accent-soft py-1.5 pl-2.5 pr-1.5">
-          <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-accent" />
-          <span className="flex-1 text-sm font-medium text-accent">
-            {checkedLayers.size} layer{checkedLayers.size === 1 ? '' : 's'} on the map
+        <div className="flex items-center justify-between px-3 pt-3 text-sm">
+          <span className="text-ink-2">
+            <span className="num font-semibold text-ink">{checkedLayers.size}</span> layer
+            {checkedLayers.size === 1 ? '' : 's'} on the map
           </span>
-          <button
-            onClick={clearAllLayers}
-            className="rounded-[6px] px-2 py-[2px] text-xs font-semibold text-accent transition-colors hover:bg-white"
-          >
-            Clear
+          <button onClick={clearAllLayers} className="font-medium text-ink-3 transition-colors hover:text-ink">
+            Clear all
           </button>
         </div>
       )}
 
-      {/* Apply. The quickest start, so it leads, and it looks like the
-          one thing here that sets several layers at once. */}
-      <div className="px-2.5 pb-1 pt-3">
-        <PanelHeading>Blueprints</PanelHeading>
-        <div className="space-y-2">
+      <div className="pt-4">
+        <div className="px-3">
+          <PanelHeading>Blueprints</PanelHeading>
+        </div>
+        <div className="divide-y divide-line border-y border-line">
           {BLUEPRINTS.map((b) => {
             const on = activeBlueprint === b.id;
             const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
             return (
-              <div
+              <button
                 key={b.id}
-                className="flex items-center gap-2.5 rounded-[10px] p-2 transition-colors"
-                style={{ background: withAlpha(b.accent, on ? 0.16 : 0.08) }}
+                onClick={() => applyBlueprint(b.id)}
+                aria-pressed={on}
+                className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
               >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] text-white"
-                  style={{ background: b.accent }}
-                >
-                  <Icon size={19} />
+                <span className="shrink-0" style={{ color: b.accent }}>
+                  <Icon size={18} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-semibold text-ink">{b.title}</span>
+                  <span className={`block truncate text-lg ${on ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>
+                    {b.title}
+                  </span>
                   <span className="num block text-xs text-ink-3">{b.layers.length} layers</span>
                 </span>
-                <button
-                  onClick={() => applyBlueprint(b.id)}
-                  className="shrink-0 rounded-[6px] px-3 py-1 text-xs font-semibold transition-colors"
-                  style={
-                    on
-                      ? { background: b.accent, color: '#fff' }
-                      : { background: '#fff', color: b.accent, boxShadow: `inset 0 0 0 1px ${withAlpha(b.accent, 0.4)}` }
-                  }
-                  aria-pressed={on}
+                <span
+                  className={`shrink-0 text-sm font-semibold ${on ? '' : 'text-ink-3 group-hover:text-ink'}`}
+                  style={on ? { color: b.accent } : undefined}
                 >
                   {on ? 'Applied' : 'Apply'}
-                </button>
-              </div>
+                </span>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Navigate, then toggle. One level at a time: the category list,
-          or one category's layers. */}
-      <div className="px-2.5 pb-3 pt-3" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+      <div className="pb-4 pt-5" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
         {activeTab === null ? (
           <>
-            <PanelHeading>Browse layers</PanelHeading>
-            <div className="overflow-hidden rounded-[10px] border border-line bg-white">
-              {categories.map((c, i) => (
+            <div className="px-3">
+              <PanelHeading>Browse layers</PanelHeading>
+            </div>
+            <div className="divide-y divide-line border-y border-line">
+              {categories.map((c) => (
                 <button
                   key={c.value}
                   onClick={() => selectTab(c.value)}
-                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2 ${i > 0 ? 'border-t border-line' : ''}`}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
                 >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
-                  <span className="flex-1 text-base font-medium text-ink">{c.label}</span>
-                  {c.on > 0 ? (
-                    <span className="num rounded-[5px] bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
-                      {c.on} on
-                    </span>
-                  ) : (
-                    <span className="num text-xs text-ink-3">{c.total}</span>
-                  )}
+                  <span className="h-[8px] w-[8px] shrink-0 rounded-full" style={{ background: c.color }} />
+                  <span className="flex-1 text-lg font-medium text-ink">{c.label}</span>
+                  {c.on > 0 && <span className="num text-sm font-semibold text-accent">{c.on} on</span>}
+                  <span className="num w-4 text-right text-sm text-ink-3">{c.value === 'planning' ? '–' : c.total}</span>
                   <IconChevron size={14} className="shrink-0 text-ink-3" />
                 </button>
               ))}
             </div>
           </>
         ) : (
-          <div className="-mx-2.5">
-            <div className="px-2.5">
+          <div>
+            <div className="px-3">
               <button
                 onClick={() => selectTab(null)}
-                className="mb-1 flex items-center gap-1 py-1 text-sm font-medium text-ink-2 transition-colors hover:text-accent"
+                className="mb-1 flex items-center gap-1 py-1 text-sm font-medium text-ink-3 transition-colors hover:text-ink"
               >
                 <IconChevron size={14} className="rotate-180" />
                 All layers
@@ -2012,9 +1994,8 @@ function LayersTab({
         )}
       </div>
 
-      {/* Display setting. A utility, so it's quiet and last. */}
-      <div className="mx-2.5 mb-3 flex items-center gap-2.5 rounded-[10px] bg-surface-2 px-3 py-2">
-        <span className="text-xs font-medium text-ink-3">Layer opacity</span>
+      <div className="mb-3 flex items-center gap-3 border-t border-line px-3 pt-3">
+        <span className="text-sm text-ink-3">Opacity</span>
         <input
           type="range"
           min={10}
@@ -2053,7 +2034,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
           supplied yet.
         </p>
         <PanelHeading>SA2s</PanelHeading>
-        <div className="space-y-1.5">
+        <div className="-mx-2.5 divide-y divide-line border-y border-line">
           {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
             const value = bs.reduce((n, b) => n + b.insuredValue, 0);
@@ -2061,7 +2042,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
+                className="flex w-full items-center justify-between gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
               >
                 <span>
                   <span className="block text-lg font-medium text-ink">{s.name}</span>
@@ -2362,12 +2343,12 @@ function BlueprintPanel({
             {!saSel ? (
               <>
                 <PanelHeading>SA2s, most affected first</PanelHeading>
-                <div className="space-y-1.5">
+                <div className="-mx-2.5 divide-y divide-line border-y border-line">
                   {sa2Rows.map(({ s, buildings, count }) => (
                     <button
                       key={s.id}
                       onClick={() => setSaSel(s.id)}
-                      className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
+                      className="flex w-full items-center justify-between gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
                     >
                       <span>
                         <span className="block text-lg font-medium text-ink">{s.name}</span>
@@ -3448,7 +3429,7 @@ function RealBuildingsRegister({
       {/* Filter and headline share one card, so the number you're reading
           and the scope that produced it are never more than a glance
           apart. */}
-      <div className="mb-4 rounded-[8px] border border-line bg-white p-3">
+      <div className="mb-5">
         <PanelHeading>Ward</PanelHeading>
         <div className="mb-3 flex flex-wrap gap-1.5">
           {[{ key: null as string | null, count: REAL_BUILDINGS.length }, ...REAL_WARDS].map((w) => {
@@ -3488,10 +3469,8 @@ function RealBuildingsRegister({
         </div>
       </div>
 
-      {/* What you can do here, as a grid of equal cards (the same visual
-          language Layers uses for its own category and Blueprint cards),
-          so all four are read in one glance instead of scanned top to
-          bottom as a list. */}
+      {/* What you can do here: plain rows with a chevron, the same
+          editorial list style as Layers' categories and Blueprints. */}
       <PanelHeading
         right={
           <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
@@ -3505,41 +3484,27 @@ function RealBuildingsRegister({
       </PanelHeading>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
-          <div className="grid grid-cols-2 gap-1.5">
-            <button
-              onClick={() => selectView('types')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
-              <span className="block text-base font-semibold leading-tight text-ink">Building types</span>
-              <span className="num mt-[2px] block text-xs text-ink-3">
-                {onCount} of {ALL_BUILDING_TYPES.size} shown on map
-              </span>
-            </button>
-            <button
-              onClick={() => selectView('list')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
-              <span className="block text-base font-semibold leading-tight text-ink">Browse buildings</span>
-              <span className="text-xs text-ink-3">By category or all at once</span>
-            </button>
-            <button
-              onClick={() => selectView('condition')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
-              <span className="block text-base font-semibold leading-tight text-ink">Condition</span>
-              <span className="text-xs text-ink-3">How the register rates them</span>
-            </button>
-            <button
-              onClick={() => selectView('about')}
-              className="rounded-[5px] border border-line bg-white px-1.5 py-1.5 text-left transition-colors hover:border-accent"
-            >
-              <span className="mb-1 block h-1.5 w-1.5 rounded-full bg-accent" />
-              <span className="block text-base font-semibold leading-tight text-ink">Data sources</span>
-              <span className="text-xs text-ink-3">Dates and map coverage</span>
-            </button>
+          <div className="-mx-2.5 divide-y divide-line border-y border-line">
+            {(
+              [
+                ['types', 'Building types', `${onCount} of ${ALL_BUILDING_TYPES.size} shown on the map`],
+                ['list', 'Browse buildings', 'By category or all at once'],
+                ['condition', 'Condition', 'How the register rates them'],
+                ['about', 'Data sources', 'Register dates and map coverage'],
+              ] as const
+            ).map(([id, title, sub]) => (
+              <button
+                key={id}
+                onClick={() => selectView(id)}
+                className="flex w-full items-center gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-lg font-medium text-ink">{title}</span>
+                  <span className="block text-xs text-ink-3">{sub}</span>
+                </span>
+                <IconChevron size={14} className="shrink-0 text-ink-3" />
+              </button>
+            ))}
           </div>
         )}
 
@@ -3552,11 +3517,9 @@ function RealBuildingsRegister({
               <IconChevron size={13} className="rotate-180" />
               Back
             </button>
-            <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
-              <div className="mb-1.5 text-base font-medium text-ink-3">
-                Condition, as rated in the register
-              </div>
-              <div className="space-y-1.5">
+            <div>
+              <PanelHeading>Condition, as rated in the register</PanelHeading>
+              <div className="space-y-2">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
                     <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
