@@ -785,6 +785,22 @@ const IconTransport = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
+const IconHazard = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M12 4 21 19.5H3L12 4Z" />
+    <path d="M12 10v4.5M12 17v.1" />
+  </svg>
+);
+
+const IconPeople = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <circle cx="9" cy="8.5" r="3" />
+    <path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+    <circle cx="16.5" cy="9.5" r="2.4" />
+    <path d="M16 14.2c2.4.2 4 1.8 4.5 4.3" />
+  </svg>
+);
+
 /** Recentre on the LGA. */
 const IconLocate = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
@@ -1586,10 +1602,10 @@ function MapView(props: MapViewProps) {
     <div className="relative h-full w-full">
       <div ref={containerRef} className="absolute inset-0" />
 
-      {/* Map controls: icons, not labelled panels, stacked top right the
-          way map apps place them. Basemap and boundaries open a small
-          menu beside the button; Focus is a plain on/off. */}
-      <div className="absolute right-3 top-3 z-[999] flex flex-col gap-2">
+      {/* Map controls: one card, each row naming what it changes and its
+          current setting, so nothing depends on guessing an icon. Basemap
+          and boundaries open a menu beside their row; Focus is a switch. */}
+      <div className="absolute right-3 top-3 z-[999] w-[214px] rounded-[12px] bg-white p-1 shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
         {(
           [
             {
@@ -1616,19 +1632,27 @@ function MapView(props: MapViewProps) {
         ).map((c) => {
           const Icon = c.icon;
           const open = openControl === c.id;
+          const current = c.options.find((o) => o.value === c.value)?.label ?? '';
           return (
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${open ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
-                aria-label={c.label}
+                className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
-                title={c.label}
               >
-                <Icon size={18} />
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] ${open ? 'bg-accent text-white' : 'bg-surface-2 text-ink-2'}`}
+                >
+                  <Icon size={16} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-ink">{c.label}</span>
+                  <span className="block truncate text-xs text-ink-3">{current}</span>
+                </span>
+                <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className="fade-up absolute right-[calc(100%+8px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
+                <div className="fade-up absolute right-[calc(100%+10px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -1656,11 +1680,16 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          aria-label="Focus on the council area"
-          title={dimOutside ? 'Focus on the council area: on' : 'Focus on the council area: off'}
-          className={`flex h-9 w-9 items-center justify-center rounded-[10px] shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors ${dimOutside ? 'bg-accent text-white' : 'bg-white text-ink-2 hover:text-accent'}`}
+          className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
         >
-          <IconFocus size={18} />
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-surface-2 text-ink-2">
+            <IconFocus size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-ink">Focus on council</span>
+            <span className="block text-xs text-ink-3">Dims the area outside it</span>
+          </span>
+          <Switch on={dimOutside} />
         </button>
       </div>
 
@@ -1773,6 +1802,14 @@ function LayersTab({
   // step an actual crossfade, the same pattern Assets' own drill-downs
   // already use, rather than two sections just appearing at once.
   const [activeTab, setActiveTab] = useState<LayersSection | null>(null);
+  const [displayOpen, setDisplayOpen] = useState(false);
+  const CATEGORY_ICON: Record<LayerGroup, (p: IconProps) => React.ReactElement> = {
+    hazard: IconHazard,
+    vulnerability: IconPeople,
+    transport: IconTransport,
+    infrastructure: IconAssets,
+    planning: IconBounds,
+  };
   const selectTab = (v: LayersSection | null) => withViewTransition(() => setActiveTab(v));
 
   const allCategories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
@@ -1830,10 +1867,12 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="flex items-center gap-2.5 border-y border-line px-3 py-2.5">
-            <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2] opacity-60" />
-            <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
-            <span className="text-xs text-ink-3">Not supplied yet</span>
+          <div className="mx-3 rounded-[12px] bg-surface-2 p-1.5">
+            <div className="flex items-center gap-2.5 rounded-[8px] border border-dashed border-line bg-white/60 px-2.5 py-2.5">
+              <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2] opacity-60" />
+              <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
+              <span className="text-xs text-ink-3">Not supplied yet</span>
+            </div>
           </div>
         </div>
       );
@@ -1842,12 +1881,15 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        <div className="divide-y divide-line border-y border-line">
+        <div className="mx-3 space-y-1 rounded-[12px] bg-surface-2 p-1.5">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
           return (
-            <div key={l.id} className="px-3 py-2.5">
+            <div
+              key={l.id}
+              className={`rounded-[8px] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(20,32,31,0.06)] transition-shadow ${checked ? 'ring-1 ring-accent-line' : ''}`}
+            >
               <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => toggleLayer(l.id)}
@@ -1902,29 +1944,17 @@ function LayersTab({
   };
 
   return (
-    <div>
-      {/* Editorial layout: no boxes or tinted fills around items. Names in
-          weight, details in grey, hairlines between rows, space between
-          sections. What differs between controls is the action on the
-          right: a text action applies, a chevron opens, a switch toggles. */}
-
-      {checkedLayers.size > 0 && (
-        <div className="flex items-center justify-between px-3 pt-3 text-sm">
-          <span className="text-ink-2">
-            <span className="num font-semibold text-ink">{checkedLayers.size}</span> layer
-            {checkedLayers.size === 1 ? '' : 's'} on the map
-          </span>
-          <button onClick={clearAllLayers} className="font-medium text-ink-3 transition-colors hover:text-ink">
-            Clear all
-          </button>
-        </div>
-      )}
+    <div className="flex min-h-full flex-col">
+      {/* Two sections, one divider between them. Inside each, hierarchy
+          comes from structure rather than lines: Blueprints are rows you
+          apply, categories are tiles you open, and an open category shows
+          its layers as a tray of switch rows. */}
 
       <div className="pt-4">
         <div className="px-3">
           <PanelHeading>Blueprints</PanelHeading>
         </div>
-        <div className="divide-y divide-line border-y border-line">
+        <div className="space-y-0.5 px-1.5">
           {BLUEPRINTS.map((b) => {
             const on = activeBlueprint === b.id;
             const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
@@ -1933,7 +1963,8 @@ function LayersTab({
                 key={b.id}
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
-                className="group flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
+                className="group flex w-full items-center gap-3 rounded-[10px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
+                style={on ? { background: withAlpha(b.accent, 0.08) } : undefined}
               >
                 <span className="shrink-0" style={{ color: b.accent }}>
                   <Icon size={18} />
@@ -1956,57 +1987,122 @@ function LayersTab({
         </div>
       </div>
 
-      <div className="pb-4 pt-5" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+      {/* The one divider: between "pick a ready-made set" and "build your own". */}
+      <div className="mx-3 mt-3 border-t border-line" />
+
+      <div className="flex-1 pb-4 pt-4" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
         {activeTab === null ? (
           <>
             <div className="px-3">
               <PanelHeading>Browse layers</PanelHeading>
             </div>
-            <div className="divide-y divide-line border-y border-line">
-              {categories.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => selectTab(c.value)}
-                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
-                >
-                  <span className="h-[8px] w-[8px] shrink-0 rounded-full" style={{ background: c.color }} />
-                  <span className="flex-1 text-lg font-medium text-ink">{c.label}</span>
-                  {c.on > 0 && <span className="num text-sm font-semibold text-accent">{c.on} on</span>}
-                  <span className="num w-4 text-right text-sm text-ink-3">{c.value === 'planning' ? '–' : c.total}</span>
-                  <IconChevron size={14} className="shrink-0 text-ink-3" />
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-2 px-3">
+              {categories.map((c) => {
+                const Icon = CATEGORY_ICON[c.value];
+                const pending = c.value === 'planning';
+                return (
+                  <button
+                    key={c.value}
+                    onClick={() => selectTab(c.value)}
+                    className={`group flex flex-col rounded-[12px] border bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)] ${pending ? 'border-dashed border-line' : 'border-line'}`}
+                    style={c.on > 0 ? { borderColor: c.color } : undefined}
+                  >
+                    <span className="flex items-start justify-between">
+                      <span
+                        className="flex h-8 w-8 items-center justify-center rounded-[9px]"
+                        style={{ background: withAlpha(c.color, 0.12), color: c.color }}
+                      >
+                        <Icon size={17} />
+                      </span>
+                      {c.on > 0 && (
+                        <span
+                          className="num rounded-[5px] px-1.5 py-[1px] text-2xs font-semibold text-white"
+                          style={{ background: c.color }}
+                        >
+                          {c.on} on
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-2.5 text-base font-semibold leading-tight text-ink">{c.label}</span>
+                    <span className="num mt-1 text-xs text-ink-3">
+                      {pending ? 'Not supplied yet' : `${c.total} layer${c.total === 1 ? '' : 's'}`}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </>
         ) : (
           <div>
-            <div className="px-3">
+            <div className="mb-2.5 flex items-center gap-2 px-3">
               <button
                 onClick={() => selectTab(null)}
-                className="mb-1 flex items-center gap-1 py-1 text-sm font-medium text-ink-3 transition-colors hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+                aria-label="Back to all layer categories"
               >
                 <IconChevron size={14} className="rotate-180" />
-                All layers
               </button>
+              <span className="text-sm text-ink-3">Browse layers</span>
             </div>
             {renderLayerList(activeTab)}
           </div>
         )}
       </div>
 
-      <div className="mb-3 flex items-center gap-3 border-t border-line px-3 pt-3">
-        <span className="text-sm text-ink-3">Opacity</span>
-        <input
-          type="range"
-          min={10}
-          max={100}
-          value={Math.round(overlayOpacity * 100)}
-          onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
-          className="flex-1"
-        />
-        <span className="num w-[34px] text-right text-xs font-semibold text-ink-2">
-          {Math.round(overlayOpacity * 100)}%
-        </span>
+      {/* What's on and how strongly it shows, together, docked at the
+          bottom: one summary line that opens to the controls for every
+          layer at once, so neither reads as a stray setting. */}
+      <div className="sticky bottom-0 border-t border-line bg-white">
+        {displayOpen && (
+          <div className="fade-up space-y-3 border-b border-line px-3 py-3">
+            <div>
+              <div className="mb-1.5 flex items-center justify-between">
+                <span className="text-sm font-medium text-ink">Opacity of all layers</span>
+                <span className="num text-sm font-semibold text-accent">{Math.round(overlayOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={100}
+                value={Math.round(overlayOpacity * 100)}
+                onChange={(e) => setOverlayOpacity(Number(e.target.value) / 100)}
+                className="w-full"
+              />
+            </div>
+            <button
+              onClick={() => {
+                clearAllLayers();
+                setDisplayOpen(false);
+              }}
+              disabled={checkedLayers.size === 0}
+              className="w-full rounded-[8px] border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
+            >
+              Turn all layers off
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => setDisplayOpen((v) => !v)}
+          aria-expanded={displayOpen}
+          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
+        >
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-[8px] ${checkedLayers.size > 0 ? 'bg-accent text-white' : 'bg-surface-2 text-ink-3'}`}
+          >
+            <IconLayers size={15} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-semibold text-ink">
+              {checkedLayers.size === 0
+                ? 'No layers on'
+                : `${checkedLayers.size} layer${checkedLayers.size === 1 ? '' : 's'} on the map`}
+            </span>
+            <span className="num block text-xs text-ink-3">
+              Opacity {Math.round(overlayOpacity * 100)}%
+            </span>
+          </span>
+          <IconChevron size={14} className={`text-ink-3 transition-transform ${displayOpen ? 'rotate-90' : '-rotate-90'}`} />
+        </button>
       </div>
     </div>
   );
@@ -2026,31 +2122,21 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
 
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
-      <div className="px-2.5 py-2.5">
-        <p className="mb-3 text-md leading-[1.6] text-ink-2">
-          The eight ABS SA2s covering the LGA. Choose one to see the council
-          buildings register filed inside it. Population, SEIFA and hazard
-          scores are not shown, because no real figures for them have been
-          supplied yet.
-        </p>
-        <PanelHeading>SA2s</PanelHeading>
-        <div className="-mx-2.5 divide-y divide-line border-y border-line">
+      <div className="px-3 py-4">
+        <PanelHeading>Suburbs</PanelHeading>
+        <p className="-mt-1 mb-3 text-sm text-ink-3">Pick one to see the council buildings inside it.</p>
+        <div className="grid grid-cols-2 gap-2">
           {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
-            const value = bs.reduce((n, b) => n + b.insuredValue, 0);
             return (
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex w-full items-center justify-between gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
+                className="flex min-h-[74px] flex-col justify-between rounded-[12px] border border-line bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:border-accent-line hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)]"
               >
-                <span>
-                  <span className="block text-lg font-medium text-ink">{s.name}</span>
-                  <span className="num mt-[2px] block text-xs text-ink-3">SA2 {s.sa2}</span>
-                </span>
-                <span className="text-right">
-                  <span className="num block text-lg font-semibold text-ink">{bs.length} buildings</span>
-                  <span className="num block text-xs text-ink-3">${(value / 1e6).toFixed(1)}M insured</span>
+                <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
+                <span className="num mt-2 text-xs text-ink-3">
+                  <span className="font-semibold text-ink-2">{bs.length}</span> buildings
                 </span>
               </button>
             );
@@ -2065,34 +2151,31 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
   const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
 
   return (
-    <div className="px-2.5 py-2.5">
-      <button
-        onClick={() => setSelectedId(null)}
-        className="mb-2 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
-      >
-        <IconChevron size={13} className="rotate-180" />
-        All SA2s
-      </button>
-      <div className="mb-3">
-        <div className="text-2xl font-semibold text-ink">{s.name}</div>
-        <div className="num text-sm text-ink-3">SA2 {s.sa2}</div>
+    <div className="px-3 py-4">
+      <div className="mb-3 flex items-center gap-2.5">
+        <button
+          onClick={() => setSelectedId(null)}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+          aria-label="Back to all suburbs"
+        >
+          <IconChevron size={14} className="rotate-180" />
+        </button>
+        <div className="min-w-0">
+          <div className="truncate text-2xl font-semibold leading-tight text-ink">{s.name}</div>
+          <div className="num text-xs text-ink-3">SA2 {s.sa2}</div>
+        </div>
       </div>
-      <PanelHeading>At a glance</PanelHeading>
-      <div className="mb-3 grid grid-cols-2 gap-2">
-        <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium text-ink-3">Buildings</div>
+      <div className="mb-4 grid grid-cols-2 divide-x divide-line rounded-[12px] bg-surface-2 py-2.5">
+        <div className="px-3">
+          <div className="text-xs text-ink-3">Buildings</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
         </div>
-        <div className="rounded-[6px] border border-line bg-white px-3 py-2">
-          <div className="text-xs font-medium text-ink-3">Insured value</div>
+        <div className="px-3">
+          <div className="text-xs text-ink-3">Insured value</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
         </div>
       </div>
-      <p className="mb-3 text-sm leading-[1.5] text-ink-3">
-        Population, SEIFA and hazard scores for this SA2 are not shown, no
-        real figures for them have been supplied yet.
-      </p>
-      <PanelHeading>Buildings in this SA2</PanelHeading>
+      <PanelHeading>Buildings</PanelHeading>
       {buildings.length === 0 ? (
         <p className="text-base text-ink-3">No register buildings geocode inside this SA2.</p>
       ) : (
@@ -3398,7 +3481,6 @@ function RealBuildingsRegister({
     [ward],
   );
   const scopedTree = useMemo(() => buildUseTree(scoped), [scoped]);
-  const scopeLabel = ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward recorded' : `${ward} ward`;
 
   const totalInsured = scoped.reduce((n, b) => n + b.insuredValue, 0);
   const preciseCount = scoped.filter((b) => BUILDING_LOCATION[b.id]?.precision === 'site').length;
