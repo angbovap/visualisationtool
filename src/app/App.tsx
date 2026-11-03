@@ -1580,7 +1580,13 @@ function LayersTab({
   // several accordions stacked, so picking a category costs a tap, not
   // a scroll past the others.
   type LayersSection = LayerGroup;
-  const [activeTab, setActiveTab] = useState<LayersSection>('hazard');
+  // null is the top level (the category grid). Picking a category drills
+  // in to its layer list, a real step down, not a second heading stacked
+  // under the first at the same weight. withViewTransition gives the
+  // step an actual crossfade, the same pattern Assets' own drill-downs
+  // already use, rather than two sections just appearing at once.
+  const [activeTab, setActiveTab] = useState<LayersSection | null>(null);
+  const selectTab = (v: LayersSection | null) => withViewTransition(() => setActiveTab(v));
 
   const allCategories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
     {
@@ -1764,41 +1770,47 @@ function LayersTab({
         </div>
       </div>
 
-      {/* Category cards: a colour and a live on/total count read faster than
-          a label alone. The manual path, for picking individual layers
-          rather than a Blueprint's curated set. */}
-      <div className="border-b border-line px-2.5 py-2.5">
-        <PanelHeading>Layer categories</PanelHeading>
-        <div className="grid grid-cols-2 gap-1.5">
-          {categories.map((c) => {
-            const on = activeTab === c.value;
-            return (
-              <button
-                key={c.value}
-                onClick={() => setActiveTab(c.value)}
-                className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
-                style={{
-                  borderColor: on ? c.color : '#E2E7E7',
-                  background: on ? withAlpha(c.color, 0.08) : '#fff',
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
-                  <span className="num text-2xs text-ink-3">{c.on}/{c.total}</span>
-                </div>
-                <span
-                  className="mt-1 block text-base font-semibold leading-tight"
-                  style={{ color: on ? c.color : '#14201F' }}
+      {/* A real drill-down, one level showing at a time: the category
+          grid, or a single category's layer list, never both stacked
+          together at the same visual weight. */}
+      <div style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+        {activeTab === null ? (
+          <div className="border-b border-line px-2.5 py-2.5">
+            <PanelHeading>Layer categories</PanelHeading>
+            <div className="grid grid-cols-2 gap-1.5">
+              {categories.map((c) => (
+                <button
+                  key={c.value}
+                  onClick={() => selectTab(c.value)}
+                  className="rounded-[5px] border px-1.5 py-1.5 text-left transition-all"
+                  style={{ borderColor: '#E2E7E7', background: '#fff' }}
                 >
-                  {c.label}
-                </span>
+                  <div className="flex items-center justify-between">
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: c.color }} />
+                    <span className="num text-2xs text-ink-3">{c.on}/{c.total}</span>
+                  </div>
+                  <span className="mt-1 block text-base font-semibold leading-tight text-ink">
+                    {c.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div className="px-2.5 pt-2">
+              <button
+                onClick={() => selectTab(null)}
+                className="mb-1.5 flex items-center gap-[3px] text-xs text-ink-3 transition-colors hover:text-accent"
+              >
+                <IconChevron size={13} className="rotate-180" />
+                All categories
               </button>
-            );
-          })}
-        </div>
+            </div>
+            {renderLayerList(activeTab)}
+          </div>
+        )}
       </div>
-
-      {renderLayerList(activeTab)}
 
       {/* Global opacity last: a fine-tune for whatever is already on
           screen, not a decision to make before anything is showing. */}
