@@ -801,6 +801,21 @@ const IconPeople = ({ size = 17, className }: IconProps) => (
   </svg>
 );
 
+const IconList = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M9 6.5h11M9 12h11M9 17.5h11" />
+    <path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" />
+  </svg>
+);
+
+const IconGauge = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M4 16a8 8 0 1 1 16 0" />
+    <path d="M12 16l3.5-5" />
+    <path d="M3.5 20h17" />
+  </svg>
+);
+
 /** Recentre on the LGA. */
 const IconLocate = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
@@ -983,6 +998,32 @@ function Segmented<T extends string | number>({
  *  once too many stacked sections started reading as one undifferentiated
  *  block, changing it here fixes hierarchy everywhere it's used at once,
  *  rather than one-off font sizes creeping back in per call site. */
+/** Back button plus where you are, for a view opened from a tile. */
+function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string; title: string }) {
+  return (
+    <div className="mb-3 flex items-center gap-2.5">
+      <button
+        onClick={onBack}
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+        aria-label={`Back to ${parent}`}
+      >
+        <IconChevron size={14} className="rotate-180" />
+      </button>
+      <div className="min-w-0">
+        <div className="text-xs text-ink-3">{parent}</div>
+        <div className="truncate text-xl font-semibold leading-tight text-ink">{title}</div>
+      </div>
+    </div>
+  );
+}
+
+const ASSET_VIEW_TITLE = {
+  types: 'Building types',
+  list: 'Browse buildings',
+  condition: 'Condition',
+  about: 'Data sources',
+} as const;
+
 function PanelHeading({
   children,
   right,
@@ -3502,15 +3543,10 @@ function RealBuildingsRegister({
   ].filter((r) => r.n > 0);
 
   return (
-    <div className="mb-4 border-b border-line pb-4">
-      <p className="mb-4 text-md leading-[1.6] text-ink-2">
-        Council's asset register (<span className="num">CCS_Buildings.xlsx</span>):
-        one row per building, not per fitout or meter.
-      </p>
-
-      {/* Filter and headline share one card, so the number you're reading
-          and the scope that produced it are never more than a glance
-          apart. */}
+    <div>
+      {/* Filter, then the headline it produces, then four colour-coded
+          ways in. Same pattern as Layers and Place: tiles open a view,
+          a back button returns. */}
       <div className="mb-5">
         <PanelHeading>Ward</PanelHeading>
         <div className="mb-3 flex flex-wrap gap-1.5">
@@ -3533,79 +3569,111 @@ function RealBuildingsRegister({
             );
           })}
         </div>
-        <div className="grid grid-cols-2 gap-3 border-t border-line pt-3">
-          <div>
-            <div className="text-base text-ink-3">Buildings</div>
+        <div className="grid grid-cols-2 divide-x divide-line rounded-[12px] bg-surface-2 py-3">
+          <div className="px-3">
+            <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
-            <div className="mt-1 text-base text-ink-3">{typeCount} types</div>
+            <div className="mt-1 text-xs text-ink-3">{typeCount} types</div>
           </div>
-          <div>
-            <div className="text-base text-ink-3">Insured value</div>
+          <div className="px-3">
+            <div className="text-xs text-ink-3">Insured value</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">
               ${(totalInsured / 1e6).toFixed(1)}M
             </div>
-            <div className="mt-1 text-base text-ink-3">
+            <div className="mt-1 text-xs text-ink-3">
               {scoped.filter((b) => b.insuredValue > 0).length} valued
             </div>
           </div>
         </div>
       </div>
 
-      {/* What you can do here: plain rows with a chevron, the same
-          editorial list style as Layers' categories and Blueprints. */}
-      <PanelHeading
-        right={
-          <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
-            <span className="cursor-help text-base text-ink-3 underline decoration-dotted">
-              how read
-            </span>
-          </Tip>
-        }
-      >
-        What do you want to do?
-      </PanelHeading>
       <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
         {view === null && (
-          <div className="-mx-2.5 divide-y divide-line border-y border-line">
-            {(
-              [
-                ['types', 'Building types', `${onCount} of ${ALL_BUILDING_TYPES.size} shown on the map`],
-                ['list', 'Browse buildings', 'By category or all at once'],
-                ['condition', 'Condition', 'How the register rates them'],
-                ['about', 'Data sources', 'Register dates and map coverage'],
-              ] as const
-            ).map(([id, title, sub]) => (
-              <button
-                key={id}
-                onClick={() => selectView(id)}
-                className="flex w-full items-center gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-lg font-medium text-ink">{title}</span>
-                  <span className="block text-xs text-ink-3">{sub}</span>
-                </span>
-                <IconChevron size={14} className="shrink-0 text-ink-3" />
-              </button>
-            ))}
-          </div>
+          <>
+            <PanelHeading
+              right={
+                <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
+                  <span className="cursor-help text-sm text-ink-3 underline decoration-dotted">how read</span>
+                </Tip>
+              }
+            >
+              Explore the register
+            </PanelHeading>
+            <div className="grid grid-cols-2 gap-2">
+              {(
+                [
+                  {
+                    id: 'types' as const,
+                    title: 'Building types',
+                    color: '#006E78',
+                    icon: IconAssets,
+                    sub: <span className="num">{onCount} of {ALL_BUILDING_TYPES.size} on the map</span>,
+                  },
+                  {
+                    id: 'list' as const,
+                    title: 'Browse buildings',
+                    color: '#2563EB',
+                    icon: IconList,
+                    sub: <span className="num">{scoped.length} to browse</span>,
+                  },
+                  {
+                    id: 'condition' as const,
+                    title: 'Condition',
+                    color: '#D97706',
+                    icon: IconGauge,
+                    // The register's own rating mix, in its own colours.
+                    sub: (
+                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[3px] bg-white">
+                        {conditionRows.map((r) => (
+                          <span key={r.label} style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }} />
+                        ))}
+                      </span>
+                    ),
+                  },
+                  {
+                    id: 'about' as const,
+                    title: 'Data sources',
+                    color: '#7C3AED',
+                    icon: IconInfo,
+                    sub: <span>Updated {formatRegisterDate(ccsRegisterDates.lastModified)}</span>,
+                  },
+                ]
+              ).map((t) => {
+                const Icon = t.icon;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => selectView(t.id)}
+                    className="flex flex-col rounded-[12px] border border-line bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)]"
+                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = t.color)}
+                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = '')}
+                  >
+                    <span
+                      className="flex h-8 w-8 items-center justify-center rounded-[9px]"
+                      style={{ background: withAlpha(t.color, 0.12), color: t.color }}
+                    >
+                      <Icon size={17} />
+                    </span>
+                    <span className="mt-2.5 text-base font-semibold leading-tight text-ink">{t.title}</span>
+                    <span className="mt-1 block text-xs text-ink-3">{t.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {view === 'condition' && (
           <div>
-            <button
-              onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
-            >
-              <IconChevron size={13} className="rotate-180" />
-              Back
-            </button>
-            <div>
-              <PanelHeading>Condition, as rated in the register</PanelHeading>
-              <div className="space-y-2">
+            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <div className="rounded-[12px] bg-surface-2 p-3">
+              <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
+              <div className="space-y-2.5">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
-                    <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                    <span className="h-[8px] w-[8px] shrink-0 rounded-[2px]" style={{ background: r.color }} />
+                    <span className="w-[112px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-white">
                       <span
                         className="block h-full rounded-[3px]"
                         style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
@@ -3621,15 +3689,13 @@ function RealBuildingsRegister({
 
         {view === 'about' && (
           <div>
-            <button
-              onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
-            >
-              <IconChevron size={13} className="rotate-180" />
-              Back
-            </button>
+            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <p className="mb-4 text-sm leading-[1.5] text-ink-2">
+              Council's asset register (<span className="num">CCS_Buildings.xlsx</span>), one row per building, not per
+              fitout or meter.
+            </p>
             <PanelHeading>Register dates</PanelHeading>
-            <div className="mb-3 space-y-1 rounded-[6px] border border-line bg-white px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+            <div className="mb-4 space-y-1 rounded-[12px] bg-surface-2 px-3 py-2.5 text-base leading-[1.5] text-ink-2">
               <div>
                 Last modified{' '}
                 <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -3659,7 +3725,7 @@ function RealBuildingsRegister({
             >
               Map coverage
             </PanelHeading>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[6px] border border-dashed border-line bg-surface-2 px-3 py-2 text-sm text-ink-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[12px] bg-surface-2 px-3 py-2.5 text-sm text-ink-3">
               <span className="flex items-center gap-1.5">
                 <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
                 {preciseCount} precise
@@ -3675,26 +3741,14 @@ function RealBuildingsRegister({
 
         {view === 'types' && (
           <div>
-            <button
-              onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
-            >
-              <IconChevron size={13} className="rotate-180" />
-              Back
-            </button>
+            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
           </div>
         )}
 
         {view === 'list' && (
           <div>
-            <button
-              onClick={() => selectView(null)}
-              className="mb-1.5 flex items-center gap-[3px] text-sm text-ink-3 transition-colors hover:text-accent"
-            >
-              <IconChevron size={13} className="rotate-180" />
-              Back
-            </button>
+            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
 
             <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
               {listScope === null && (
@@ -4327,7 +4381,7 @@ export default function App() {
             />
           )}
           {panelTab === 'assets' && (
-            <div className="px-2.5 py-2.5">
+            <div className="px-3 py-4">
               <RealBuildingsRegister offTypes={buildingOffTypes} setOffTypes={setBuildingOffTypes} />
             </div>
           )}
