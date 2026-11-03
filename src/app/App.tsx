@@ -967,86 +967,6 @@ function Segmented<T extends string | number>({
  *  once too many stacked sections started reading as one undifferentiated
  *  block, changing it here fixes hierarchy everywhere it's used at once,
  *  rather than one-off font sizes creeping back in per call site. */
-/** A solid coloured label, like a status tag in a spreadsheet. Text flips
- *  to dark on pale colours so it always reads. */
-function Tag({ color, children }: { color: string; children: React.ReactNode }) {
-  const [r, g, b] = hexToRgb(color);
-  const light = 0.299 * r + 0.587 * g + 0.114 * b > 170;
-  return (
-    <span
-      className="inline-block max-w-full truncate rounded-[5px] px-1.5 py-[2px] align-middle text-xs font-semibold"
-      style={{ background: color, color: light ? '#14201F' : '#fff' }}
-    >
-      {children}
-    </span>
-  );
-}
-
-interface DataColumn {
-  label: string;
-  align?: 'left' | 'right';
-  width?: string;
-}
-
-/** The one table style: a grey header row with column names, divided rows,
- *  numbers right-aligned so they line up. Rows with onClick are buttons and
- *  get a chevron, so whether a row opens something is visible. */
-function DataTable({
-  columns,
-  rows,
-}: {
-  columns: DataColumn[];
-  rows: { key: string; onClick?: () => void; cells: React.ReactNode[] }[];
-}) {
-  const clickable = rows.some((r) => r.onClick);
-  const template = columns.map((c) => c.width ?? 'minmax(0,1fr)').join(' ') + (clickable ? ' 13px' : '');
-  return (
-    <div className="overflow-hidden rounded-[8px] border border-line bg-white">
-      <div
-        className="grid items-center gap-2 border-b border-line bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-ink-3"
-        style={{ gridTemplateColumns: template }}
-      >
-        {columns.map((c) => (
-          <span key={c.label} className={c.align === 'right' ? 'text-right' : ''}>
-            {c.label}
-          </span>
-        ))}
-        {clickable && <span />}
-      </div>
-      {rows.map((r, i) => {
-        const inner = (
-          <>
-            {r.cells.map((cell, j) => (
-              <span
-                key={j}
-                className={`min-w-0 truncate text-base ${columns[j]?.align === 'right' ? 'text-right' : ''}`}
-              >
-                {cell}
-              </span>
-            ))}
-            {clickable && <IconChevron size={13} className="text-ink-3" />}
-          </>
-        );
-        const cls = `grid w-full items-center gap-2 px-2.5 py-[7px] text-left ${i > 0 ? 'border-t border-line' : ''}`;
-        return r.onClick ? (
-          <button
-            key={r.key}
-            onClick={r.onClick}
-            className={`${cls} transition-colors hover:bg-surface-2`}
-            style={{ gridTemplateColumns: template }}
-          >
-            {inner}
-          </button>
-        ) : (
-          <div key={r.key} className={cls} style={{ gridTemplateColumns: template }}>
-            {inner}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 function PanelHeading({
   children,
   right,
@@ -2055,22 +1975,26 @@ function LayersTab({
         {activeTab === null ? (
           <>
             <PanelHeading>Browse layers</PanelHeading>
-            <DataTable
-              columns={[
-                { label: 'Category' },
-                { label: 'Layers', align: 'right', width: '46px' },
-                { label: 'On', align: 'right', width: '30px' },
-              ]}
-              rows={categories.map((c) => ({
-                key: c.value,
-                onClick: () => selectTab(c.value),
-                cells: [
-                  <Tag key="t" color={c.color}>{c.label}</Tag>,
-                  <span key="n" className="num text-ink-2">{c.value === 'planning' ? '–' : c.total}</span>,
-                  <span key="o" className={`num ${c.on > 0 ? 'font-semibold text-accent' : 'text-ink-3'}`}>{c.on}</span>,
-                ],
-              }))}
-            />
+            <div className="overflow-hidden rounded-[10px] border border-line bg-white">
+              {categories.map((c, i) => (
+                <button
+                  key={c.value}
+                  onClick={() => selectTab(c.value)}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2 ${i > 0 ? 'border-t border-line' : ''}`}
+                >
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+                  <span className="flex-1 text-base font-medium text-ink">{c.label}</span>
+                  {c.on > 0 ? (
+                    <span className="num rounded-[5px] bg-accent px-1.5 py-[1px] text-2xs font-semibold text-white">
+                      {c.on} on
+                    </span>
+                  ) : (
+                    <span className="num text-xs text-ink-3">{c.total}</span>
+                  )}
+                  <IconChevron size={14} className="shrink-0 text-ink-3" />
+                </button>
+              ))}
+            </div>
           </>
         ) : (
           <div className="-mx-2.5">
@@ -2129,26 +2053,28 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
           supplied yet.
         </p>
         <PanelHeading>SA2s</PanelHeading>
-        <DataTable
-          columns={[
-            { label: 'Suburb' },
-            { label: 'Buildings', align: 'right', width: '58px' },
-            { label: 'Insured', align: 'right', width: '52px' },
-          ]}
-          rows={SUBURBS.map((s) => {
+        <div className="space-y-1.5">
+          {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
             const value = bs.reduce((n, b) => n + b.insuredValue, 0);
-            return {
-              key: s.id,
-              onClick: () => setSelectedId(s.id),
-              cells: [
-                <span key="n" className="font-medium text-ink">{s.name}</span>,
-                <span key="b" className="num text-ink-2">{bs.length}</span>,
-                <span key="v" className="num text-ink-2">${(value / 1e6).toFixed(1)}M</span>,
-              ],
-            };
+            return (
+              <button
+                key={s.id}
+                onClick={() => setSelectedId(s.id)}
+                className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
+              >
+                <span>
+                  <span className="block text-lg font-medium text-ink">{s.name}</span>
+                  <span className="num mt-[2px] block text-xs text-ink-3">SA2 {s.sa2}</span>
+                </span>
+                <span className="text-right">
+                  <span className="num block text-lg font-semibold text-ink">{bs.length} buildings</span>
+                  <span className="num block text-xs text-ink-3">${(value / 1e6).toFixed(1)}M insured</span>
+                </span>
+              </button>
+            );
           })}
-        />
+        </div>
       </div>
     );
   }
@@ -2436,28 +2362,24 @@ function BlueprintPanel({
             {!saSel ? (
               <>
                 <PanelHeading>SA2s, most affected first</PanelHeading>
-                <DataTable
-                  columns={[
-                    { label: 'Suburb' },
-                    { label: isFlood ? 'Inside' : 'Matched', align: 'right', width: '52px' },
-                    { label: 'Total', align: 'right', width: '38px' },
-                  ]}
-                  rows={sa2Rows.map(({ s, buildings, count }) => ({
-                    key: s.id,
-                    onClick: () => setSaSel(s.id),
-                    cells: [
-                      <span key="n" className="font-medium text-ink">{s.name}</span>,
-                      <span
-                        key="c"
-                        className={`num ${count > 0 ? 'font-semibold' : 'text-ink-3'}`}
-                        style={count > 0 ? { color: blueprint.accent } : undefined}
-                      >
-                        {count}
-                      </span>,
-                      <span key="t" className="num text-ink-3">{buildings.length}</span>,
-                    ],
-                  }))}
-                />
+                <div className="space-y-1.5">
+                  {sa2Rows.map(({ s, buildings, count }) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSaSel(s.id)}
+                      className="flex w-full items-center justify-between rounded-[6px] border border-line bg-white px-3 py-2 text-left transition-colors hover:border-accent"
+                    >
+                      <span>
+                        <span className="block text-lg font-medium text-ink">{s.name}</span>
+                        <span className="num mt-[2px] block text-xs text-ink-3">SA2 {s.sa2}</span>
+                      </span>
+                      <span className="text-right">
+                        <span className="num block text-xl font-semibold text-ink">{count}</span>
+                        <span className="block text-2xs text-ink-3">of {buildings.length}</span>
+                      </span>
+                    </button>
+                  ))}
+                </div>
               </>
             ) : selectedRow && shownBuildings ? (
               <div>
@@ -3630,27 +3552,25 @@ function RealBuildingsRegister({
               <IconChevron size={13} className="rotate-180" />
               Back
             </button>
-            <PanelHeading>Condition, as rated in the register</PanelHeading>
-            <DataTable
-              columns={[
-                { label: 'Rating' },
-                { label: 'Share', width: '64px' },
-                { label: 'Buildings', align: 'right', width: '56px' },
-              ]}
-              rows={conditionRows.map((r) => ({
-                key: r.label,
-                cells: [
-                  <Tag key="t" color={r.color}>{r.label}</Tag>,
-                  <span key="b" className="block h-[6px] overflow-hidden rounded-[3px] bg-surface-2">
-                    <span
-                      className="block h-full rounded-[3px]"
-                      style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
-                    />
-                  </span>,
-                  <span key="n" className="num font-semibold text-ink">{r.n}</span>,
-                ],
-              }))}
-            />
+            <div className="rounded-[6px] border border-line bg-white px-3 py-2.5">
+              <div className="mb-1.5 text-base font-medium text-ink-3">
+                Condition, as rated in the register
+              </div>
+              <div className="space-y-1.5">
+                {conditionRows.map((r) => (
+                  <div key={r.label} className="flex items-center gap-2">
+                    <span className="w-[116px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                      <span
+                        className="block h-full rounded-[3px]"
+                        style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
+                      />
+                    </span>
+                    <span className="num w-7 shrink-0 text-right text-sm font-semibold text-ink">{r.n}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
