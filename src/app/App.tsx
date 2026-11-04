@@ -1189,7 +1189,7 @@ interface MapViewProps {
    *  and the legend's low/high ends. */
   suburbShade: SuburbShade | null;
   /** A point the current view is about (the TQEH use case), ringed. */
-  highlight: { lat: number; lng: number; label: string } | null;
+  highlight: { lat: number; lng: number; label: string; links?: CaseLink[] } | null;
   /** Clicking the always-on TQEH marker opens its case study. */
   onOpenCase: () => void;
 }
@@ -1746,15 +1746,32 @@ function MapView(props: MapViewProps) {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight) return;
-    const ring = L.circleMarker([highlight.lat, highlight.lng], {
-      radius: 17,
-      color: '#14201F',
-      weight: 2,
-      fill: false,
-      interactive: false,
-    }).addTo(map);
+    const added: LeafletLayer[] = [];
+    added.push(
+      L.circleMarker([highlight.lat, highlight.lng], {
+        radius: 17,
+        color: '#14201F',
+        weight: 2,
+        fill: false,
+        interactive: false,
+      }).addTo(map),
+    );
+    for (const link of highlight.links ?? []) {
+      added.push(
+        L.polyline([[highlight.lat, highlight.lng], link.to], {
+          color: '#14201F',
+          weight: 1.6,
+          opacity: 0.8,
+          dashArray: '5 4',
+          interactive: false,
+        }).addTo(map),
+        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, fillColor: '#14201F', fillOpacity: 1, interactive: false })
+          .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
+          .addTo(map),
+      );
+    }
     return () => {
-      ring.remove();
+      for (const l of added) l.remove();
     };
   }, [ready, highlight]);
 
@@ -3518,6 +3535,33 @@ function floodAtSite(f: TqehReading['flood'][number]): string {
   return `${formatMetres(f.metres)} outside the grounds' centre`;
 }
 
+/** Lines drawn from the hospital to the nearest station, water and heat
+ *  cell while its case study is open, each labelled with its distance. */
+interface CaseLink {
+  to: LatLngTuple;
+  label: string;
+}
+let tqehLinkCache: CaseLink[] | null = null;
+function tqehLinks(): CaseLink[] {
+  if (tqehLinkCache) return tqehLinkCache;
+  const { lat, lng } = TQEH;
+  const out: CaseLink[] = [];
+  const st = nearestPointOn(lat, lng, PROXIMITY_SHAPES['train-stations']());
+  if (st) out.push({ to: st.at, label: `Train station · ${formatMetres(st.m)}` });
+  const wc = nearestPointOn(lat, lng, PROXIMITY_SHAPES['watercourses']());
+  const wb = nearestPointOn(lat, lng, PROXIMITY_SHAPES['waterbodies']());
+  const w = wc && (!wb || wc.m <= wb.m) ? { ...wc, kind: 'Watercourse' } : wb ? { ...wb, kind: 'Waterbody' } : null;
+  if (w) out.push({ to: w.at, label: `${w.kind} · ${formatMetres(w.m)}` });
+  let heat: { m: number; at: LatLngTuple; cat: number } | null = null;
+  for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+    const h = nearestPointOn(lat, lng, rings.map(({ ring }) => toShape(ring, true)));
+    if (h && (!heat || h.m < heat.m)) heat = { ...h, cat: cell.uhiCat };
+  }
+  if (heat && heat.m > 0) out.push({ to: heat.at, label: `Heat cell, category ${heat.cat} · ${formatMetres(heat.m)}` });
+  tqehLinkCache = out;
+  return out;
+}
+
 let tqehCache: TqehReading | null = null;
 function tqehReading(): TqehReading {
   if (tqehCache) return tqehCache;
@@ -3647,7 +3691,14 @@ ${CONSEQUENCE_CATEGORIES.map((c) => row(c.name, [sheet[c.name]?.tolerance || 'No
 
 /** The case studies available, each a site the map zooms to. */
 const CASE_STUDIES = [
-  { id: 'tqeh', name: 'The Queen Elizabeth Hospital', where: 'Woodville South · state hospital', point: TQEH },
+  {
+    id: 'tqeh',
+    name: 'The Queen Elizabeth Hospital',
+    where: 'Woodville South · state hospital',
+    point: TQEH,
+    // Turned on when the case opens, and off again when it closes.
+    layers: ['flood-1in100-real', 'flood-1in20-real', 'flood-1in5-real', 'heat-vuln', 'pedestrian-network', 'train-stations'],
+  },
 ] as const;
 type CaseId = (typeof CASE_STUDIES)[number]['id'];
 
@@ -4586,6 +4637,31 @@ function metresToShape(lat: number, lng: number, s: Shape): number {
     const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
     const d = Math.hypot(ax + t * dx, ay + t * dy);
     if (d < best) best = d;
+  }
+  return best;
+}
+
+/** The nearest point on any of the shapes, and how far it is. */
+function nearestPointOn(lat: number, lng: number, shapes: Shape[]): { m: number; at: LatLngTuple } | null {
+  const kx = M_PER_DEG * Math.cos((lat * Math.PI) / 180);
+  let best: { m: number; at: LatLngTuple } | null = null;
+  for (const s of shapes) {
+    const bx = Math.max(s.bbox.lngLo - lng, 0, lng - s.bbox.lngHi) * kx;
+    const by = Math.max(s.bbox.latLo - lat, 0, lat - s.bbox.latHi) * M_PER_DEG;
+    if (best && Math.hypot(bx, by) >= best.m) continue;
+    if (s.closed && inBBox(lat, lng, s.bbox) && pointInRing(lat, lng, s.pts)) return { m: 0, at: [lat, lng] };
+    const p = s.pts;
+    const n = p.length === 1 ? 1 : s.closed ? p.length : p.length - 1;
+    for (let i = 0; i < n; i++) {
+      const a = p[i];
+      const b = p.length === 1 ? a : p[(i + 1) % p.length];
+      const ax = (a[1] - lng) * kx, ay = (a[0] - lat) * M_PER_DEG;
+      const dx = (b[1] - a[1]) * kx, dy = (b[0] - a[0]) * M_PER_DEG;
+      const len2 = dx * dx + dy * dy;
+      const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
+      const d = Math.hypot(ax + t * dx, ay + t * dy);
+      if (!best || d < best.m) best = { m: d, at: [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])] };
+    }
   }
   return best;
 }
@@ -5921,7 +5997,7 @@ export default function App() {
   // The case study open in the Case studies tab, if any.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
-    () => new Set(['heat-vuln']),
+    () => new Set<string>(),
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overlayOpacity, setOverlayOpacity] = useState(0.85);
@@ -6117,13 +6193,35 @@ export default function App() {
   const meta = TAB_META[panelTab];
 
   // Opening a case study zooms the map to its site.
+  // Layers a case turned on that weren't on already, so closing the
+  // case releases exactly those and leaves the rest alone.
+  const caseAddedRef = useRef<string[]>([]);
   const openCase = useCallback((id: CaseId | null) => {
     setCaseId(id);
     const c = CASE_STUDIES.find((x) => x.id === id);
-    if (c) setFlyTarget({ lat: c.point.lat, lng: c.point.lng, zoom: 16, key: Date.now() });
+    if (c) {
+      setActiveBlueprint(null);
+      setLayerInfoId(null);
+      setSelectedBuildingKey(null);
+      setCheckedLayers((prev) => {
+        caseAddedRef.current = [...new Set([...caseAddedRef.current, ...c.layers.filter((l) => !prev.has(l))])];
+        return new Set([...prev, ...c.layers]);
+      });
+      setFlyTarget({ lat: c.point.lat, lng: c.point.lng, zoom: 15, key: Date.now() });
+    } else {
+      const added = caseAddedRef.current;
+      caseAddedRef.current = [];
+      setCheckedLayers((prev) => {
+        const next = new Set(prev);
+        for (const l of added) next.delete(l);
+        return next;
+      });
+    }
   }, []);
-  const openCaseStudy = CASE_STUDIES.find((x) => x.id === caseId);
-  const highlight = panelTab === 'cases' && openCaseStudy ? openCaseStudy.point : null;
+  const highlight = useMemo(() => {
+    const c = CASE_STUDIES.find((x) => x.id === caseId);
+    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks() } : null;
+  }, [panelTab, caseId]);
 
   // Place's suburb comparison shades the map while it's showing.
   const suburbShade = useMemo<SuburbShade | null>(() => {
