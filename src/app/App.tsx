@@ -71,7 +71,7 @@ import vapLogo from '@/assets/vaplogo.png';
  * ------------------------------------------------------------------ */
 
 
-type PanelTab = 'layers' | 'assets' | 'place' | 'tqeh' | 'help';
+type PanelTab = 'layers' | 'assets' | 'place' | 'cases' | 'help';
 
 type LayerGroup =
   | 'hazard'
@@ -3531,10 +3531,16 @@ function TqehTab({
   const r = tqehReading();
 
   return (
-    <div className="px-3 py-4">
-      <p className="mb-4 text-base leading-[1.55] text-ink-2">
+    <div>
+      <p className="mb-3 text-base leading-[1.55] text-ink-2">
         Woodville South{r.suburb ? ` (${r.suburb.name} SA2)` : ''}. Every reading below is measured at the hospital's point.
       </p>
+      <button
+        onClick={() => downloadTqehReport(r)}
+        className="mb-4 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
+      >
+        Download report
+      </button>
       <TabStrip
         value={view}
         onChange={setView}
@@ -3549,6 +3555,131 @@ function TqehTab({
         <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
       )}
       {view === 'tolerance' && <TqehTolerance />}
+    </div>
+  );
+}
+
+/** The case study as a standalone, printable HTML report: every reading
+ *  from the three sections plus the tolerance sheet as filled in so far. */
+function downloadTqehReport(r: TqehReading) {
+  const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const row = (k: string, v: string) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`;
+  const sheet = loadTolerance();
+  const groups: { name: string; n: number; metres: number }[] = [];
+  for (const { b, metres } of r.buildings) {
+    const g = groups.find((x) => x.name === b.name);
+    if (g) g.n++;
+    else groups.push({ name: b.name, n: 1, metres });
+  }
+  const heatRow = r.heatHere
+    ? row('Heat cell', `UHI category ${r.heatHere.uhiCat}, SVI ${r.heatHere.svi.toFixed(2)}`)
+    : r.nearestHeat
+      ? row(
+          'Nearest heat cell',
+          `${formatMetres(r.nearestHeat.metres)} away, UHI category ${r.nearestHeat.uhiCat}, SVI ${r.nearestHeat.svi.toFixed(2)}`,
+        )
+      : '';
+  const indexRows = r.suburb
+    ? INDEXES.filter((d) => d.group !== 'Assets')
+        .map((d) => {
+          const x = rankSuburbs(d).find((y) => y.s.id === r.suburb!.id)!;
+          return row(d.label, x.v === null ? 'n/a' : `${d.format(x.v)} (${ordinal(x.rank!)} of 8)`);
+        })
+        .join('')
+    : '';
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH case study</title>
+<style>body{font:14px/1.5 'IBM Plex Sans',system-ui,sans-serif;color:#14201F;max-width:760px;margin:40px auto;padding:0 20px}
+h1{font-size:24px;margin:0}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #E2E7E7;padding-bottom:4px}
+.sub{color:#7E8D8C;margin:4px 0 0}table{width:100%;border-collapse:collapse}
+th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}
+th{width:40%;font-weight:500;color:#4A5A59}.note{color:#7E8D8C;font-size:12px;margin-top:24px}</style></head><body>
+<h1>The Queen Elizabeth Hospital</h1>
+<p class="sub">Case study, CoCS Climate Risk Tolerance Tool. Woodville South${r.suburb ? ` (${esc(r.suburb.name)} SA2)` : ''}. Generated ${new Date().toLocaleDateString('en-AU')}.</p>
+<h2>Hazard</h2><table>
+${r.flood.map((f) => row(`Flood ${FLOOD_SHORT[f.id]}`, f.metres === 0 ? 'Inside the extent' : `${formatMetres(f.metres)} to the nearest edge`)).join('')}
+${heatRow}
+${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
+</table>
+${r.suburb ? `<h2>${esc(r.suburb.name)} indexes</h2><table>${indexRows}</table>` : ''}
+<h2>Assets and access</h2><table>
+${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Roads', "Waiting on council's road data")}
+</table>
+<h2>Nearest council buildings</h2><table>
+${groups
+  .slice(0, 10)
+  .map((g) => row(g.n > 1 ? `${g.name} (${g.n} buildings)` : g.name, formatMetres(g.metres)))
+  .join('')}
+</table>
+<h2>Risk tolerance</h2><table>
+${CONSEQUENCE_CATEGORIES.map((c) => row(c.name, [sheet[c.name]?.tolerance || 'Not set', sheet[c.name]?.notes].filter(Boolean).join(' | '))).join('')}
+</table>
+<p class="note">Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Location from the state obstetric hospitals layer. Indexes are measured from the supplied layers, not scored.</p>
+</body></html>`;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+  a.download = 'tqeh-case-study.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/** The case studies available, each a site the map zooms to. */
+const CASE_STUDIES = [
+  { id: 'tqeh', name: 'The Queen Elizabeth Hospital', where: 'Woodville South · state hospital', point: TQEH },
+] as const;
+type CaseId = (typeof CASE_STUDIES)[number]['id'];
+
+function CasesTab({
+  caseId,
+  setCaseId,
+  showLayers,
+  onOpenBuilding,
+  onOpenBuildings,
+  onOpenSuburb,
+}: {
+  caseId: CaseId | null;
+  setCaseId: (id: CaseId | null) => void;
+  showLayers: (ids: string[]) => void;
+  onOpenBuilding: (id: string) => void;
+  onOpenBuildings: (ids: string[]) => void;
+  onOpenSuburb: (id: string) => void;
+}) {
+  const c = CASE_STUDIES.find((x) => x.id === caseId);
+  if (!c) {
+    const r = tqehReading();
+    const inside = r.flood.find((f) => f.metres === 0);
+    return (
+      <div className="px-3 py-4">
+        <PanelHeading>Case studies</PanelHeading>
+        <BuildingList>
+          {CASE_STUDIES.map((x) => (
+            <button
+              key={x.id}
+              onClick={() => setCaseId(x.id)}
+              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-surface-2"
+            >
+              <span className="min-w-0">
+                <span className="block text-lg font-medium text-ink">{x.name}</span>
+                <span className="mt-0.5 block text-sm text-ink-3">
+                  {x.where}
+                  {inside ? ` · in the ${FLOOD_SHORT[inside.id]} flood extent` : ''}
+                </span>
+              </span>
+              <IconChevron size={13} className="shrink-0 text-ink-3" />
+            </button>
+          ))}
+        </BuildingList>
+      </div>
+    );
+  }
+  return (
+    <div className="px-3 py-4">
+      <BackBar onBack={() => setCaseId(null)} parent="Case studies" title={c.name} />
+      <TqehTab
+        showLayers={showLayers}
+        onOpenBuilding={onOpenBuilding}
+        onOpenBuildings={onOpenBuildings}
+        onOpenSuburb={onOpenSuburb}
+      />
     </div>
   );
 }
@@ -3873,8 +4004,8 @@ function HelpTab() {
             filed inside each.
           </li>
           <li>
-            <span className="font-semibold text-ink">Queen Elizabeth Hospital.</span> A
-            worked use case: the hazards at the hospital, the assets and access
+            <span className="font-semibold text-ink">Case studies.</span> Site reports, starting with The Queen Elizabeth Hospital:
+            the hazards at the hospital, the assets and access
             around it, and a risk tolerance sheet for the workshop to fill in.
           </li>
           <li>
@@ -4000,9 +4131,9 @@ const TAB_META: Record<
     subtitle: 'The eight SA2s, and the council buildings inside each',
     icon: IconPlace,
   },
-  tqeh: {
-    title: 'Queen Elizabeth Hospital',
-    subtitle: 'Use case: hazard, assets and risk tolerance at TQEH',
+  cases: {
+    title: 'Case studies',
+    subtitle: 'Site reports: hazard, assets and risk tolerance',
     icon: IconHospital,
   },
   help: {
@@ -4023,7 +4154,7 @@ function IconRail({
 }) {
   // Assets split out from Place: a real, LGA-wide register isn't a
   // suburb profile, it doesn't belong nested under one.
-  const order: PanelTab[] = ['layers', 'assets', 'place', 'tqeh', 'help'];
+  const order: PanelTab[] = ['layers', 'assets', 'place', 'cases', 'help'];
   return (
     <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 border-r border-line bg-white py-3">
       <Tip label="Home" body="Back to the landing screen" side="right">
@@ -5688,6 +5819,8 @@ export default function App() {
   const [panelTab, setPanelTab] = useState<PanelTab>('layers');
   // Index Place compares suburbs on; it also shades the map there.
   const [indexId, setIndexId] = useState<IndexId>('flood100');
+  // The case study open in the Case studies tab, if any.
+  const [caseId, setCaseId] = useState<CaseId | null>(null);
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set(['heat-vuln']),
   );
@@ -5884,11 +6017,14 @@ export default function App() {
 
   const meta = TAB_META[panelTab];
 
-  // Opening the TQEH tab takes the map to the hospital.
-  useEffect(() => {
-    if (panelTab === 'tqeh') setFlyTarget({ lat: TQEH.lat, lng: TQEH.lng, zoom: 15, key: Date.now() });
-  }, [panelTab]);
-  const highlight = panelTab === 'tqeh' ? TQEH : null;
+  // Opening a case study zooms the map to its site.
+  const openCase = useCallback((id: CaseId | null) => {
+    setCaseId(id);
+    const c = CASE_STUDIES.find((x) => x.id === id);
+    if (c) setFlyTarget({ lat: c.point.lat, lng: c.point.lng, zoom: 16, key: Date.now() });
+  }, []);
+  const openCaseStudy = CASE_STUDIES.find((x) => x.id === caseId);
+  const highlight = panelTab === 'cases' && openCaseStudy ? openCaseStudy.point : null;
 
   // Place's suburb comparison shades the map while it's showing.
   const suburbShade = useMemo<SuburbShade | null>(() => {
@@ -5985,8 +6121,10 @@ export default function App() {
               setIndexId={setIndexId}
             />
           )}
-          {panelTab === 'tqeh' && (
-            <TqehTab
+          {panelTab === 'cases' && (
+            <CasesTab
+              caseId={caseId}
+              setCaseId={openCase}
               showLayers={showLayers}
               onOpenBuilding={openBuilding}
               onOpenBuildings={openBuildings}
