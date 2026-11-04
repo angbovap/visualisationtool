@@ -48,6 +48,9 @@ import obstetricHospitalsData from '@/data/obstetricHospitals.json';
 import floodContoursData from '@/data/floodContours.json';
 import pedestrianNetworkData from '@/data/pedestrianNetwork.json';
 import dwellingDensityData from '@/data/dwellingDensity.json';
+// Measured per-SA2 indicators, built by scripts/build-sa2-indicators.cjs
+// from the layers above. No weights or cut-offs, see that script.
+import sa2IndicatorsData from '@/data/sa2Indicators.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -68,7 +71,7 @@ import vapLogo from '@/assets/vaplogo.png';
  * ------------------------------------------------------------------ */
 
 
-type PanelTab = 'layers' | 'assets' | 'place' | 'help';
+type PanelTab = 'layers' | 'assets' | 'place' | 'tqeh' | 'help';
 
 type LayerGroup =
   | 'hazard'
@@ -814,6 +817,13 @@ const IconGauge = ({ size = 17, className }: IconProps) => (
 );
 
 /** Recentre on the LGA. */
+const IconHospital = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
+    <path d="M12 8v8M8 12h8" />
+  </svg>
+);
+
 const IconLocate = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <circle cx="12" cy="12" r="6.5" />
@@ -1172,6 +1182,20 @@ interface MapViewProps {
   /** Where a search result asked the map to go. key changes on every
    *  search pick, so choosing the same place twice still moves the map. */
   flyTarget: { lat: number; lng: number; zoom: number; key: number } | null;
+  /** Suburbs shaded by a Place index: fill per suburb id, tooltip text,
+   *  and the legend's low/high ends. */
+  suburbShade: SuburbShade | null;
+  /** A point the current view is about (the TQEH use case), ringed. */
+  highlight: { lat: number; lng: number; label: string } | null;
+}
+
+interface SuburbShade {
+  label: string;
+  color: string;
+  colors: Record<string, string>;
+  text: Record<string, string>;
+  lo: string;
+  hi: string;
 }
 
 
@@ -1195,6 +1219,8 @@ function MapView(props: MapViewProps) {
     focusSuburbId,
     focusBuildingIds,
     flyTarget,
+    suburbShade,
+    highlight,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1496,15 +1522,21 @@ function MapView(props: MapViewProps) {
        SA2 shapes draw lighter, inside it, for the suburb divisions. */
     if (boundsMode === 'sa2') {
       for (const s of SUBURBS) {
+        const shade = suburbShade?.colors[s.id];
         push(
           L.polygon(s.path, {
-            fill: false,
+            fill: !!shade,
+            fillColor: shade,
+            fillOpacity: 0.62,
             color: darkBase ? '#F2F7F6' : '#2B3C3A',
-            weight: 0.7,
-            opacity: darkBase ? 0.55 : 0.4,
+            weight: shade ? 1 : 0.7,
+            opacity: darkBase ? 0.55 : shade ? 0.6 : 0.4,
             interactive: true,
           })
-            .bindTooltip(s.name, { direction: 'top', offset: [0, -3] })
+            .bindTooltip(suburbShade ? `${s.name}: ${suburbShade.text[s.id] ?? 'n/a'}` : s.name, {
+              direction: 'top',
+              offset: [0, -3],
+            })
             .on('click', () => onSelectSuburb(s.id)),
         );
       }
@@ -1678,6 +1710,7 @@ function MapView(props: MapViewProps) {
     };
   }, [
     ready,
+    suburbShade,
     checkedLayers,
     overlayOpacity,
     layerOpacity,
@@ -1701,6 +1734,34 @@ function MapView(props: MapViewProps) {
     if (!ready || !map || !flyTarget) return;
     map.flyTo([flyTarget.lat, flyTarget.lng], flyTarget.zoom, { duration: 0.8 });
   }, [ready, flyTarget]);
+
+  /* -- Highlighted point (TQEH), its own layer so it never rebuilds. -- */
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map || !highlight) return;
+    const ring = L.circleMarker([highlight.lat, highlight.lng], {
+      radius: 11,
+      color: '#14201F',
+      weight: 2,
+      fill: false,
+      interactive: false,
+    })
+      .bindTooltip(highlight.label, { permanent: true, direction: 'right', offset: [12, 0], className: 'building-label' })
+      .addTo(map);
+    const dot = L.circleMarker([highlight.lat, highlight.lng], {
+      radius: 4,
+      color: '#fff',
+      weight: 1.5,
+      fillColor: '#14201F',
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(map);
+    return () => {
+      ring.remove();
+      dot.remove();
+    };
+  }, [ready, highlight]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
   useEffect(() => {
@@ -1860,7 +1921,7 @@ function MapView(props: MapViewProps) {
         {ready && LRef.current && mapRef.current && (
           <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
         )}
-        <MapLegend checkedLayers={checkedLayers} showBuildings={showBuildings} />
+        <MapLegend checkedLayers={checkedLayers} showBuildings={showBuildings} shade={suburbShade} />
       </div>
 
       <div className="absolute bottom-4 right-3 z-[999] flex flex-col items-center gap-2">
@@ -1928,10 +1989,18 @@ function LegendScale({ items }: { items: { label: string; color: string; opacity
   );
 }
 
-function MapLegend({ checkedLayers, showBuildings }: { checkedLayers: Set<string>; showBuildings: boolean }) {
+function MapLegend({
+  checkedLayers,
+  showBuildings,
+  shade,
+}: {
+  checkedLayers: Set<string>;
+  showBuildings: boolean;
+  shade: SuburbShade | null;
+}) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
-  if (layers.length === 0 && !showBuildings) return null;
+  if (layers.length === 0 && !showBuildings && !shade) return null;
   return (
     <div className="w-[208px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
       <button
@@ -1944,6 +2013,19 @@ function MapLegend({ checkedLayers, showBuildings }: { checkedLayers: Set<string
       </button>
       {open && (
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
+          {shade && (
+            <div>
+              <div className="text-sm font-medium text-ink">Suburbs: {shade.label}</div>
+              <div
+                className="mt-1.5 h-[8px] w-full"
+                style={{ background: `linear-gradient(90deg, #EEF2F2, ${shade.color})`, opacity: 0.85 }}
+              />
+              <div className="num mt-0.5 flex justify-between text-sm text-ink-3">
+                <span>{shade.lo}</span>
+                <span>{shade.hi}</span>
+              </div>
+            </div>
+          )}
           {layers.map((l) => {
             if (l.id === 'heat-vuln') {
               return (
@@ -2459,6 +2541,162 @@ interface PlaceTabProps {
   onOpenBuildings: (ids: string[]) => void;
   /** Buildings open on the right, to mark their row. */
   activeIds: string[];
+  /** The index suburbs are compared on, also shading the map. */
+  indexId: IndexId;
+  setIndexId: (v: IndexId) => void;
+}
+
+/* ------------------------------------------------------------------ *
+ * Suburb indexes
+ *
+ * Measured, not scored: each one is a share, an average or a count from
+ * the supplied layers (see scripts/build-sa2-indicators.cjs), and suburbs
+ * are ranked on each one separately. There is no combined index, because
+ * no weighting between hazards has been agreed.
+ * ------------------------------------------------------------------ */
+
+interface Sa2Indicator {
+  floodShare: Record<'1in5' | '1in20' | '1in100' | 'any', number>;
+  heatCells: number;
+  uhiAvg: number | null;
+  uhiCat4Share: number | null;
+  sviAvg: number | null;
+  densityAvg: number | null;
+  densitySa1s: number;
+}
+const SA2_IND = sa2IndicatorsData.bySa2 as Record<string, Sa2Indicator>;
+
+type IndexId = 'flood100' | 'flood5' | 'bflood' | 'uhi' | 'heat4' | 'svi' | 'density';
+interface IndexDef {
+  id: IndexId;
+  group: 'Flood' | 'Heat' | 'People' | 'Assets';
+  label: string;
+  short: string;
+  /** How it was measured, in one line. */
+  how: string;
+  color: string;
+  format: (v: number) => string;
+  value: (s: Suburb) => number | null;
+}
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+const INDEXES: IndexDef[] = [
+  {
+    id: 'flood100',
+    group: 'Flood',
+    label: 'Area inside the 1 in 100 flood extent',
+    short: '1 in 100 flood area',
+    how: "Share of the suburb's area inside the 1 in 100 extent, from a 30 m point grid.",
+    color: '#1E3A8A',
+    format: pct,
+    value: (s) => SA2_IND[s.sa2]?.floodShare['1in100'] ?? null,
+  },
+  {
+    id: 'flood5',
+    group: 'Flood',
+    label: 'Area inside the 1 in 5 flood extent',
+    short: '1 in 5 flood area',
+    how: "Share of the suburb's area inside the 1 in 5 extent, from a 30 m point grid. Trimmer not supplied.",
+    color: '#1D4ED8',
+    format: pct,
+    value: (s) => SA2_IND[s.sa2]?.floodShare['1in5'] ?? null,
+  },
+  {
+    id: 'bflood',
+    group: 'Assets',
+    label: 'Council buildings inside a flood extent',
+    short: 'Buildings in flood',
+    how: "Share of the suburb's mapped council buildings inside at least one flood extent.",
+    color: ACCENT,
+    format: pct,
+    value: (s) => {
+      const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+      if (bs.length === 0) return null;
+      const p = hazardProfiles();
+      return bs.filter((b) => (p.get(b.id)?.flood.length ?? 0) > 0).length / bs.length;
+    },
+  },
+  {
+    id: 'uhi',
+    group: 'Heat',
+    label: 'Average UHI category',
+    short: 'Average UHI',
+    how: 'Average Urban Heat Island category (2 to 4) of the heat grid cells centred in the suburb.',
+    color: '#EF4444',
+    format: (v) => v.toFixed(2),
+    value: (s) => SA2_IND[s.sa2]?.uhiAvg ?? null,
+  },
+  {
+    id: 'heat4',
+    group: 'Heat',
+    label: 'Heat cells in category 4',
+    short: 'Category 4 cells',
+    how: "Share of the suburb's heat grid cells in the hottest category.",
+    color: '#DC2626',
+    format: pct,
+    value: (s) => SA2_IND[s.sa2]?.uhiCat4Share ?? null,
+  },
+  {
+    id: 'svi',
+    group: 'People',
+    label: 'Average Social Vulnerability Index',
+    short: 'Average SVI',
+    how: 'Average SVI of the heat grid cells centred in the suburb.',
+    color: '#B45309',
+    format: (v) => v.toFixed(2),
+    value: (s) => SA2_IND[s.sa2]?.sviAvg ?? null,
+  },
+  {
+    id: 'density',
+    group: 'People',
+    label: 'Dwelling density',
+    short: 'Dwelling density',
+    how: 'SA1 "Density 21" values averaged across the suburb, weighted by SA1 area.',
+    color: '#6B3FA0',
+    format: (v) => v.toFixed(1),
+    value: (s) => SA2_IND[s.sa2]?.densityAvg ?? null,
+  },
+];
+const INDEX_BY_ID = Object.fromEntries(INDEXES.map((d) => [d.id, d])) as Record<IndexId, IndexDef>;
+
+/** Every suburb's value on one index, highest first, with its rank. */
+function rankSuburbs(def: IndexDef): { s: Suburb; v: number | null; rank: number | null }[] {
+  const rows = SUBURBS.map((s) => ({ s, v: def.value(s) }));
+  const ranked = rows.filter((r) => r.v !== null).sort((a, b) => b.v! - a.v!);
+  return [
+    ...ranked.map((r, i) => ({ ...r, rank: i + 1 })),
+    ...rows.filter((r) => r.v === null).map((r) => ({ ...r, rank: null })),
+  ];
+}
+const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
+
+/** Light-to-colour ramp for shading suburbs on the map by an index. */
+function shadeFor(def: IndexDef): Record<string, string> {
+  const rows = rankSuburbs(def).filter((r) => r.v !== null);
+  const lo = Math.min(...rows.map((r) => r.v!));
+  const hi = Math.max(...rows.map((r) => r.v!));
+  return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EEF2F2', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
+}
+
+function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexId) => void }) {
+  const groups = [...new Set(INDEXES.map((d) => d.group))];
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as IndexId)}
+      aria-label="Index"
+      className="w-full rounded-[6px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
+    >
+      {groups.map((g) => (
+        <optgroup key={g} label={g}>
+          {INDEXES.filter((d) => d.group === g).map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.label}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </select>
+  );
 }
 
 /** Several register rows filed under one name (one site with many
@@ -2469,11 +2707,13 @@ function BuildingGroupRow({
   items,
   onOpen,
   active,
+  right,
 }: {
   name: string;
   items: RealAsset[];
   onOpen: (ids: string[]) => void;
   active?: boolean;
+  right?: React.ReactNode;
 }) {
   const types = [...new Set(items.map((b) => b.buildingType ?? 'Not yet classified'))];
   const value = items.reduce((n, b) => n + b.insuredValue, 0);
@@ -2490,7 +2730,7 @@ function BuildingGroupRow({
           {items.length} buildings · {types.length === 1 ? types[0] : `${types.length} types`}
         </span>
       </span>
-      {value > 0 && <span className="num shrink-0 pt-[1px] text-base text-ink-2">{formatMoney(value)}</span>}
+      {right ?? (value > 0 && <span className="num shrink-0 pt-[1px] text-base text-ink-2">{formatMoney(value)}</span>)}
     </button>
   );
 }
@@ -2502,7 +2742,15 @@ const PLACE_FILTERS: { id: PlaceFilter; label: string; hint?: string }[] = [
   { id: 'heat4', label: 'Heat category 4', hint: "In the heat grid's highest category." },
 ];
 
-function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, onOpenBuildings, activeIds }: PlaceTabProps) {
+function PlaceTab({
+  selectedId,
+  setSelectedId,
+  onOpenBuilding,
+  onOpenBuildings,
+  activeIds,
+  indexId,
+  setIndexId,
+}: PlaceTabProps) {
   const [filter, setFilter] = useState<PlaceFilter>('all');
   const [showAll, setShowAll] = useState(false);
   useEffect(() => {
@@ -2537,6 +2785,37 @@ function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, onOpenBuildings, 
             );
           })}
         </div>
+
+        <Section title="Compare suburbs">
+          <IndexPicker value={indexId} onChange={setIndexId} />
+          <p className="mb-3 mt-1.5 text-sm leading-[1.5] text-ink-3">
+            {INDEX_BY_ID[indexId].how} Shaded on the map, darker is higher.
+          </p>
+          {(() => {
+            const def = INDEX_BY_ID[indexId];
+            const rows = rankSuburbs(def);
+            const max = Math.max(...rows.map((r) => r.v ?? 0));
+            return rows.map((r) => (
+              <button
+                key={r.s.id}
+                onClick={() => setSelectedId(r.s.id)}
+                className="flex w-full items-center gap-3 py-1.5 text-left hover:opacity-80"
+              >
+                <span className="num w-4 shrink-0 text-sm text-ink-3">{r.rank ?? '–'}</span>
+                <span className="w-[104px] shrink-0 truncate text-base text-ink-2">{r.s.name}</span>
+                <span className="h-[4px] flex-1 rounded-full bg-line">
+                  <span
+                    className="block h-full rounded-full"
+                    style={{ width: `${max && r.v ? (r.v / max) * 100 : 0}%`, background: def.color }}
+                  />
+                </span>
+                <span className="num w-10 shrink-0 text-right text-base font-medium text-ink">
+                  {r.v === null ? 'n/a' : def.format(r.v)}
+                </span>
+              </button>
+            ));
+          })()}
+        </Section>
       </div>
     );
   }
@@ -2569,6 +2848,25 @@ function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, onOpenBuildings, 
         <Figure label="Buildings" value={buildings.length} />
         <Figure label="Insured value" value={formatMoney(insured)} />
       </FigureStrip>
+
+      <Section title="Indexes" right={<span className="text-sm text-ink-3">Rank of 8 suburbs</span>}>
+        <dl className="divide-y divide-line">
+          {INDEXES.map((def) => {
+            const row = rankSuburbs(def).find((r) => r.s.id === s.id)!;
+            return (
+              <div key={def.id} className="flex items-baseline gap-3 py-1.5">
+                <dt className="min-w-0 flex-1 truncate text-base text-ink-2" title={def.how}>
+                  {def.short}
+                </dt>
+                <dd className="num w-12 shrink-0 text-right text-base font-medium text-ink">
+                  {row.v === null ? 'n/a' : def.format(row.v)}
+                </dd>
+                <dd className="num w-9 shrink-0 text-right text-sm text-ink-3">{row.rank ? ordinal(row.rank) : ''}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      </Section>
 
       <section className="mt-6">
         <PanelHeading>Buildings</PanelHeading>
@@ -3120,6 +3418,370 @@ function LayerInfoPanel({
 }
 
 /* ------------------------------------------------------------------ *
+ * Use case: The Queen Elizabeth Hospital
+ *
+ * One site looked at three ways, all measured at the hospital's point
+ * from the state obstetric hospitals layer (the one point of that layer
+ * inside the LGA, Woodville South): the hazards there, the assets and
+ * access around it, and a risk tolerance sheet the workshop fills in.
+ * Nothing here is pre-filled: tolerances start blank.
+ * ------------------------------------------------------------------ */
+
+const TQEH = { lat: OBSTETRIC_HOSPITALS[0][0], lng: OBSTETRIC_HOSPITALS[0][1], label: 'The Queen Elizabeth Hospital' };
+
+const floodShapeCache = new Map<FloodLayerId, Shape[]>();
+function floodShapes(id: FloodLayerId): Shape[] {
+  let hit = floodShapeCache.get(id);
+  if (!hit) {
+    hit = floodRingsFor(id).map(({ ring }) => toShape(ring, true));
+    floodShapeCache.set(id, hit);
+  }
+  return hit;
+}
+
+interface TqehReading {
+  flood: { id: FloodLayerId; metres: number }[];
+  heatHere: { uhiCat: number; svi: number } | null;
+  nearestHeat: { uhiCat: number; svi: number; metres: number } | null;
+  waterM: number;
+  waterKind: 'watercourse' | 'waterbody';
+  stationM: number;
+  railM: number;
+  pedM: number;
+  suburb: Suburb | null;
+  buildings: { b: RealAsset; metres: number }[];
+}
+
+let tqehCache: TqehReading | null = null;
+function tqehReading(): TqehReading {
+  if (tqehCache) return tqehCache;
+  const { lat, lng } = TQEH;
+  const near = (id: string) => nearestMetres(lat, lng, PROXIMITY_SHAPES[id]());
+  let heatHere: TqehReading['heatHere'] = null;
+  let nearestHeat: TqehReading['nearestHeat'] = null;
+  for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+    const m = Math.min(...rings.map(({ ring }) => nearestMetres(lat, lng, [toShape(ring, true)])));
+    if (m === 0 && !heatHere) heatHere = { uhiCat: cell.uhiCat, svi: cell.svi };
+    if (!nearestHeat || m < nearestHeat.metres) nearestHeat = { uhiCat: cell.uhiCat, svi: cell.svi, metres: m };
+  }
+  const wc = near('watercourses');
+  const wb = near('waterbodies');
+  const sa2 = SA2_BOUNDARIES.find((s) => pointInRing(lat, lng, s.ring));
+  tqehCache = {
+    flood: FLOOD_LAYER_IDS.map((id) => ({ id, metres: nearestMetres(lat, lng, floodShapes(id)) })),
+    heatHere,
+    nearestHeat,
+    waterM: Math.min(wc, wb),
+    waterKind: wc <= wb ? 'watercourse' : 'waterbody',
+    stationM: near('train-stations'),
+    railM: near('railways'),
+    pedM: near('pedestrian-network'),
+    suburb: sa2 ? SUBURB_BY_ID[SA2_CODE_TO_SUBURB_ID[sa2.code]] ?? null : null,
+    buildings: MAPPED_BUILDINGS.map((b) => {
+      const loc = BUILDING_LOCATION[b.id];
+      return { b, metres: nearestMetres(lat, lng, [toShape([[loc.lat, loc.lng]])]) };
+    }).sort((a, z) => a.metres - z.metres),
+  };
+  return tqehCache;
+}
+
+const TOLERANCE_KEY = 'cocs-tqeh-tolerance-v1';
+type ToleranceSheet = Record<string, { tolerance: string; notes: string }>;
+function loadTolerance(): ToleranceSheet {
+  try {
+    return JSON.parse(localStorage.getItem(TOLERANCE_KEY) ?? '{}') as ToleranceSheet;
+  } catch {
+    return {};
+  }
+}
+
+function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+  return (
+    <div className="mb-4 flex gap-4 border-b border-line" role="tablist">
+      {tabs.map((t) => {
+        const on = t.id === value;
+        return (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={on}
+            onClick={() => onChange(t.id)}
+            className={`-mb-px whitespace-nowrap border-b-2 pb-2 text-base transition-colors ${on ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink-3 hover:text-ink'}`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function TqehTab({
+  showLayers,
+  onOpenBuilding,
+  onOpenBuildings,
+  onOpenSuburb,
+}: {
+  showLayers: (ids: string[]) => void;
+  onOpenBuilding: (id: string) => void;
+  onOpenBuildings: (ids: string[]) => void;
+  onOpenSuburb: (id: string) => void;
+}) {
+  const [view, setView] = useState<'hazard' | 'assets' | 'tolerance'>('hazard');
+  const r = tqehReading();
+
+  return (
+    <div className="px-3 py-4">
+      <p className="mb-4 text-base leading-[1.55] text-ink-2">
+        Woodville South{r.suburb ? ` (${r.suburb.name} SA2)` : ''}. Every reading below is measured at the hospital's point.
+      </p>
+      <TabStrip
+        value={view}
+        onChange={setView}
+        tabs={[
+          { id: 'hazard', label: 'Hazard' },
+          { id: 'assets', label: 'Assets' },
+          { id: 'tolerance', label: 'Risk tolerance' },
+        ]}
+      />
+      {view === 'hazard' && <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />}
+      {view === 'assets' && (
+        <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
+      )}
+      {view === 'tolerance' && <TqehTolerance />}
+    </div>
+  );
+}
+
+function TqehHazard({
+  r,
+  showLayers,
+  onOpenSuburb,
+}: {
+  r: TqehReading;
+  showLayers: (ids: string[]) => void;
+  onOpenSuburb: (id: string) => void;
+}) {
+  const inside = r.flood.filter((f) => f.metres === 0);
+  return (
+    <>
+      <FigureStrip>
+        <Figure
+          label="Flood"
+          value={<span className="text-xl">{inside.length ? `In ${FLOOD_SHORT[inside[0].id]}` : 'Outside'}</span>}
+          sub={inside.length ? 'mapped extent' : 'every mapped extent'}
+        />
+        <Figure
+          label="Urban heat"
+          value={<span className="text-xl">{r.heatHere ? `Category ${r.heatHere.uhiCat}` : 'Off grid'}</span>}
+          sub={r.heatHere ? `SVI ${r.heatHere.svi.toFixed(2)}` : 'no cell at the site'}
+        />
+      </FigureStrip>
+
+      <Section title="Flood extents">
+        <dl className="divide-y divide-line">
+          {r.flood.map((f) => (
+            <FactRow
+              key={f.id}
+              label={FLOOD_SHORT[f.id]}
+              value={f.metres === 0 ? 'Inside the extent' : `${formatMetres(f.metres)} to the nearest edge`}
+            />
+          ))}
+        </dl>
+        <p className="mt-1.5 text-sm text-ink-3">1 in 20 covers three catchments; 1 in 5 has no Trimmer data yet.</p>
+      </Section>
+
+      <Section title="Heat and water">
+        <dl className="divide-y divide-line">
+          {r.heatHere ? (
+            <FactRow label="Heat cell" value={`UHI category ${r.heatHere.uhiCat}, SVI ${r.heatHere.svi.toFixed(2)}`} />
+          ) : (
+            r.nearestHeat && (
+              <FactRow
+                label="Nearest heat cell"
+                value={`${formatMetres(r.nearestHeat.metres)} away, UHI category ${r.nearestHeat.uhiCat}, SVI ${r.nearestHeat.svi.toFixed(2)}`}
+              />
+            )
+          )}
+          <FactRow label="Nearest water" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
+        </dl>
+      </Section>
+
+      {r.suburb && (
+        <Section title={`${r.suburb.name} indexes`}>
+          <dl className="divide-y divide-line">
+            {INDEXES.filter((d) => d.group !== 'Assets').map((def) => {
+              const row = rankSuburbs(def).find((x) => x.s.id === r.suburb!.id)!;
+              return (
+                <div key={def.id} className="flex items-baseline gap-3 py-1.5">
+                  <dt className="min-w-0 flex-1 truncate text-base text-ink-2" title={def.how}>
+                    {def.short}
+                  </dt>
+                  <dd className="num text-base font-medium text-ink">{row.v === null ? 'n/a' : def.format(row.v)}</dd>
+                  <dd className="num w-9 text-right text-sm text-ink-3">{row.rank ? ordinal(row.rank) : ''}</dd>
+                </div>
+              );
+            })}
+          </dl>
+          <button onClick={() => onOpenSuburb(r.suburb!.id)} className="mt-2 text-base font-medium text-accent hover:text-ink">
+            Open {r.suburb.name} in Place
+          </button>
+        </Section>
+      )}
+
+      <button
+        onClick={() => showLayers(['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real', 'heat-vuln', 'watercourses', 'waterbodies'])}
+        className="mt-6 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
+      >
+        Show these hazards on the map
+      </button>
+    </>
+  );
+}
+
+function TqehAssets({
+  r,
+  showLayers,
+  onOpenBuilding,
+  onOpenBuildings,
+}: {
+  r: TqehReading;
+  showLayers: (ids: string[]) => void;
+  onOpenBuilding: (id: string) => void;
+  onOpenBuildings: (ids: string[]) => void;
+}) {
+  const [n, setN] = useState(6);
+  // Same-named buildings (one site) as one row, at the closest one's distance.
+  const groups: { name: string; items: RealAsset[]; metres: number }[] = [];
+  for (const { b, metres } of r.buildings) {
+    const g = groups.find((x) => x.name === b.name);
+    if (g) g.items.push(b);
+    else groups.push({ name: b.name, items: [b], metres });
+  }
+  const shown = groups.slice(0, n);
+  return (
+    <>
+      <Section title="Access">
+        <dl className="divide-y divide-line">
+          <FactRow label="Train station" value={formatMetres(r.stationM)} />
+          <FactRow label="Railway" value={formatMetres(r.railM)} />
+          <FactRow label="Pedestrian network" value={formatMetres(r.pedM)} />
+          <FactRow label="Roads" value={<span className="text-ink-3">Waiting on council's road data</span>} />
+        </dl>
+      </Section>
+
+      <Section title="Nearest council buildings">
+        <BuildingList>
+          {shown.map((g) =>
+            g.items.length === 1 ? (
+              <BuildingRow
+                key={g.name}
+                b={g.items[0]}
+                onOpen={onOpenBuilding}
+                right={<span className="num block text-base font-medium text-ink">{formatMetres(g.metres)}</span>}
+              />
+            ) : (
+              <BuildingGroupRow
+                key={g.name}
+                name={g.name}
+                items={g.items}
+                onOpen={onOpenBuildings}
+                right={<span className="num shrink-0 pt-[1px] text-base font-medium text-ink">{formatMetres(g.metres)}</span>}
+              />
+            ),
+          )}
+        </BuildingList>
+        {n < 24 && (
+          <button onClick={() => setN((v) => v + 6)} className="mt-2 text-base font-medium text-accent hover:text-ink">
+            Show more
+          </button>
+        )}
+      </Section>
+
+      <button
+        onClick={() => showLayers(['train-stations', 'railways', 'pedestrian-network', 'obstetric-hospitals'])}
+        className="mt-6 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
+      >
+        Show access layers on the map
+      </button>
+    </>
+  );
+}
+
+function TqehTolerance() {
+  const [sheet, setSheet] = useState<ToleranceSheet>(() => (typeof window === 'undefined' ? {} : loadTolerance()));
+  const update = (name: string, field: 'tolerance' | 'notes', v: string) => {
+    setSheet((prev) => {
+      const next = { ...prev, [name]: { ...(prev[name] ?? { tolerance: '', notes: '' }), [field]: v } };
+      try {
+        localStorage.setItem(TOLERANCE_KEY, JSON.stringify(next));
+      } catch {
+        // Storage blocked: the sheet still works for this session.
+      }
+      return next;
+    });
+  };
+  const filled = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
+
+  const download = () => {
+    const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = [
+      ['Consequence category', 'Metrics', 'Tolerance', 'Notes'],
+      ...CONSEQUENCE_CATEGORIES.map((c) => [c.name, c.indicators, sheet[c.name]?.tolerance ?? '', sheet[c.name]?.notes ?? '']),
+    ];
+    const blob = new Blob([rows.map((row) => row.map(q).join(',')).join('\n')], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tqeh-risk-tolerance.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
+  return (
+    <>
+      <p className="mb-4 text-base leading-[1.55] text-ink-2">
+        Council's seven consequence categories. Record the tolerance agreed for TQEH against each one. Saved in this
+        browser; download to share.
+      </p>
+      <div className="mb-4 flex items-center justify-between">
+        <span className="num text-sm text-ink-3">
+          {filled} of {CONSEQUENCE_CATEGORIES.length} set
+        </span>
+        <button onClick={download} className="rounded-[6px] border border-line px-2 py-1 text-sm font-medium text-ink hover:border-ink-3">
+          Download CSV
+        </button>
+      </div>
+      <div className="space-y-4">
+        {CONSEQUENCE_CATEGORIES.map((c) => (
+          <div key={c.name} className="rounded-[8px] border border-line p-3">
+            <div className="text-base font-semibold text-ink">{c.name}</div>
+            <div className="mt-0.5 text-sm leading-[1.45] text-ink-3">{c.indicators}</div>
+            <label className="mt-2.5 block text-sm text-ink-2">
+              Tolerance
+              <input
+                value={sheet[c.name]?.tolerance ?? ''}
+                onChange={(e) => update(c.name, 'tolerance', e.target.value)}
+                placeholder="Not set"
+                className="mt-1 block w-full rounded-[6px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
+              />
+            </label>
+            <label className="mt-2 block text-sm text-ink-2">
+              Notes
+              <textarea
+                value={sheet[c.name]?.notes ?? ''}
+                onChange={(e) => update(c.name, 'notes', e.target.value)}
+                rows={2}
+                className="mt-1 block w-full resize-y rounded-[6px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Tab. Help
  * ------------------------------------------------------------------ */
 
@@ -3207,7 +3869,13 @@ function HelpTab() {
           </li>
           <li>
             <span className="font-semibold text-ink">Place.</span> The eight
-            ABS SA2s, with the council buildings filed inside each.
+            ABS SA2s, compared on measured indexes, with the council buildings
+            filed inside each.
+          </li>
+          <li>
+            <span className="font-semibold text-ink">Queen Elizabeth Hospital.</span> A
+            worked use case: the hazards at the hospital, the assets and access
+            around it, and a risk tolerance sheet for the workshop to fill in.
           </li>
           <li>
             <span className="font-semibold text-ink">Help.</span> This page.
@@ -3332,6 +4000,11 @@ const TAB_META: Record<
     subtitle: 'The eight SA2s, and the council buildings inside each',
     icon: IconPlace,
   },
+  tqeh: {
+    title: 'Queen Elizabeth Hospital',
+    subtitle: 'Use case: hazard, assets and risk tolerance at TQEH',
+    icon: IconHospital,
+  },
   help: {
     title: 'Help',
     subtitle: 'What this tool shows, where it comes from, and what is not shown',
@@ -3350,7 +4023,7 @@ function IconRail({
 }) {
   // Assets split out from Place: a real, LGA-wide register isn't a
   // suburb profile, it doesn't belong nested under one.
-  const order: PanelTab[] = ['layers', 'assets', 'place', 'help'];
+  const order: PanelTab[] = ['layers', 'assets', 'place', 'tqeh', 'help'];
   return (
     <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 border-r border-line bg-white py-3">
       <Tip label="Home" body="Back to the landing screen" side="right">
@@ -5013,6 +5686,8 @@ function GuideTour({ onDone }: { onDone: () => void }) {
 
 export default function App() {
   const [panelTab, setPanelTab] = useState<PanelTab>('layers');
+  // Index Place compares suburbs on; it also shades the map there.
+  const [indexId, setIndexId] = useState<IndexId>('flood100');
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set(['heat-vuln']),
   );
@@ -5126,6 +5801,13 @@ export default function App() {
     setLayerOpacityState((prev) => ({ ...prev, [id]: v }));
   }, []);
 
+  // Turn a set of layers on (the TQEH tab's "show on map" buttons),
+  // keeping whatever else is already on.
+  const showLayers = useCallback((ids: string[]) => {
+    setActiveBlueprint(null);
+    setCheckedLayers((prev) => new Set([...prev, ...ids]));
+  }, []);
+
   const clearAllLayers = useCallback(() => {
     setCheckedLayers(new Set());
     setLayerInfoId(null);
@@ -5202,6 +5884,28 @@ export default function App() {
 
   const meta = TAB_META[panelTab];
 
+  // Opening the TQEH tab takes the map to the hospital.
+  useEffect(() => {
+    if (panelTab === 'tqeh') setFlyTarget({ lat: TQEH.lat, lng: TQEH.lng, zoom: 15, key: Date.now() });
+  }, [panelTab]);
+  const highlight = panelTab === 'tqeh' ? TQEH : null;
+
+  // Place's suburb comparison shades the map while it's showing.
+  const suburbShade = useMemo<SuburbShade | null>(() => {
+    if (panelTab !== 'place' || selectedId) return null;
+    const def = INDEX_BY_ID[indexId];
+    const rows = rankSuburbs(def).filter((r) => r.v !== null);
+    if (rows.length === 0) return null;
+    return {
+      label: def.short,
+      color: def.color,
+      colors: shadeFor(def),
+      text: Object.fromEntries(rows.map((r) => [r.s.id, `${def.short} ${def.format(r.v!)} (${ordinal(r.rank!)} of 8)`])),
+      lo: def.format(rows[rows.length - 1].v!),
+      hi: def.format(rows[0].v!),
+    };
+  }, [panelTab, selectedId, indexId]);
+
   // What the map should label at its real location: a Blueprint's
   // drilled-into SA2 takes priority (and its exact filtered buildings),
   // otherwise Place's selected SA2 labels every real building inside it.
@@ -5277,6 +5981,16 @@ export default function App() {
               onOpenBuilding={openBuilding}
               onOpenBuildings={openBuildings}
               activeIds={selectedBuildingKey ? selectedBuildingIds : []}
+              indexId={indexId}
+              setIndexId={setIndexId}
+            />
+          )}
+          {panelTab === 'tqeh' && (
+            <TqehTab
+              showLayers={showLayers}
+              onOpenBuilding={openBuilding}
+              onOpenBuildings={openBuildings}
+              onOpenSuburb={handleSelectSuburb}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -5313,6 +6027,8 @@ export default function App() {
             focusSuburbId={focusSuburbId}
             focusBuildingIds={focusBuildingIds}
             flyTarget={flyTarget}
+            suburbShade={suburbShade}
+            highlight={highlight}
           />
         </div>
 

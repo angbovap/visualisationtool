@@ -1,0 +1,118 @@
+{
+ "method": "Measured from the supplied layers only. Flood: share of SA2 area inside each extent, from a 30 m point grid. Heat: heat grid cells assigned to the SA2 holding their centre; average UHI category, share in category 4, average SVI. Dwelling density: SA1 \"Density 21\" values averaged across the SA2, weighted by SA1 area.",
+ "gridMetres": 30,
+ "bySa2": {
+  "404011090": {
+   "floodShare": {
+    "1in5": 0.048,
+    "1in20": 0.079,
+    "1in100": 0.448,
+    "any": 0.453
+   },
+   "heatCells": 80,
+   "uhiAvg": 2.89,
+   "uhiCat4Share": 0.263,
+   "sviAvg": 0.92,
+   "densityAvg": 8.87,
+   "densitySa1s": 19
+  },
+  "404011091": {
+   "floodShare": {
+    "1in5": 0.06,
+    "1in20": 0.077,
+    "1in100": 0.276,
+    "any": 0.283
+   },
+   "heatCells": 103,
+   "uhiAvg": 2.83,
+   "uhiCat4Share": 0.223,
+   "sviAvg": 1.16,
+   "densityAvg": 10.7,
+   "densitySa1s": 31
+  },
+  "404011092": {
+   "floodShare": {
+    "1in5": 0.009,
+    "1in20": 0.005,
+    "1in100": 0.272,
+    "any": 0.272
+   },
+   "heatCells": 52,
+   "uhiAvg": 2.69,
+   "uhiCat4Share": 0.212,
+   "sviAvg": 1.08,
+   "densityAvg": 11,
+   "densitySa1s": 34
+  },
+  "404011093": {
+   "floodShare": {
+    "1in5": 0.025,
+    "1in20": 0.029,
+    "1in100": 0.206,
+    "any": 0.208
+   },
+   "heatCells": 150,
+   "uhiAvg": 2.86,
+   "uhiCat4Share": 0.253,
+   "sviAvg": 0.85,
+   "densityAvg": 10.09,
+   "densitySa1s": 46
+  },
+  "404011094": {
+   "floodShare": {
+    "1in5": 0.027,
+    "1in20": 0.004,
+    "1in100": 0.211,
+    "any": 0.212
+   },
+   "heatCells": 48,
+   "uhiAvg": 2.63,
+   "uhiCat4Share": 0.125,
+   "sviAvg": 0.98,
+   "densityAvg": 11.51,
+   "densitySa1s": 12
+  },
+  "404011095": {
+   "floodShare": {
+    "1in5": 0.037,
+    "1in20": 0.042,
+    "1in100": 0.215,
+    "any": 0.218
+   },
+   "heatCells": 74,
+   "uhiAvg": 2.58,
+   "uhiCat4Share": 0.149,
+   "sviAvg": 1.08,
+   "densityAvg": 9.71,
+   "densitySa1s": 40
+  },
+  "404011096": {
+   "floodShare": {
+    "1in5": 0.045,
+    "1in20": 0.038,
+    "1in100": 0.091,
+    "any": 0.092
+   },
+   "heatCells": 17,
+   "uhiAvg": 2.29,
+   "uhiCat4Share": 0.059,
+   "sviAvg": 0.97,
+   "densityAvg": 7.44,
+   "densitySa1s": 34
+  },
+  "404011097": {
+   "floodShare": {
+    "1in5": 0.019,
+    "1in20": 0.051,
+    "1in100": 0.22,
+    "any": 0.223
+   },
+   "heatCells": 157,
+   "uhiAvg": 2.73,
+   "uhiCat4Share": 0.185,
+   "sviAvg": 1.42,
+   "densityAvg": 9.66,
+   "densitySa1s": 37
+  }
+ }
+}
