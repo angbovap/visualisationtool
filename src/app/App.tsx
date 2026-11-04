@@ -3696,8 +3696,10 @@ const CASE_STUDIES = [
     name: 'The Queen Elizabeth Hospital',
     where: 'Woodville South · state hospital',
     point: TQEH,
-    // Turned on when the case opens, and off again when it closes.
-    layers: ['flood-1in100-real', 'flood-1in20-real', 'flood-1in5-real', 'heat-vuln', 'pedestrian-network', 'train-stations'],
+    // Turned on when the case opens, and off again when it closes. Just
+    // the extent that reaches the grounds most; the measure lines cover
+    // the station, water and heat.
+    layers: ['flood-1in100-real'],
   },
 ] as const;
 type CaseId = (typeof CASE_STUDIES)[number]['id'];
