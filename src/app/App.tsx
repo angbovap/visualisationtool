@@ -2626,6 +2626,9 @@ interface PlaceTabProps {
   /** The index suburbs are compared on, also shading the map. */
   indexId: IndexId;
   setIndexId: (v: IndexId) => void;
+  /** SPECULATIVE scenario the comparison is shown under. */
+  scenario: ScenarioSel;
+  setScenario: (v: ScenarioSel) => void;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2741,8 +2744,62 @@ const INDEXES: IndexDef[] = [
 const INDEX_BY_ID = Object.fromEntries(INDEXES.map((d) => [d.id, d])) as Record<IndexId, IndexDef>;
 
 /** Every suburb's value on one index, highest first, with its rank. */
-function rankSuburbs(def: IndexDef): { s: Suburb; v: number | null; rank: number | null }[] {
-  const rows = SUBURBS.map((s) => ({ s, v: def.value(s) }));
+/* ------------------------------------------------------------------ *
+ * SSP scenarios. SPECULATIVE.
+ *
+ * Placeholder figures, asked for as speculative, so the scenario switch
+ * can be shown and used before real projections arrive. They are not
+ * modelled or sourced: every place they appear is labelled
+ * "Speculative". Replace SPECULATIVE_UPLIFT and SPECULATIVE_OUTLOOK with
+ * real values (e.g. DEW's 2022 SA climate projections guide, or
+ * NARCliM 2.0) when they are supplied.
+ * ------------------------------------------------------------------ */
+
+type Scenario = 'today' | 'ssp245' | 'ssp585';
+type Horizon = 2050 | 2090;
+interface ScenarioSel {
+  scenario: Scenario;
+  year: Horizon;
+}
+const SCENARIO_LABEL: Record<Scenario, string> = { today: 'Today', ssp245: 'SSP2-4.5', ssp585: 'SSP5-8.5' };
+const SCENARIO_NOTE: Record<Scenario, string> = {
+  today: 'The supplied layers as they are.',
+  ssp245: 'Middle of the road emissions.',
+  ssp585: 'High emissions.',
+};
+/** SPECULATIVE multipliers on the flood and heat indexes. */
+const SPECULATIVE_UPLIFT: Record<Exclude<Scenario, 'today'>, Record<Horizon, { heat: number; flood: number }>> = {
+  ssp245: { 2050: { heat: 1.08, flood: 1.1 }, 2090: { heat: 1.15, flood: 1.2 } },
+  ssp585: { 2050: { heat: 1.12, flood: 1.15 }, 2090: { heat: 1.3, flood: 1.4 } },
+};
+/** SPECULATIVE LGA-wide outlook lines. */
+const SPECULATIVE_OUTLOOK: Record<Exclude<Scenario, 'today'>, Record<Horizon, [string, string][]>> = {
+  ssp245: {
+    2050: [['Warming', '+1.0 °C'], ['Days over 35 °C', '+4 a year'], ['Annual rainfall', '−5%'], ['Sea level', '+0.2 m']],
+    2090: [['Warming', '+1.8 °C'], ['Days over 35 °C', '+8 a year'], ['Annual rainfall', '−9%'], ['Sea level', '+0.5 m']],
+  },
+  ssp585: {
+    2050: [['Warming', '+1.4 °C'], ['Days over 35 °C', '+6 a year'], ['Annual rainfall', '−7%'], ['Sea level', '+0.25 m']],
+    2090: [['Warming', '+3.5 °C'], ['Days over 35 °C', '+17 a year'], ['Annual rainfall', '−18%'], ['Sea level', '+0.8 m']],
+  },
+};
+/** The speculative multiplier for one index under a scenario (1 = no change). */
+function scenarioFactor(def: IndexDef, sel: ScenarioSel | undefined): number {
+  if (!sel || sel.scenario === 'today') return 1;
+  const u = SPECULATIVE_UPLIFT[sel.scenario][sel.year];
+  if (def.group === 'Flood' || def.id === 'bflood') return u.flood;
+  if (def.group === 'Heat') return u.heat;
+  return 1;
+}
+/** Shares can't pass 100%, and the UHI scale tops out at category 4. */
+function applyScenario(def: IndexDef, v: number | null, sel: ScenarioSel | undefined): number | null {
+  if (v === null) return null;
+  const x = v * scenarioFactor(def, sel);
+  return def.id === 'uhi' ? Math.min(x, 4) : def.format === pct ? Math.min(x, 1) : x;
+}
+
+function rankSuburbs(def: IndexDef, sel?: ScenarioSel): { s: Suburb; v: number | null; rank: number | null }[] {
+  const rows = SUBURBS.map((s) => ({ s, v: applyScenario(def, def.value(s), sel) }));
   const ranked = rows.filter((r) => r.v !== null).sort((a, b) => b.v! - a.v!);
   return [
     ...ranked.map((r, i) => ({ ...r, rank: i + 1 })),
@@ -2752,8 +2809,8 @@ function rankSuburbs(def: IndexDef): { s: Suburb; v: number | null; rank: number
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? 'st' : n % 10 === 2 && n !== 12 ? 'nd' : n % 10 === 3 && n !== 13 ? 'rd' : 'th'}`;
 
 /** Light-to-colour ramp for shading suburbs on the map by an index. */
-function shadeFor(def: IndexDef): Record<string, string> {
-  const rows = rankSuburbs(def).filter((r) => r.v !== null);
+function shadeFor(def: IndexDef, sel?: ScenarioSel): Record<string, string> {
+  const rows = rankSuburbs(def, sel).filter((r) => r.v !== null);
   const lo = Math.min(...rows.map((r) => r.v!));
   const hi = Math.max(...rows.map((r) => r.v!));
   return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EEF2F2', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
@@ -2832,6 +2889,8 @@ function PlaceTab({
   activeIds,
   indexId,
   setIndexId,
+  scenario,
+  setScenario,
 }: PlaceTabProps) {
   const [filter, setFilter] = useState<PlaceFilter>('all');
   const [showAll, setShowAll] = useState(false);
@@ -2870,12 +2929,56 @@ function PlaceTab({
 
         <Section title="Compare suburbs">
           <IndexPicker value={indexId} onChange={setIndexId} />
+          <div className="mt-2 flex gap-2">
+            <select
+              value={scenario.scenario}
+              onChange={(e) => setScenario({ ...scenario, scenario: e.target.value as Scenario })}
+              aria-label="Scenario"
+              className="min-w-0 flex-1 rounded-[6px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
+            >
+              {(Object.keys(SCENARIO_LABEL) as Scenario[]).map((k) => (
+                <option key={k} value={k}>
+                  {SCENARIO_LABEL[k]}
+                  {k === 'today' ? '' : ' (speculative)'}
+                </option>
+              ))}
+            </select>
+            <select
+              value={scenario.year}
+              disabled={scenario.scenario === 'today'}
+              onChange={(e) => setScenario({ ...scenario, year: Number(e.target.value) as Horizon })}
+              aria-label="Year"
+              className="w-[84px] rounded-[6px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3 disabled:text-ink-3"
+            >
+              <option value={2050}>2050</option>
+              <option value={2090}>2090</option>
+            </select>
+          </div>
+          {scenario.scenario !== 'today' && (
+            <div className="mt-2 rounded-[8px] border border-[#E9C46A] bg-[#FFFBEB] px-3 py-2.5">
+              <div className="text-sm font-semibold text-[#92400E]">
+                Speculative · {SCENARIO_LABEL[scenario.scenario]}, {scenario.year}
+              </div>
+              <p className="mt-0.5 text-sm leading-[1.45] text-[#92400E]">
+                {SCENARIO_NOTE[scenario.scenario]} Placeholder figures, not modelled projections. Flood and heat
+                indexes are scaled up to show the idea; replace with council's or the state's projections.
+              </p>
+              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
+                {SPECULATIVE_OUTLOOK[scenario.scenario][scenario.year].map(([k, v]) => (
+                  <div key={k} className="flex items-baseline justify-between gap-2">
+                    <dt className="text-sm text-[#92400E]">{k}</dt>
+                    <dd className="num text-sm font-semibold text-[#78350F]">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
           <p className="mb-3 mt-1.5 text-sm leading-[1.5] text-ink-3">
             {INDEX_BY_ID[indexId].how} Shaded on the map, darker is higher.
           </p>
           {(() => {
             const def = INDEX_BY_ID[indexId];
-            const rows = rankSuburbs(def);
+            const rows = rankSuburbs(def, scenario);
             const max = Math.max(...rows.map((r) => r.v ?? 0));
             return rows.map((r) => (
               <button
@@ -6110,6 +6213,8 @@ export default function App() {
   const [panelTab, setPanelTab] = useState<PanelTab>('layers');
   // Index Place compares suburbs on; it also shades the map there.
   const [indexId, setIndexId] = useState<IndexId>('flood100');
+  // SPECULATIVE scenario for the suburb comparison; 'today' is the data as supplied.
+  const [scenario, setScenario] = useState<ScenarioSel>({ scenario: 'today', year: 2050 });
   // The case study open in the Case studies tab, if any.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
@@ -6343,17 +6448,18 @@ export default function App() {
   const suburbShade = useMemo<SuburbShade | null>(() => {
     if (panelTab !== 'place' || selectedId) return null;
     const def = INDEX_BY_ID[indexId];
-    const rows = rankSuburbs(def).filter((r) => r.v !== null);
+    const rows = rankSuburbs(def, scenario).filter((r) => r.v !== null);
     if (rows.length === 0) return null;
+    const spec = scenario.scenario !== 'today';
     return {
-      label: def.short,
+      label: spec ? `${def.short}, ${SCENARIO_LABEL[scenario.scenario]} ${scenario.year} (speculative)` : def.short,
       color: def.color,
-      colors: shadeFor(def),
+      colors: shadeFor(def, scenario),
       text: Object.fromEntries(rows.map((r) => [r.s.id, `${def.short} ${def.format(r.v!)} (${ordinal(r.rank!)} of 8)`])),
       lo: def.format(rows[rows.length - 1].v!),
       hi: def.format(rows[0].v!),
     };
-  }, [panelTab, selectedId, indexId]);
+  }, [panelTab, selectedId, indexId, scenario]);
 
   // What the map should label at its real location: a Blueprint's
   // drilled-into SA2 takes priority (and its exact filtered buildings),
@@ -6432,6 +6538,8 @@ export default function App() {
               activeIds={selectedBuildingKey ? selectedBuildingIds : []}
               indexId={indexId}
               setIndexId={setIndexId}
+              scenario={scenario}
+              setScenario={setScenario}
             />
           )}
           {panelTab === 'cases' && (
