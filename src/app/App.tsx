@@ -5849,7 +5849,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
  *  depends on remembering whether this browser has seen it before. Two
  *  explicit choices rather than a silent auto-start, so landing here is
  *  never ambiguous about whether anything happened. */
-function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () => void }) {
+function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSkip: () => void; onCases: () => void }) {
   return (
     <div className="fixed inset-0 z-[2000] flex flex-col items-center justify-center bg-white px-6">
       <div className="flex w-full max-w-[400px] flex-col items-center text-center">
@@ -5892,6 +5892,12 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
             className="w-full rounded-[6px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View the tool
+          </button>
+          <button
+            onClick={onCases}
+            className="w-full rounded-[6px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+          >
+            View case studies
           </button>
         </div>
       </div>
@@ -6338,7 +6344,14 @@ export default function App() {
         </footer>
 
         {screen === 'landing' && (
-          <LandingScreen onGuide={() => setScreen('tour')} onSkip={() => setScreen(null)} />
+          <LandingScreen
+            onGuide={() => setScreen('tour')}
+            onSkip={() => setScreen(null)}
+            onCases={() => {
+              setScreen(null);
+              setPanelTab('cases');
+            }}
+          />
         )}
         {screen === 'tour' && <GuideTour onDone={() => setScreen(null)} />}
         {searchOpen && <SearchPalette onPick={handleSearchPick} onClose={() => setSearchOpen(false)} />}
