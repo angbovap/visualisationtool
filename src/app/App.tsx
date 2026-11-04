@@ -834,6 +834,13 @@ const IconGauge = ({ size = 17, className }: IconProps) => (
 );
 
 /** Recentre on the LGA. */
+const IconThermo = ({ size = 17, className }: IconProps) => (
+  <svg {...svgBase(size)} className={className}>
+    <path d="M10 13.5V5a2 2 0 1 1 4 0v8.5a4 4 0 1 1-4 0Z" />
+    <path d="M12 9v7" />
+  </svg>
+);
+
 const IconHospital = ({ size = 17, className }: IconProps) => (
   <svg {...svgBase(size)} className={className}>
     <rect x="3.5" y="3.5" width="17" height="17" rx="3" />
@@ -1252,7 +1259,8 @@ function MapView(props: MapViewProps) {
   const [zoomLevel, setZoomLevel] = useState(MAP_ZOOM);
   const [basemap, setBasemap] = useState(BASEMAPS[0].id);
   const [dimOutside, setDimOutside] = useState(true);
-  const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | null>(null);
+  const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
+  const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const baseDef = BASEMAP_BY_ID[basemap] ?? BASEMAPS[0];
   const darkBase = !!baseDef.dark;
 
@@ -1902,6 +1910,17 @@ function MapView(props: MapViewProps) {
               value: boundsMode as string,
               onChange: (v: string) => setBoundsMode(v as BoundsMode),
             },
+            {
+              id: 'scenario' as const,
+              icon: IconThermo,
+              label: 'Scenario',
+              options: SCENARIO_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.value === 'today' ? o.label : `${o.label} (speculative)`,
+              })),
+              value: scenarioKey(scenario),
+              onChange: (v: string) => setScenario(SCENARIO_OPTIONS.find((o) => o.value === v)?.sel ?? TODAY),
+            },
           ]
         ).map((c) => {
           const Icon = c.icon;
@@ -1926,7 +1945,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className="fade-up absolute right-[calc(100%+10px)] top-0 w-[170px] rounded-[8px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[8px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -1966,6 +1985,27 @@ function MapView(props: MapViewProps) {
           <Switch on={dimOutside} />
         </button>
       </div>
+
+      {scenario.scenario !== 'today' && (
+        <div className="absolute bottom-4 left-1/2 z-[999] w-[min(460px,calc(100%-480px))] min-w-[300px] -translate-x-1/2">
+          <div className="fade-up rounded-[8px] border border-[#E9C46A] bg-[#FFFBEB] px-3 py-2 shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-semibold text-[#92400E]">Speculative scenario · {scenarioName(scenario)}</span>
+              <button onClick={() => setScenario(TODAY)} className="text-sm font-medium text-[#92400E] underline hover:text-[#78350F]">
+                Back to today
+              </button>
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+              {SPECULATIVE_OUTLOOK[scenario.scenario][scenario.year].map(([k, v]) => (
+                <span key={k} className="text-sm text-[#92400E]">
+                  {k} <span className="num font-semibold text-[#78350F]">{v}</span>
+                </span>
+              ))}
+            </div>
+            <div className="mt-0.5 text-xs text-[#92400E]">{SCENARIO_NOTE[scenario.scenario]} Placeholder figures, not modelled projections.</div>
+          </div>
+        </div>
+      )}
 
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
@@ -2626,9 +2666,6 @@ interface PlaceTabProps {
   /** The index suburbs are compared on, also shading the map. */
   indexId: IndexId;
   setIndexId: (v: IndexId) => void;
-  /** SPECULATIVE scenario the comparison is shown under. */
-  scenario: ScenarioSel;
-  setScenario: (v: ScenarioSel) => void;
 }
 
 /* ------------------------------------------------------------------ *
@@ -2783,6 +2820,22 @@ const SPECULATIVE_OUTLOOK: Record<Exclude<Scenario, 'today'>, Record<Horizon, [s
     2090: [['Warming', '+3.5 °C'], ['Days over 35 °C', '+17 a year'], ['Annual rainfall', '−18%'], ['Sea level', '+0.8 m']],
   },
 };
+const TODAY: ScenarioSel = { scenario: 'today', year: 2050 };
+/** The scenario the whole tool is showing, set from the map controls. */
+const ScenarioContext = React.createContext<{ sel: ScenarioSel; set: (v: ScenarioSel) => void }>({
+  sel: TODAY,
+  set: () => {},
+});
+const SCENARIO_OPTIONS: { value: string; label: string; sel: ScenarioSel }[] = [
+  { value: 'today', label: 'Today', sel: TODAY },
+  { value: 'ssp245-2050', label: 'SSP2-4.5 · 2050', sel: { scenario: 'ssp245', year: 2050 } },
+  { value: 'ssp245-2090', label: 'SSP2-4.5 · 2090', sel: { scenario: 'ssp245', year: 2090 } },
+  { value: 'ssp585-2050', label: 'SSP5-8.5 · 2050', sel: { scenario: 'ssp585', year: 2050 } },
+  { value: 'ssp585-2090', label: 'SSP5-8.5 · 2090', sel: { scenario: 'ssp585', year: 2090 } },
+];
+const scenarioKey = (sel: ScenarioSel) => (sel.scenario === 'today' ? 'today' : `${sel.scenario}-${sel.year}`);
+const scenarioName = (sel: ScenarioSel) => `${SCENARIO_LABEL[sel.scenario]}, ${sel.year}`;
+
 /** The speculative multiplier for one index under a scenario (1 = no change). */
 function scenarioFactor(def: IndexDef, sel: ScenarioSel | undefined): number {
   if (!sel || sel.scenario === 'today') return 1;
@@ -2889,9 +2942,8 @@ function PlaceTab({
   activeIds,
   indexId,
   setIndexId,
-  scenario,
-  setScenario,
 }: PlaceTabProps) {
+  const { sel: scenario } = React.useContext(ScenarioContext);
   const [filter, setFilter] = useState<PlaceFilter>('all');
   const [showAll, setShowAll] = useState(false);
   useEffect(() => {
@@ -2908,49 +2960,10 @@ function PlaceTab({
       <div className="px-3 py-4">
         <Section title="Compare suburbs">
           <IndexPicker value={indexId} onChange={setIndexId} />
-          <div className="mt-2 flex gap-2">
-            <select
-              value={scenario.scenario}
-              onChange={(e) => setScenario({ ...scenario, scenario: e.target.value as Scenario })}
-              aria-label="Scenario"
-              className="min-w-0 flex-1 rounded-[6px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
-            >
-              {(Object.keys(SCENARIO_LABEL) as Scenario[]).map((k) => (
-                <option key={k} value={k}>
-                  {SCENARIO_LABEL[k]}
-                  {k === 'today' ? '' : ' (speculative)'}
-                </option>
-              ))}
-            </select>
-            <select
-              value={scenario.year}
-              disabled={scenario.scenario === 'today'}
-              onChange={(e) => setScenario({ ...scenario, year: Number(e.target.value) as Horizon })}
-              aria-label="Year"
-              className="w-[84px] rounded-[6px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3 disabled:text-ink-3"
-            >
-              <option value={2050}>2050</option>
-              <option value={2090}>2090</option>
-            </select>
-          </div>
           {scenario.scenario !== 'today' && (
-            <div className="mt-2 rounded-[8px] border border-[#E9C46A] bg-[#FFFBEB] px-3 py-2.5">
-              <div className="text-sm font-semibold text-[#92400E]">
-                Speculative · {SCENARIO_LABEL[scenario.scenario]}, {scenario.year}
-              </div>
-              <p className="mt-0.5 text-sm leading-[1.45] text-[#92400E]">
-                {SCENARIO_NOTE[scenario.scenario]} Placeholder figures, not modelled projections. Flood and heat
-                indexes are scaled up to show the idea; replace with council's or the state's projections.
-              </p>
-              <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1">
-                {SPECULATIVE_OUTLOOK[scenario.scenario][scenario.year].map(([k, v]) => (
-                  <div key={k} className="flex items-baseline justify-between gap-2">
-                    <dt className="text-sm text-[#92400E]">{k}</dt>
-                    <dd className="num text-sm font-semibold text-[#78350F]">{v}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
+            <p className="mt-2 text-sm font-medium text-[#92400E]">
+              Showing {scenarioName(scenario)}, speculative. Change it in the map's Scenario control.
+            </p>
           )}
           <p className="mb-3 mt-1.5 text-sm leading-[1.5] text-ink-3">
             {INDEX_BY_ID[indexId].how} Shaded on the map, darker is higher.
@@ -3039,7 +3052,7 @@ function PlaceTab({
       <Section title="Indexes" right={<span className="text-sm text-ink-3">Rank of 8 suburbs</span>}>
         <dl className="divide-y divide-line">
           {INDEXES.map((def) => {
-            const row = rankSuburbs(def).find((r) => r.s.id === s.id)!;
+            const row = rankSuburbs(def, scenario).find((r) => r.s.id === s.id)!;
             return (
               <div key={def.id} className="flex items-baseline gap-3 py-1.5">
                 <dt className="min-w-0 flex-1 truncate text-base text-ink-2" title={def.how}>
@@ -3821,7 +3834,7 @@ function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; 
 
 /** The case study as a standalone, printable HTML report: every reading
  *  from the three sections plus the tolerance sheet as filled in so far. */
-function downloadTqehReport(r: TqehReading) {
+function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const row = (k: string, v: string) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`;
   const sheet = loadTolerance();
@@ -3842,7 +3855,7 @@ function downloadTqehReport(r: TqehReading) {
   const indexRows = r.suburb
     ? INDEXES.filter((d) => d.group !== 'Assets')
         .map((d) => {
-          const x = rankSuburbs(d).find((y) => y.s.id === r.suburb!.id)!;
+          const x = rankSuburbs(d, sel).find((y) => y.s.id === r.suburb!.id)!;
           return row(d.label, x.v === null ? 'n/a' : `${d.format(x.v)} (${ordinal(x.rank!)} of 8)`);
         })
         .join('')
@@ -3860,7 +3873,7 @@ ${r.flood.map((f) => row(`Flood ${FLOOD_SHORT[f.id]}`, floodAtSite(f))).join('')
 ${heatRow}
 ${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
 </table>
-${r.suburb ? `<h2>${esc(r.suburb.name)} indexes</h2><table>${indexRows}</table>` : ''}
+${r.suburb ? `<h2>${esc(r.suburb.name)} indexes${sel.scenario === 'today' ? '' : `, ${esc(scenarioName(sel))} (speculative placeholder figures)`}</h2><table>${indexRows}</table>` : ''}
 <h2>Assets and access</h2><table>
 ${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m, of which ${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`)}${row('Nearest stormwater pipe', `${formatMetres(r.pipeM)} from the centre`)}${row('Roads, pipe sizes, people', 'Waiting on council data')}
 </table>
@@ -3965,6 +3978,7 @@ function TqehTab({
   onOpenSuburb: (id: string) => void;
 }) {
   const [view, setView] = useState<'hazard' | 'assets' | 'tolerance'>('hazard');
+  const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
   const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
 
@@ -4011,7 +4025,7 @@ function TqehTab({
       <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-sm leading-[1.45] text-ink-3">All readings and the tolerance sheet, as one file.</span>
         <button
-          onClick={() => downloadTqehReport(r)}
+          onClick={() => downloadTqehReport(r, scenarioSel)}
           className="shrink-0 rounded-[6px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
         >
           Download report
@@ -4051,6 +4065,7 @@ function TqehHazard({
   showLayers: (ids: string[]) => void;
   onOpenSuburb: (id: string) => void;
 }) {
+  const { sel: scenario } = React.useContext(ScenarioContext);
   return (
     <>
       <Section title="Flood" right={<ShowOnMap ids={TQEH_FLOOD_LAYERS} showLayers={showLayers} />}>
@@ -4105,10 +4120,15 @@ function TqehHazard({
             </button>
           }
         >
-          <p className="-mt-1 mb-1 text-sm text-ink-3">The hospital's suburb, ranked against the other seven.</p>
+          <p className="-mt-1 mb-1 text-sm text-ink-3">
+            The hospital's suburb, ranked against the other seven.
+            {scenario.scenario !== 'today' && (
+              <span className="font-medium text-[#92400E]"> Showing {scenarioName(scenario)}, speculative.</span>
+            )}
+          </p>
           <dl className="divide-y divide-line">
             {INDEXES.filter((d) => d.group !== 'Assets').map((def) => {
-              const row = rankSuburbs(def).find((x) => x.s.id === r.suburb!.id)!;
+              const row = rankSuburbs(def, scenario).find((x) => x.s.id === r.suburb!.id)!;
               return (
                 <div key={def.id} className="flex items-baseline gap-3 py-1.5">
                   <dt className="min-w-0 flex-1 truncate text-base text-ink-2" title={def.how}>
@@ -6475,7 +6495,10 @@ export default function App() {
       ? [searchFocusId!]
       : null;
 
+  const scenarioCtx = useMemo(() => ({ sel: scenario, set: setScenario }), [scenario]);
+
   return (
+    <ScenarioContext.Provider value={scenarioCtx}>
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
@@ -6540,8 +6563,6 @@ export default function App() {
               activeIds={selectedBuildingKey ? selectedBuildingIds : []}
               indexId={indexId}
               setIndexId={setIndexId}
-              scenario={scenario}
-              setScenario={setScenario}
             />
           )}
           {panelTab === 'cases' && (
@@ -6626,5 +6647,6 @@ export default function App() {
         />
       )}
     </div>
+    </ScenarioContext.Provider>
   );
 }
