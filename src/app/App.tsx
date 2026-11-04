@@ -1906,7 +1906,16 @@ function LocatorMap({
   const ref = useRef<HTMLDivElement | null>(null);
   const miniRef = useRef<LeafletMap | null>(null);
   const selRef = useRef<LeafletLayer | null>(null);
-  const [open, setOpen] = useState(true);
+  // Only shown once the whole council area is no longer in view.
+  const lgaBounds = useMemo(() => L.latLngBounds(LGA_BOUNDARY.ring), [L]);
+  const [open, setOpen] = useState(() => !main.getBounds().contains(lgaBounds));
+  useEffect(() => {
+    const check = () => setOpen(!main.getBounds().contains(lgaBounds));
+    main.on('moveend zoomend resize', check);
+    return () => {
+      main.off('moveend zoomend resize', check);
+    };
+  }, [main, lgaBounds]);
 
   useEffect(() => {
     if (!open || !ref.current) return;
@@ -1925,7 +1934,7 @@ function LocatorMap({
       L.polygon(s.path, { color: '#9AA8A7', weight: 0.6, fill: false, interactive: false }).addTo(mini);
     }
     L.polygon(LGA_BOUNDARY.ring, { color: ACCENT, weight: 1.4, fillColor: ACCENT, fillOpacity: 0.05, interactive: false }).addTo(mini);
-    mini.fitBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [6, 6] });
+    mini.fitBounds(lgaBounds, { padding: [6, 6] });
     const box = L.rectangle(main.getBounds(), {
       color: '#14201F',
       weight: 1.5,
@@ -1943,7 +1952,7 @@ function LocatorMap({
       miniRef.current = null;
       selRef.current = null;
     };
-  }, [open, L, main]);
+  }, [open, L, main, lgaBounds]);
 
   // The suburb open in Place, shaded so it's findable at a glance.
   useEffect(() => {
@@ -1966,25 +1975,10 @@ function LocatorMap({
     };
   }, [main]);
 
+  if (!open) return null;
   return (
-    <div className="absolute bottom-4 left-3 z-[999] w-[188px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
-      <div className="flex items-center justify-between px-2.5 py-1.5">
-        <span className="text-sm font-medium text-ink-2">Where you are</span>
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="text-sm text-ink-3 hover:text-ink"
-          aria-expanded={open}
-        >
-          {open ? 'Hide' : 'Show'}
-        </button>
-      </div>
-      {open && (
-        <div
-          ref={ref}
-          className="h-[150px] w-full cursor-pointer border-t border-line"
-          title="Click to move the map here"
-        />
-      )}
+    <div className="fade-in absolute bottom-4 left-3 z-[999] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+      <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
 }
