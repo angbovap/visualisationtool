@@ -2232,39 +2232,71 @@ interface PlaceTabProps {
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
   onOpenBuilding: (id: string) => void;
-  activeBuildingId: string | null;
+  onOpenBuildings: (ids: string[]) => void;
+  /** Buildings open on the right, to mark their row. */
+  activeIds: string[];
 }
 
-/** One hazard as a row of three counts, e.g. buildings per flood extent. */
-function ExposureLine({ label, cells, border }: { label: string; cells: [string, number][]; border?: boolean }) {
+/** Several register rows filed under one name (one site with many
+ *  buildings, e.g. an aged care facility) as one line. Opens the list of
+ *  them on the right, where each has its own profile. */
+function BuildingGroupRow({
+  name,
+  items,
+  onOpen,
+  active,
+}: {
+  name: string;
+  items: RealAsset[];
+  onOpen: (ids: string[]) => void;
+  active?: boolean;
+}) {
+  const types = [...new Set(items.map((b) => b.buildingType ?? 'Not yet classified'))];
+  const value = items.reduce((n, b) => n + b.insuredValue, 0);
   return (
-    <div className={`px-3 py-2.5 ${border ? 'border-t border-line' : ''}`}>
-      <div className="text-sm text-ink-3">{label}</div>
-      <div className="mt-1.5 grid grid-cols-3 gap-2">
-        {cells.map(([k, n]) => (
-          <div key={k}>
-            <div className={`num text-stat-sm font-semibold leading-none ${n ? 'text-ink' : 'text-ink-3'}`}>{n}</div>
-            <div className="mt-1 text-sm text-ink-3">{k}</div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <button
+      onClick={() => onOpen(items.map((b) => b.id))}
+      aria-current={active || undefined}
+      className={`flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left transition-colors ${active ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+      style={active ? { boxShadow: `inset 2px 0 0 ${ACCENT}` } : undefined}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-lg font-medium text-ink">{name}</span>
+        <span className="num mt-0.5 block truncate text-sm text-ink-3">
+          {items.length} buildings · {types.length === 1 ? types[0] : `${types.length} types`}
+        </span>
+      </span>
+      {value > 0 && <span className="num shrink-0 pt-[1px] text-base text-ink-2">{formatMoney(value)}</span>}
+    </button>
   );
 }
 
-function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, activeBuildingId }: PlaceTabProps) {
+type PlaceFilter = 'all' | 'flood' | 'heat4';
+const PLACE_FILTERS: { id: PlaceFilter; label: string; hint?: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'flood', label: 'In a flood extent', hint: 'Inside at least one mapped flood extent.' },
+  { id: 'heat4', label: 'Heat category 4', hint: "In the heat grid's highest category." },
+];
+
+function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, onOpenBuildings, activeIds }: PlaceTabProps) {
+  const [filter, setFilter] = useState<PlaceFilter>('all');
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => {
+    setFilter('all');
+    setShowAll(false);
+  }, [selectedId]);
+
   const profiles = hazardProfiles();
-  const inAnyFlood = (b: RealAsset) => (profiles.get(b.id)?.flood.length ?? 0) > 0;
+  const inFlood = (b: RealAsset) => (profiles.get(b.id)?.flood.length ?? 0) > 0;
+  const inHeat4 = (b: RealAsset) => profiles.get(b.id)?.heat?.uhiCat === 4;
 
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
       <div className="px-3 py-4">
         <PanelHeading>Suburbs</PanelHeading>
-        <p className="-mt-1 mb-3 text-base text-ink-3">Pick one to see its council buildings and what they're exposed to.</p>
         <div className="grid grid-cols-2 gap-2">
           {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
-            const flooded = bs.filter(inAnyFlood).length;
             return (
               <button
                 key={s.id}
@@ -2275,7 +2307,7 @@ function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, activeBuildingId 
                 <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
                   {bs.length} buildings
                   <br />
-                  {flooded} in a flood extent
+                  {bs.filter(inFlood).length} in a flood extent
                 </span>
               </button>
             );
@@ -2286,13 +2318,25 @@ function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, activeBuildingId 
   }
 
   const s = SUBURB_BY_ID[selectedId];
-  const buildings = [...(REAL_BUILDINGS_BY_SUBURB[s.id] ?? [])].sort((a, b) => b.insuredValue - a.insuredValue);
+  const buildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
   const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
-  const count = (f: (p: HazardProfile) => boolean) =>
-    buildings.filter((b) => {
-      const p = profiles.get(b.id);
-      return !!p && f(p);
-    }).length;
+  const pick = { all: () => true, flood: inFlood, heat4: inHeat4 } as const;
+  const counts: Record<PlaceFilter, number> = {
+    all: buildings.length,
+    flood: buildings.filter(inFlood).length,
+    heat4: buildings.filter(inHeat4).length,
+  };
+  const active: PlaceFilter = counts[filter] > 0 ? filter : 'all';
+
+  // Same-named register rows (one site, many buildings) collapse into one
+  // line, largest total value first.
+  const groups = new Map<string, RealAsset[]>();
+  for (const b of buildings.filter(pick[active])) groups.set(b.name, [...(groups.get(b.name) ?? []), b]);
+  const rows = [...groups.entries()]
+    .map(([name, items]) => ({ name, items, value: items.reduce((n, b) => n + b.insuredValue, 0) }))
+    .sort((a, b) => b.value - a.value);
+  const shown = showAll ? rows : rows.slice(0, 10);
+  const hint = PLACE_FILTERS.find((f) => f.id === active)?.hint;
 
   return (
     <div className="px-3 py-4">
@@ -2302,33 +2346,63 @@ function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, activeBuildingId 
         <Figure label="Insured value" value={formatMoney(insured)} />
       </FigureStrip>
 
-      {buildings.length > 0 && (
-        <Section title="Hazard exposure">
-          <div className="rounded-[8px] border border-line">
-            <ExposureLine
-              label="Buildings inside each flood extent"
-              cells={FLOOD_LAYER_IDS.map((id) => [FLOOD_SHORT[id], count((p) => p.flood.includes(id))] as [string, number])}
-            />
-            <ExposureLine
-              border
-              label="Buildings by urban heat category"
-              cells={[4, 3, 2].map((c) => [`Category ${c}`, count((p) => p.heat?.uhiCat === c)] as [string, number])}
-            />
-          </div>
-        </Section>
-      )}
-
-      <Section title="Buildings" right={<span className="text-sm text-ink-3">Highest value first</span>}>
+      <section className="mt-6">
+        <PanelHeading>Buildings</PanelHeading>
         {buildings.length === 0 ? (
           <p className="text-base text-ink-3">No register buildings are mapped inside this SA2.</p>
         ) : (
-          <BuildingList>
-            {buildings.map((b) => (
-              <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} active={activeBuildingId === b.id} />
-            ))}
-          </BuildingList>
+          <>
+            <div className="flex gap-4 border-b border-line" role="tablist">
+              {PLACE_FILTERS.map((f) => {
+                const on = active === f.id;
+                const n = counts[f.id];
+                return (
+                  <button
+                    key={f.id}
+                    role="tab"
+                    aria-selected={on}
+                    disabled={n === 0}
+                    onClick={() => {
+                      setFilter(f.id);
+                      setShowAll(false);
+                    }}
+                    className={`-mb-px whitespace-nowrap border-b-2 pb-2 text-base transition-colors disabled:cursor-default disabled:opacity-40 ${on ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink-3 hover:text-ink'}`}
+                  >
+                    {f.label} <span className="num font-normal text-ink-3">{n}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mb-3 mt-2 min-h-[16px] text-sm text-ink-3">{hint ?? 'Highest insured value first.'}</p>
+            <BuildingList>
+              {shown.map((r) =>
+                r.items.length === 1 ? (
+                  <BuildingRow
+                    key={r.name}
+                    b={r.items[0]}
+                    onOpen={onOpenBuilding}
+                    active={activeIds.length === 1 && activeIds[0] === r.items[0].id}
+                    hideSuburb
+                  />
+                ) : (
+                  <BuildingGroupRow
+                    key={r.name}
+                    name={r.name}
+                    items={r.items}
+                    onOpen={onOpenBuildings}
+                    active={activeIds.length > 1 && r.items.some((b) => b.id === activeIds[0])}
+                  />
+                ),
+              )}
+            </BuildingList>
+            {rows.length > 10 && (
+              <button onClick={() => setShowAll((v) => !v)} className="mt-2 text-base font-medium text-accent hover:text-ink">
+                {showAll ? 'Show fewer' : `Show all ${rows.length}`}
+              </button>
+            )}
+          </>
         )}
-      </Section>
+      </section>
     </div>
   );
 }
@@ -3642,11 +3716,14 @@ function BuildingRow({
   onOpen,
   active,
   right,
+  hideSuburb,
 }: {
   b: RealAsset;
   onOpen: (id: string) => void;
   active?: boolean;
   right?: React.ReactNode;
+  /** In a list already scoped to one suburb, repeating it is noise. */
+  hideSuburb?: boolean;
 }) {
   const p = hazardProfiles().get(b.id);
   const tags: string[] = [];
@@ -3664,15 +3741,14 @@ function BuildingRow({
     >
       <span className="min-w-0 flex-1">
         <span className="block truncate text-lg font-medium text-ink">{b.name}</span>
-        <span className="mt-0.5 block truncate text-sm text-ink-3">
-          {b.buildingType ?? 'Not yet classified'}
-          {b.suburb ? ` · ${b.suburb}` : ''}
-          {!p && ' · not mapped'}
+        <span className="num mt-0.5 block truncate text-sm text-ink-3">
+          {[b.buildingType ?? 'Not yet classified', !hideSuburb && b.suburb, ...tags, !p && 'not mapped']
+            .filter(Boolean)
+            .join(' · ')}
         </span>
       </span>
-      <span className="shrink-0 text-right">
+      <span className="shrink-0 pt-[1px] text-right">
         {right ?? (b.insuredValue > 0 && <span className="num block text-base text-ink-2">{formatMoney(b.insuredValue)}</span>)}
-        {tags.length > 0 && <span className="num mt-0.5 block text-sm text-ink-3">{tags.join(' · ')}</span>}
       </span>
     </button>
   );
@@ -3820,8 +3896,14 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
   }
 
   const total = buildings.reduce((n, b) => n + b.insuredValue, 0);
+  const oneName = buildings.every((b) => b.name === buildings[0].name);
   return (
-    <RightPanelShell accent={ACCENT} eyebrow="Map point" title={`${buildings.length} buildings here`} onClose={onClose}>
+    <RightPanelShell
+      accent={ACCENT}
+      eyebrow={oneName ? `${buildings.length} buildings` : 'Map point'}
+      title={oneName ? buildings[0].name : `${buildings.length} buildings here`}
+      onClose={onClose}
+    >
       <div className="px-4 py-4">
         <FigureStrip>
           <Figure label="Buildings" value={buildings.length} />
@@ -4756,7 +4838,22 @@ export default function App() {
     setSelectedBuildingKey(loc ? `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}` : `id:${id}`);
     setSelectedBuildingIds([id]);
   }, []);
-  const activeBuildingId = selectedBuildingKey && selectedBuildingIds.length === 1 ? selectedBuildingIds[0] : null;
+  // A same-named group: ringed on the map when they share one point.
+  const openBuildings = useCallback(
+    (ids: string[]) => {
+      if (ids.length === 1) return openBuilding(ids[0]);
+      const keys = new Set(
+        ids.map((id) => {
+          const loc = BUILDING_LOCATION[id];
+          return loc ? `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}` : `id:${id}`;
+        }),
+      );
+      setSelectedBuildingKey(keys.size === 1 ? [...keys][0] : `group:${ids[0]}`);
+      setSelectedBuildingIds(ids);
+    },
+    [openBuilding],
+  );
+  const activeBuildingId =selectedBuildingKey && selectedBuildingIds.length === 1 ? selectedBuildingIds[0] : null;
 
   // A building opened from anywhere sits on top of a Blueprint or layer
   // panel; closing it goes back to whichever was open underneath.
@@ -4954,7 +5051,8 @@ export default function App() {
               selectedId={selectedId}
               setSelectedId={setSelectedId}
               onOpenBuilding={openBuilding}
-              activeBuildingId={activeBuildingId}
+              onOpenBuildings={openBuildings}
+              activeIds={selectedBuildingKey ? selectedBuildingIds : []}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
