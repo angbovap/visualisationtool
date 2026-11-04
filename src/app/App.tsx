@@ -1646,7 +1646,7 @@ function MapView(props: MapViewProps) {
       {/* Map controls: one card, each row naming what it changes and its
           current setting, so nothing depends on guessing an icon. Basemap
           and boundaries open a menu beside their row; Focus is a switch. */}
-      <div className="absolute right-3 top-3 z-[999] w-[214px] rounded-[12px] bg-white p-1 shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+      <div className="absolute right-3 top-3 z-[999] w-[214px] rounded-[8px] bg-white p-1 shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
         {(
           [
             {
@@ -1678,11 +1678,11 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
+                className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
               >
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] ${open ? 'bg-accent text-white' : 'bg-surface-2 text-ink-2'}`}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] ${open ? 'text-accent' : 'text-ink-2'}`}
                 >
                   <Icon size={16} />
                 </span>
@@ -1693,7 +1693,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className="fade-up absolute right-[calc(100%+10px)] top-0 w-[170px] rounded-[10px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
+                <div className="fade-up absolute right-[calc(100%+10px)] top-0 w-[170px] rounded-[8px] bg-white p-1.5 shadow-[0_8px_24px_rgba(20,32,31,0.2)]">
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -1706,7 +1706,7 @@ function MapView(props: MapViewProps) {
                           c.onChange(o.value);
                           setOpenControl(null);
                         }}
-                        className={`flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'bg-accent-soft font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
+                        className={`flex w-full items-center justify-between rounded-[6px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
                       >
                         {o.label}
                         {on && <span className="h-[6px] w-[6px] rounded-full bg-accent" />}
@@ -1723,7 +1723,7 @@ function MapView(props: MapViewProps) {
           aria-pressed={dimOutside}
           className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] bg-surface-2 text-ink-2">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center text-ink-2">
             <IconFocus size={16} />
           </span>
           <span className="min-w-0 flex-1">
@@ -1764,13 +1764,13 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-white text-ink-2 shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[8px] bg-white text-ink-2 shadow-[0_2px_10px_rgba(20,32,31,0.16)] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[10px] bg-white py-1 shadow-[0_2px_10px_rgba(20,32,31,0.16)]">
+        <div className="flex w-9 flex-col items-center rounded-[8px] bg-white py-1 shadow-[0_2px_10px_rgba(20,32,31,0.16)]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
             className="flex h-7 w-7 items-center justify-center rounded-[6px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
@@ -1908,8 +1908,8 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-3 rounded-[12px] bg-surface-2 p-1.5">
-            <div className="flex items-center gap-2.5 rounded-[8px] border border-dashed border-line bg-white/60 px-2.5 py-2.5">
+          <div className="mx-3 overflow-hidden rounded-[8px] border border-dashed border-line">
+            <div className="flex items-center gap-2.5 px-3 py-2.5">
               <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2] opacity-60" />
               <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
               <span className="text-xs text-ink-3">Not supplied yet</span>
@@ -1922,14 +1922,14 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        <div className="mx-3 space-y-1 rounded-[12px] bg-surface-2 p-1.5">
+        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[8px] border border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
           return (
             <div
               key={l.id}
-              className={`rounded-[8px] bg-white px-2.5 py-2 shadow-[0_1px_2px_rgba(20,32,31,0.06)] transition-shadow ${checked ? 'ring-1 ring-accent-line' : ''}`}
+              className="bg-white px-3 py-2.5"
             >
               <div className="flex items-center gap-2.5">
                 <button
@@ -2004,8 +2004,8 @@ function LayersTab({
                 key={b.id}
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
-                className="group flex w-full items-center gap-3 rounded-[10px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
-                style={on ? { background: withAlpha(b.accent, 0.08) } : undefined}
+                className="group flex w-full items-center gap-3 rounded-[8px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
+                style={on ? { boxShadow: `inset 3px 0 0 ${b.accent}` } : undefined}
               >
                 <span className="shrink-0" style={{ color: b.accent }}>
                   <Icon size={18} />
@@ -2045,13 +2045,13 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className={`group flex flex-col rounded-[12px] border bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)] ${pending ? 'border-dashed border-line' : 'border-line'}`}
+                    className={`group flex flex-col rounded-[8px] border bg-white p-2.5 text-left transition-all hover:border-ink-3 ${pending ? 'border-dashed border-line' : 'border-line'}`}
                     style={c.on > 0 ? { borderColor: c.color } : undefined}
                   >
                     <span className="flex items-start justify-between">
                       <span
-                        className="flex h-8 w-8 items-center justify-center rounded-[9px]"
-                        style={{ background: withAlpha(c.color, 0.12), color: c.color }}
+                        className="flex h-6 items-center"
+                        style={{ color: c.color }}
                       >
                         <Icon size={17} />
                       </span>
@@ -2173,7 +2173,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex min-h-[74px] flex-col justify-between rounded-[12px] border border-line bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:border-accent-line hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)]"
+                className="flex min-h-[74px] flex-col justify-between rounded-[8px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
               >
                 <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
                 <span className="num mt-2 text-xs text-ink-3">
@@ -2206,7 +2206,7 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
           <div className="num text-xs text-ink-3">SA2 {s.sa2}</div>
         </div>
       </div>
-      <div className="mb-4 grid grid-cols-2 divide-x divide-line rounded-[12px] bg-surface-2 py-2.5">
+      <div className="mb-4 grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-2.5">
         <div className="px-3">
           <div className="text-xs text-ink-3">Buildings</div>
           <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
@@ -2817,7 +2817,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-11 items-center justify-center rounded-[12px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+          className="flex h-11 w-11 items-center justify-center rounded-[8px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
           aria-label="Home"
         >
           <IconHome size={23} />
@@ -2835,7 +2835,7 @@ function IconRail({
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 onClick={() => setTab(t)}
-                className={`flex h-11 w-11 items-center justify-center rounded-[12px] transition-colors ${on ? 'bg-accent text-white' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
+                className={`flex h-11 w-11 items-center justify-center rounded-[8px] transition-colors ${on ? 'bg-accent text-white' : 'text-ink-3 hover:bg-surface-2 hover:text-accent'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -3156,12 +3156,12 @@ function BuildingCard({
         </div>
         <div className="mt-1 flex flex-wrap gap-1">
           {b.condition && (
-            <span className="rounded-[3px] px-1 text-2xs font-medium" style={{ background: withAlpha(condColor, 0.12), color: condColor }}>
+            <span className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2"><span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: condColor }} />
               {b.condition}
             </span>
           )}
           {b.inherentRisk && (
-            <span className="rounded-[3px] px-1 text-2xs font-medium" style={{ background: withAlpha(riskColor, 0.12), color: riskColor }}>
+            <span className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2"><span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: riskColor }} />
               {b.inherentRisk}
             </span>
           )}
@@ -3262,11 +3262,8 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
                     {[...conditionCounts.entries()].map(([label, n]) => {
                       const c = CONDITION_COLOR[label] ?? NEUTRAL_TONE;
                       return (
-                        <span
-                          key={label}
-                          className="rounded-[3px] px-1 text-2xs font-medium"
-                          style={{ background: withAlpha(c, 0.12), color: c }}
-                        >
+                        <span key={label} className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2">
+                          <span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: c }} />
                           {n} {label}
                         </span>
                       );
@@ -3278,11 +3275,8 @@ function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => vo
                     {[...riskCounts.entries()].map(([label, n]) => {
                       const c = RISK_COLOR[label] ?? NEUTRAL_TONE;
                       return (
-                        <span
-                          key={label}
-                          className="rounded-[3px] px-1 text-2xs font-medium"
-                          style={{ background: withAlpha(c, 0.12), color: c }}
-                        >
+                        <span key={label} className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2">
+                          <span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: c }} />
                           {n} {label}
                         </span>
                       );
@@ -3544,32 +3538,37 @@ function RealBuildingsRegister({
 
   return (
     <div>
-      {/* Filter, then the headline it produces, then four colour-coded
-          ways in. Same pattern as Layers and Place: tiles open a view,
-          a back button returns. */}
-      <div className="mb-5">
-        <PanelHeading>Ward</PanelHeading>
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {[{ key: null as string | null, count: REAL_BUILDINGS.length }, ...REAL_WARDS].map((w) => {
-            const on = ward === w.key;
-            return (
-              <button
-                key={w.key ?? 'all'}
-                onClick={() => {
-                  setWard(w.key);
-                  setListScope(null);
-                  setOpenId(null);
-                }}
-                aria-pressed={on}
-                className={`flex items-center gap-1.5 rounded-[6px] border px-2 py-1 text-base transition-colors ${on ? 'border-accent bg-accent-soft font-semibold text-accent' : 'border-line bg-white text-ink-2 hover:border-accent'}`}
-              >
-                {w.key === null ? 'Whole LGA' : w.key === NO_WARD ? 'No ward' : w.key}
-                <span className="num text-xs text-ink-3">{w.count}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="grid grid-cols-2 divide-x divide-line rounded-[12px] bg-surface-2 py-3">
+      <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
+        {view === null && (
+          <>
+      {/* Home: one Overview section (scope picker + its headline), then
+          one Explore section of tiles. Sub-views replace both and lead
+          with their own back bar. */}
+      <div className="mb-6">
+        <PanelHeading
+          right={
+            <select
+              value={ward ?? ''}
+              onChange={(e) => {
+                setWard(e.target.value === '' ? null : e.target.value);
+                setListScope(null);
+                setOpenId(null);
+              }}
+              aria-label="Ward"
+              className="rounded-[6px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
+            >
+              <option value="">Whole LGA ({REAL_BUILDINGS.length})</option>
+              {REAL_WARDS.map((w) => (
+                <option key={w.key} value={w.key}>
+                  {w.key === NO_WARD ? 'No ward' : w.key} ({w.count})
+                </option>
+              ))}
+            </select>
+          }
+        >
+          Overview
+        </PanelHeading>
+        <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">
           <div className="px-3">
             <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
@@ -3587,9 +3586,6 @@ function RealBuildingsRegister({
         </div>
       </div>
 
-      <div style={{ viewTransitionName: 'buildings-register-step' } as React.CSSProperties}>
-        {view === null && (
-          <>
             <PanelHeading
               right={
                 <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
@@ -3623,7 +3619,7 @@ function RealBuildingsRegister({
                     icon: IconGauge,
                     // The register's own rating mix, in its own colours.
                     sub: (
-                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[3px] bg-white">
+                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[3px] bg-surface-2">
                         {conditionRows.map((r) => (
                           <span key={r.label} style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }} />
                         ))}
@@ -3644,13 +3640,11 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex flex-col rounded-[12px] border border-line bg-white p-2.5 text-left transition-all hover:-translate-y-[1px] hover:shadow-[0_4px_14px_rgba(20,32,31,0.08)]"
-                    onMouseEnter={(e) => (e.currentTarget.style.borderColor = t.color)}
-                    onMouseLeave={(e) => (e.currentTarget.style.borderColor = '')}
+                    className="flex flex-col rounded-[8px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
                   >
                     <span
-                      className="flex h-8 w-8 items-center justify-center rounded-[9px]"
-                      style={{ background: withAlpha(t.color, 0.12), color: t.color }}
+                      className="flex h-6 items-center"
+                      style={{ color: t.color }}
                     >
                       <Icon size={17} />
                     </span>
@@ -3665,15 +3659,15 @@ function RealBuildingsRegister({
 
         {view === 'condition' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
-            <div className="rounded-[12px] bg-surface-2 p-3">
+            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <div className="rounded-[8px] border border-line p-3">
               <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
               <div className="space-y-2.5">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
                     <span className="h-[8px] w-[8px] shrink-0 rounded-[2px]" style={{ background: r.color }} />
                     <span className="w-[112px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-white">
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
                       <span
                         className="block h-full rounded-[3px]"
                         style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
@@ -3689,13 +3683,13 @@ function RealBuildingsRegister({
 
         {view === 'about' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <p className="mb-4 text-sm leading-[1.5] text-ink-2">
               Council's asset register (<span className="num">CCS_Buildings.xlsx</span>), one row per building, not per
               fitout or meter.
             </p>
             <PanelHeading>Register dates</PanelHeading>
-            <div className="mb-4 space-y-1 rounded-[12px] bg-surface-2 px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+            <div className="mb-4 space-y-1 rounded-[8px] border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
               <div>
                 Last modified{' '}
                 <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -3725,7 +3719,7 @@ function RealBuildingsRegister({
             >
               Map coverage
             </PanelHeading>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[12px] bg-surface-2 px-3 py-2.5 text-sm text-ink-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[8px] border border-line px-3 py-2.5 text-sm text-ink-3">
               <span className="flex items-center gap-1.5">
                 <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
                 {preciseCount} precise
@@ -3741,14 +3735,14 @@ function RealBuildingsRegister({
 
         {view === 'types' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
           </div>
         )}
 
         {view === 'list' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent="Assets" title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
 
             <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
               {listScope === null && (
@@ -3952,7 +3946,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
       onClick={onClose}
     >
       <div
-        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[10px] border border-line bg-white shadow-[0_16px_48px_rgba(20,32,31,0.28)]"
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_16px_48px_rgba(20,32,31,0.28)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -3988,8 +3982,8 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
                 className={`flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors ${i === active ? 'bg-surface-2' : ''}`}
               >
                 <span
-                  className="w-[62px] shrink-0 rounded-[4px] px-1.5 py-[2px] text-center text-2xs font-semibold"
-                  style={{ background: withAlpha(kind.color, 0.1), color: kind.color }}
+                  className="w-[62px] shrink-0 text-2xs font-semibold"
+                  style={{ color: kind.color }}
                 >
                   {kind.label}
                 </span>
