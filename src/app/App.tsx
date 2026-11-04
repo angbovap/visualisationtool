@@ -918,24 +918,6 @@ function Accordion({
 }
 
 /** Square checkbox in the accent colour. */
-function Check({ on }: { on: boolean }) {
-  return (
-    <span
-      className="flex h-[17px] w-[17px] shrink-0 items-center justify-center rounded-[4px] border transition-colors"
-      style={{
-        borderColor: on ? ACCENT : '#C9D3D2',
-        background: on ? ACCENT : '#fff',
-      }}
-    >
-      {on && (
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12.5 10 17.5 19 7" />
-        </svg>
-      )}
-    </span>
-  );
-}
-
 /** An on/off switch, for anything that is literally on or off on the map,
  *  so the state reads at a glance from the knob's side and colour rather
  *  than from a small tick. */
@@ -3377,25 +3359,43 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
 
   return (
     <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs text-ink-3">
-          {onCount} of {ALL_BUILDING_TYPES.size} types shown
+      {/* What the switches control, and the two bulk actions, as real buttons. */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-sm text-ink-2">
+          <span className="num font-semibold text-ink">{onCount}</span> of{' '}
+          <span className="num">{ALL_BUILDING_TYPES.size}</span> types on the map
         </span>
-        <button
-          onClick={() => setOffTypes(() => new Set())}
-          className="text-xs text-ink-3 underline decoration-dotted hover:text-ink"
-        >
-          show all
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setOffTypes(() => new Set())}
+            disabled={offTypes.size === 0}
+            className="rounded-[6px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+          >
+            Show all
+          </button>
+          <button
+            onClick={() => setOffTypes(() => new Set(ALL_BUILDING_TYPES))}
+            disabled={onCount === 0}
+            className="rounded-[6px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+          >
+            Hide all
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-3">
         {REAL_USE_TREE.map((use) => {
           const isUnclassified = use.key === UNCLASSIFIED;
+          const usedOn = use.types.filter((t) => !offTypes.has(t.key)).length;
           return (
-            <div key={use.key} className="rounded-[5px] border border-line bg-white p-1.5">
-              <div className="mb-1 flex items-center justify-between">
-                <span className="flex items-center gap-1 text-xs font-semibold text-ink-2">
+            <div key={use.key} className="rounded-[8px] border border-line">
+              {/* Category row: its switch turns the whole group on or off. */}
+              <button
+                onClick={() => toggleUse(use)}
+                aria-pressed={usedOn > 0}
+                className="flex w-full items-center justify-between gap-2 rounded-t-[7px] border-b border-line bg-surface-2 px-3 py-2 text-left"
+              >
+                <span className="flex min-w-0 items-center gap-1.5 text-base font-semibold text-ink">
                   {isUnclassified ? 'Not yet classified' : use.label}
                   {isUnclassified && (
                     <Tip
@@ -3407,30 +3407,28 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                     </Tip>
                   )}
                 </span>
-                <button
-                  onClick={() => toggleUse(use)}
-                  className="text-2xs text-accent hover:underline"
-                >
-                  toggle all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1">
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="num text-xs text-ink-3">
+                    {usedOn === use.types.length ? 'All on' : usedOn === 0 ? 'Off' : `${usedOn} of ${use.types.length} on`}
+                  </span>
+                  <Switch on={usedOn > 0} />
+                </span>
+              </button>
+              <div className="divide-y divide-line">
                 {use.types.map((t) => {
                   const on = !offTypes.has(t.key);
                   return (
                     <button
                       key={t.key}
                       onClick={() => toggleType(t.key)}
-                      className="flex items-center gap-1 rounded-[4px] border px-1.5 py-[3px] text-xs transition-colors"
-                      style={
-                        on
-                          ? { borderColor: ACCENT, background: '#fff', color: '#14201F' }
-                          : { borderColor: '#E2E7E7', background: '#EDF1F1', color: '#A8B5B4' }
-                      }
+                      aria-pressed={on}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left last:rounded-b-[7px] hover:bg-surface-2"
                     >
-                      <Check on={on} />
-                      {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
-                      <span className="num text-2xs opacity-70">{t.count}</span>
+                      <span className={`min-w-0 truncate text-base ${on ? 'text-ink' : 'text-ink-3'}`}>
+                        {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
+                        <span className="num ml-1.5 text-xs text-ink-3">{t.count}</span>
+                      </span>
+                      <Switch on={on} />
                     </button>
                   );
                 })}
