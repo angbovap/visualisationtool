@@ -248,7 +248,7 @@ const LAYERS: LayerDef[] = [
     lo: '#FFFBEB',
     hi: '#EF4444',
     unit: 'UHI category 2 (lowest) to 4 (highest)',
-    note: 'Real daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series.',
+    note: 'Daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series.',
     source: 'Council GIS export, "UrbanHeatSocialVulnDay2022.shp/.dbf", reprojected from GDA2020 MGA Zone 54 and clipped to the LGA',
     vintage: 2022,
   },
@@ -259,7 +259,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#1D4ED8',
     unit: 'flood polygons',
-    note: 'Real 1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 5 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -269,7 +269,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#2563EB',
     unit: 'flood polygons',
-    note: 'Real 1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -279,7 +279,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#1E3A8A',
     unit: 'flood polygons',
-    note: 'Real 1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -309,8 +309,8 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#DB2777',
     unit: 'facilities',
-    note: 'Not a council asset, but a real state health facility inside the LGA, of the four in the statewide dataset only one point actually falls inside the boundary once checked against the real LGA shape rather than a loose bounding box.',
-    source: 'Council GIS export, "Obstetric_Hospitals_2014.shp" (statewide, GDA2020 SA Lambert), reprojected and matched to the real LGA boundary',
+    note: 'Not a council asset, but a state health facility inside the LGA, of the four in the statewide dataset only one point actually falls inside the boundary once checked against the LGA boundary.',
+    source: 'Council GIS export, "Obstetric_Hospitals_2014.shp" (statewide, GDA2020 SA Lambert), reprojected and matched to the LGA boundary',
     vintage: 2014,
   },
   {
@@ -330,7 +330,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#334155',
     unit: 'stations',
-    note: 'Real train station locations inside the LGA, from the same rail network export as the Railways layer.',
+    note: 'Train station locations inside the LGA, from the same rail network export as the Railways layer.',
     source: 'Council GIS export, "Train Stations.shp"',
   },
   {
@@ -340,8 +340,8 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#0D9488',
     unit: 'line features',
-    note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. All 20 real segments inside the LGA carry the same classification, "High Activity Pedestrian Area" (hover a segment); the export\'s other two categories, Pedestrian Local and Priority Pedestrian Area, only occur outside Charles Sturt.',
-    source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp/.dbf", clipped to the LGA boundary, fc_descrip is the real classification field',
+    note: 'Classified pedestrian routes from the statewide functional hierarchy export, clipped to the LGA. All 20 segments inside the LGA carry the same classification, "High Activity Pedestrian Area" (hover a segment); the export\'s other two categories, Pedestrian Local and Priority Pedestrian Area, only occur outside Charles Sturt.',
+    source: 'Statewide GIS export, "FunctionalHierarchyPedestrian_GDA94.shp/.dbf", clipped to the LGA boundary, fc_descrip is the classification field',
   },
   {
     id: 'dwelling-density',
@@ -350,7 +350,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#6B3FA0',
     unit: 'Very Low / Low / Medium / High (unit not confirmed by council)',
-    note: '253 of the 257 real SA1s, classified into council\'s own category, read off the "Density 21" field using the exact break values set in the CoCS_DwellingDensity2021 QGIS layer: Emp. Only exactly 0 (employment-only, no dwellings), Very Low 0-10, Low 10-22, Medium 22-40, High 40-180. The other 4 SA1s have no usable value, the export\'s own field overflowed for them ("***********"), so they are left uncoloured rather than guessed into a category. The unit behind these numbers, and who produced them, hasn\'t been confirmed by council.',
+    note: 'Council\'s density category for 253 of the 257 SA1s, from the "Density 21" field and the breaks set in the CoCS_DwellingDensity2021 QGIS layer: Emp. Only (0, no dwellings), Very Low 0-10, Low 10-22, Medium 22-40, High 40-180. The other 4 SA1s have an overflowed value in the export and are left uncoloured. Council hasn\'t confirmed the unit or who produced the figures.',
     source: 'Council GIS export, CoCS_DwellingDensity2021.shp/.dbf, "Density 21" field, classified using the export\'s own QGIS symbology',
   },
 ];
@@ -379,14 +379,14 @@ const BLUEPRINTS: Blueprint[] = [
     id: 'heat',
     title: 'Heat Vulnerability',
     accent: '#D97706',
-    description: 'The real Urban Heat Island grid, with its Social Vulnerability Index.',
+    description: 'The Urban Heat Island grid, with its Social Vulnerability Index.',
     layers: ['heat-vuln'],
   },
   {
     id: 'flood',
     title: 'Flood Risk',
     accent: '#2563EB',
-    description: 'Every real flood return-period layer supplied so far, plus the watercourses and waterbodies they interact with.',
+    description: 'Every flood return-period layer supplied so far, plus the watercourses and waterbodies they interact with.',
     layers: ['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real', 'watercourses', 'waterbodies'],
   },
   {
@@ -634,10 +634,6 @@ function lerpHex(lo: string, hi: string, t: number): string {
   return `#${[r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 }
 
-function withAlpha(hex: string, alpha: number): string {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 
 
@@ -1000,6 +996,43 @@ function Switch({ on }: { on: boolean }) {
         style={{ transform: on ? 'translateX(16px)' : 'translateX(2px)' }}
       />
     </span>
+  );
+}
+
+/** A small drawing of how a layer looks on the map: a line for line
+ *  layers, a dot for point layers, the actual category colours for the
+ *  heat and density layers, an outlined fill for flood and water areas. */
+const LINE_LAYERS = new Set(['watercourses', 'railways', 'pedestrian-network']);
+const POINT_LAYERS = new Set(['train-stations', 'obstetric-hospitals']);
+function LayerGlyph({ l }: { l: LayerDef }) {
+  const c = l.hi ?? ACCENT;
+  let body: React.ReactNode;
+  if (l.id === 'heat-vuln') {
+    body = [0, 1, 2].map((i) => <rect key={i} x={1 + i * 5.4} y="2" width="5.4" height="8" fill={lerpHex(l.lo!, l.hi!, i / 2)} />);
+  } else if (l.id === 'dwelling-density') {
+    body = ['Very Low', 'Low', 'Medium'].map((k, i) => (
+      <rect key={k} x={1 + i * 5.4} y="2" width="5.4" height="8" fill={DWELLING_DENSITY_COLOR[k]} />
+    ));
+  } else if (LINE_LAYERS.has(l.id)) {
+    body = (
+      <path
+        d="M1.5 8.5 C5 2.5, 10 10.5, 16.5 3.5"
+        fill="none"
+        stroke={c}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray={l.id === 'pedestrian-network' ? '0.5 3' : undefined}
+      />
+    );
+  } else if (POINT_LAYERS.has(l.id)) {
+    body = <circle cx="9" cy="6" r="3.5" fill={c} />;
+  } else {
+    body = <rect x="1.5" y="2" width="15" height="8" fill={c} fillOpacity="0.3" stroke={c} strokeWidth="1.2" />;
+  }
+  return (
+    <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
+      {body}
+    </svg>
   );
 }
 
@@ -1984,19 +2017,11 @@ function LayersTab({
               <div className="flex items-center gap-2.5">
                 <button
                   onClick={() => toggleLayer(l.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
                   aria-pressed={checked}
                 >
-                  <span
-                    className="h-[14px] w-[14px] shrink-0 rounded-[4px]"
-                    style={{
-                      background:
-                        l.kind === 'vector'
-                          ? l.hi
-                          : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
-                    }}
-                  />
-                  <span className={`flex-1 truncate text-lg ${checked ? 'font-semibold text-ink' : 'text-ink-2'}`}>
+                  <LayerGlyph l={l} />
+                  <span className={`flex-1 truncate text-lg ${checked ? 'font-medium text-ink' : 'text-ink-2'}`}>
                     {l.name}
                   </span>
                 </button>
@@ -2206,28 +2231,51 @@ function LayersTab({
 interface PlaceTabProps {
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
+  onOpenBuilding: (id: string) => void;
+  activeBuildingId: string | null;
 }
 
-function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
-  const [openAsset, setOpenAsset] = useState<string | null>(null);
+/** One hazard as a row of three counts, e.g. buildings per flood extent. */
+function ExposureLine({ label, cells, border }: { label: string; cells: [string, number][]; border?: boolean }) {
+  return (
+    <div className={`px-3 py-2.5 ${border ? 'border-t border-line' : ''}`}>
+      <div className="text-sm text-ink-3">{label}</div>
+      <div className="mt-1.5 grid grid-cols-3 gap-2">
+        {cells.map(([k, n]) => (
+          <div key={k}>
+            <div className={`num text-stat-sm font-semibold leading-none ${n ? 'text-ink' : 'text-ink-3'}`}>{n}</div>
+            <div className="mt-1 text-sm text-ink-3">{k}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlaceTab({ selectedId, setSelectedId, onOpenBuilding, activeBuildingId }: PlaceTabProps) {
+  const profiles = hazardProfiles();
+  const inAnyFlood = (b: RealAsset) => (profiles.get(b.id)?.flood.length ?? 0) > 0;
 
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
       <div className="px-3 py-4">
         <PanelHeading>Suburbs</PanelHeading>
-        <p className="-mt-1 mb-3 text-sm text-ink-3">Pick one to see the council buildings inside it.</p>
+        <p className="-mt-1 mb-3 text-base text-ink-3">Pick one to see its council buildings and what they're exposed to.</p>
         <div className="grid grid-cols-2 gap-2">
           {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+            const flooded = bs.filter(inAnyFlood).length;
             return (
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex min-h-[74px] flex-col justify-between rounded-[8px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
+                className="flex min-h-[78px] flex-col justify-between rounded-[8px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
               >
                 <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
-                <span className="num mt-2 text-xs text-ink-3">
-                  <span className="font-semibold text-ink-2">{bs.length}</span> buildings
+                <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
+                  {bs.length} buildings
+                  <br />
+                  {flooded} in a flood extent
                 </span>
               </button>
             );
@@ -2238,49 +2286,49 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
   }
 
   const s = SUBURB_BY_ID[selectedId];
-  const buildings = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+  const buildings = [...(REAL_BUILDINGS_BY_SUBURB[s.id] ?? [])].sort((a, b) => b.insuredValue - a.insuredValue);
   const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
+  const count = (f: (p: HazardProfile) => boolean) =>
+    buildings.filter((b) => {
+      const p = profiles.get(b.id);
+      return !!p && f(p);
+    }).length;
 
   return (
     <div className="px-3 py-4">
-      <div className="mb-3 flex items-center gap-2.5">
-        <button
-          onClick={() => setSelectedId(null)}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
-          aria-label="Back to all suburbs"
-        >
-          <IconChevron size={14} className="rotate-180" />
-        </button>
-        <div className="min-w-0">
-          <div className="truncate text-2xl font-semibold leading-tight text-ink">{s.name}</div>
-          <div className="num text-xs text-ink-3">SA2 {s.sa2}</div>
-        </div>
-      </div>
-      <div className="mb-4 grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-2.5">
-        <div className="px-3">
-          <div className="text-xs text-ink-3">Buildings</div>
-          <div className="num mt-1 text-stat font-semibold leading-none text-ink">{buildings.length}</div>
-        </div>
-        <div className="px-3">
-          <div className="text-xs text-ink-3">Insured value</div>
-          <div className="num mt-1 text-stat font-semibold leading-none text-ink">${(insured / 1e6).toFixed(1)}M</div>
-        </div>
-      </div>
-      <PanelHeading>Buildings</PanelHeading>
-      {buildings.length === 0 ? (
-        <p className="text-base text-ink-3">No register buildings geocode inside this SA2.</p>
-      ) : (
-        <div className="space-y-1.5">
-          {buildings.map((b) => (
-            <BuildingCard
-              key={b.id}
-              b={b}
-              isOpen={openAsset === b.id}
-              onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
+      <BackBar onBack={() => setSelectedId(null)} parent={`Suburbs · SA2 ${s.sa2}`} title={s.name} />
+      <FigureStrip>
+        <Figure label="Buildings" value={buildings.length} />
+        <Figure label="Insured value" value={formatMoney(insured)} />
+      </FigureStrip>
+
+      {buildings.length > 0 && (
+        <Section title="Hazard exposure">
+          <div className="rounded-[8px] border border-line">
+            <ExposureLine
+              label="Buildings inside each flood extent"
+              cells={FLOOD_LAYER_IDS.map((id) => [FLOOD_SHORT[id], count((p) => p.flood.includes(id))] as [string, number])}
             />
-          ))}
-        </div>
+            <ExposureLine
+              border
+              label="Buildings by urban heat category"
+              cells={[4, 3, 2].map((c) => [`Category ${c}`, count((p) => p.heat?.uhiCat === c)] as [string, number])}
+            />
+          </div>
+        </Section>
       )}
+
+      <Section title="Buildings" right={<span className="text-sm text-ink-3">Highest value first</span>}>
+        {buildings.length === 0 ? (
+          <p className="text-base text-ink-3">No register buildings are mapped inside this SA2.</p>
+        ) : (
+          <BuildingList>
+            {buildings.map((b) => (
+              <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} active={activeBuildingId === b.id} />
+            ))}
+          </BuildingList>
+        )}
+      </Section>
     </div>
   );
 }
@@ -2288,17 +2336,6 @@ function PlaceTab({ selectedId, setSelectedId }: PlaceTabProps) {
 /* ------------------------------------------------------------------ *
  * Shared bits
  * ------------------------------------------------------------------ */
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="mt-1 first:mt-0">
-      <div className="text-xs font-semibold text-ink-3">
-        {label}
-      </div>
-      <div className="mt-[1px] text-base leading-[1.5] text-ink-2">{value}</div>
-    </div>
-  );
-}
 
 /* ------------------------------------------------------------------ *
  * Right panel shell
@@ -2318,21 +2355,19 @@ function RightPanelShell({
   children: React.ReactNode;
 }) {
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white shadow-[-4px_0_18px_rgba(20,32,31,0.06)]">
-      <header className="flex items-start gap-1.5 border-b border-line px-2.5 py-2">
-        <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: accent }} />
+    <aside
+      className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white"
+      style={{ borderTop: `3px solid ${accent}` }}
+    >
+      <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
-          <div className="text-2xs font-semibold text-ink-3">
-            {eyebrow}
-          </div>
-          <div className="truncate text-xl font-semibold leading-tight" style={{ color: accent }}>
-            {title}
-          </div>
+          <div className="truncate text-sm text-ink-3">{eyebrow}</div>
+          <div className="mt-0.5 text-2xl font-semibold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="mt-[2px] shrink-0 rounded-[4px] p-[3px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+            className="-mr-1 mt-[1px] shrink-0 rounded-[6px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Close"
           >
             <IconClose />
@@ -2356,15 +2391,16 @@ function BlueprintPanel({
   blueprint,
   onClose,
   onFocus,
+  onOpenBuilding,
 }: {
   blueprint: Blueprint;
   onClose: () => void;
   onFocus: (suburbId: string | null, buildingIds: string[] | null) => void;
+  onOpenBuilding: (id: string) => void;
 }) {
   const [tab, setTab] = useState<'overview' | 'by-sa2'>('overview');
   const [showExposed, setShowExposed] = useState(false);
   const [saSel, setSaSel] = useState<string | null>(null);
-  const [openAsset, setOpenAsset] = useState<string | null>(null);
   useEffect(() => {
     setTab('overview');
     setSaSel(null);
@@ -2463,13 +2499,12 @@ function BlueprintPanel({
                   )}
                 </div>
                 {showExposed && (
-                  <div className="mb-3 max-h-[260px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
-                    {exposedToFlood.map((b) => (
-                      <div key={b.id} className="rounded-[5px] border border-line bg-white px-2 py-1.5 text-sm">
-                        <span className="font-medium text-ink">{b.name}</span>
-                        {b.address && <span className="block text-2xs text-ink-3">{b.address}</span>}
-                      </div>
-                    ))}
+                  <div className="mb-3">
+                    <BuildingList>
+                      {exposedToFlood.map((b) => (
+                        <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} />
+                      ))}
+                    </BuildingList>
                   </div>
                 )}
               </>
@@ -2501,7 +2536,7 @@ function BlueprintPanel({
                       })}
                   </div>
                   <div className="mt-2 text-xs leading-[1.5] text-ink-3">
-                    Counts are the real heat grid cell each building's geocoded point
+                    Counts are the heat grid cell each building's geocoded point
                     falls inside, against {mappedTotal} mapped buildings. No category
                     is marked as the one that counts as "in danger": that line hasn't
                     been agreed by council.
@@ -2552,21 +2587,14 @@ function BlueprintPanel({
                     {isFlood ? 'inside this extent' : 'matched to a heat cell'}, labelled on the map
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  {shownBuildings.map((b) => (
-                    <div key={b.id}>
-                      <BuildingCard
-                        b={b}
-                        isOpen={openAsset === b.id}
-                        onToggle={() => setOpenAsset(openAsset === b.id ? null : b.id)}
-                      />
-                      {isHeat && heatData!.byBuildingId.has(b.id) && (
-                        <div className="num mt-[2px] pl-2 text-2xs text-ink-3">
-                          UHI category {heatData!.byBuildingId.get(b.id)}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div>
+                  {shownBuildings.length > 0 && (
+                    <BuildingList>
+                      {shownBuildings.map((b) => (
+                        <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} />
+                      ))}
+                    </BuildingList>
+                  )}
                   {shownBuildings.length === 0 && (
                     <p className="text-base text-ink-3">
                       No buildings here {isFlood ? 'fall inside this extent' : 'matched a heat cell'}.
@@ -2579,21 +2607,19 @@ function BlueprintPanel({
         )}
 
         <PanelHeading>Layers this turns on</PanelHeading>
-        <div className="space-y-1.5">
+        <div className="divide-y divide-line rounded-[8px] border border-line">
           {blueprint.layers.map((id) => {
             const l = LAYER_BY_ID[id];
             return (
-              <div key={id} className="rounded-[6px] border border-line bg-white px-2.5 py-2">
-                <span
-                  className="mb-1 inline-block h-[9px] w-[9px] rounded-[2px]"
-                  style={{
-                    background: l.kind === 'vector' ? l.hi : `linear-gradient(135deg, ${l.lo}, ${l.hi})`,
-                  }}
-                />
-                <div className="text-md font-semibold text-ink">{l.name}</div>
-                <div className="mt-[2px] text-sm leading-[1.5] text-ink-2">{l.note}</div>
-                <div className="num mt-1 text-2xs text-ink-3">{l.source}</div>
-              </div>
+              <details key={id} className="group px-3 py-2.5">
+                <summary className="flex cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
+                  <LayerGlyph l={l} />
+                  <span className="flex-1 text-base font-medium text-ink">{l.name}</span>
+                  <IconChevron size={12} className="text-ink-3 transition-transform group-open:rotate-90" />
+                </summary>
+                <p className="mt-2 text-base leading-[1.55] text-ink-2">{l.note}</p>
+                <p className="mt-1 text-sm leading-[1.5] text-ink-3">{l.source}</p>
+              </details>
             );
           })}
         </div>
@@ -2609,25 +2635,191 @@ function BlueprintPanel({
  * where it came from is one click away rather than a hover tooltip.
  */
 
+function countBySuburb(list: RealAsset[]): { id: string; name: string; n: number }[] {
+  const m = new Map<string, number>();
+  for (const b of list) {
+    const sid = BUILDING_SUBURB_ID[b.id];
+    if (sid) m.set(sid, (m.get(sid) ?? 0) + 1);
+  }
+  return [...m.entries()]
+    .map(([id, n]) => ({ id, name: SUBURB_BY_ID[id]?.name ?? id, n }))
+    .sort((a, b) => b.n - a.n);
+}
+
+/** What a layer says about council's buildings, worked out from the
+ *  layer's own data: counts, where they are, and which buildings stand
+ *  out. The method note sits below this, folded away. */
+function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuilding: (id: string) => void }) {
+  const [showAll, setShowAll] = useState(false);
+  const profiles = hazardProfiles();
+  const mapped = MAPPED_BUILDINGS.length;
+  const color = layer.hi ?? ACCENT;
+
+  if (layer.id in FLOOD_RETURN_PERIOD_BY_LAYER) {
+    const id = layer.id as FloodLayerId;
+    const inside = MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.flood.includes(id)).sort(
+      (a, b) => b.insuredValue - a.insuredValue,
+    );
+    const value = inside.reduce((n, b) => n + b.insuredValue, 0);
+    const bySuburb = countBySuburb(inside);
+    const shown = showAll ? inside : inside.slice(0, 6);
+    return (
+      <>
+        <FigureStrip>
+          <Figure label="Buildings inside" value={inside.length} sub={`of ${mapped} mapped`} />
+          <Figure label="Insured value inside" value={formatMoney(value)} />
+        </FigureStrip>
+        {bySuburb.length > 0 && (
+          <Section title="By suburb">
+            {bySuburb.map((r) => (
+              <BarRow key={r.id} label={r.name} n={r.n} max={bySuburb[0].n} color={color} />
+            ))}
+          </Section>
+        )}
+        {inside.length > 0 && (
+          <Section title="Buildings inside" right={<span className="text-sm text-ink-3">Highest value first</span>}>
+            <BuildingList>
+              {shown.map((b) => (
+                <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} />
+              ))}
+            </BuildingList>
+            {inside.length > shown.length || showAll ? (
+              <button onClick={() => setShowAll((v) => !v)} className="mt-2 text-base font-medium text-accent hover:text-ink">
+                {showAll ? 'Show fewer' : `Show all ${inside.length}`}
+              </button>
+            ) : null}
+          </Section>
+        )}
+        <Section title="Catchments in this layer">
+          <p className="text-base leading-[1.55] text-ink-2">{floodCatchments(layer.id).join(', ')}</p>
+        </Section>
+      </>
+    );
+  }
+
+  if (layer.id === 'heat-vuln') {
+    const withHeat = MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.heat);
+    const byCat = [4, 3, 2].map((c) => ({ c, list: withHeat.filter((b) => profiles.get(b.id)!.heat!.uhiCat === c) }));
+    const maxCat = Math.max(...byCat.map((r) => r.list.length));
+    const cat4BySuburb = countBySuburb(byCat[0].list);
+    const topSvi = [...withHeat].sort((a, b) => profiles.get(b.id)!.heat!.svi - profiles.get(a.id)!.heat!.svi).slice(0, 5);
+    const cells = [4, 3, 2].map((c) => HEAT_VULNERABILITY.filter((x) => x.uhiCat === c).length);
+    return (
+      <>
+        <FigureStrip>
+          <Figure label="In category 4" value={byCat[0].list.length} sub={`of ${withHeat.length} on the grid`} />
+          <Figure label="Value in category 4" value={formatMoney(byCat[0].list.reduce((n, b) => n + b.insuredValue, 0))} />
+        </FigureStrip>
+        <Section title="Buildings by UHI category">
+          {byCat.map((r) => (
+            <BarRow key={r.c} label={`Category ${r.c}`} n={r.list.length} max={maxCat} color={lerpHex(layer.lo!, layer.hi!, (r.c - 2) / 2)} />
+          ))}
+          <p className="mt-1.5 text-sm text-ink-3">
+            Grid cells: {cells[0]} in category 4, {cells[1]} in 3, {cells[2]} in 2.
+          </p>
+        </Section>
+        {cat4BySuburb.length > 0 && (
+          <Section title="Category 4 buildings by suburb">
+            {cat4BySuburb.map((r) => (
+              <BarRow key={r.id} label={r.name} n={r.n} max={cat4BySuburb[0].n} color={color} />
+            ))}
+          </Section>
+        )}
+        <Section title="Highest social vulnerability">
+          <BuildingList>
+            {topSvi.map((b) => (
+              <BuildingRow
+                key={b.id}
+                b={b}
+                onOpen={onOpenBuilding}
+                right={<span className="num block text-base font-medium text-ink">SVI {profiles.get(b.id)!.heat!.svi.toFixed(2)}</span>}
+              />
+            ))}
+          </BuildingList>
+        </Section>
+      </>
+    );
+  }
+
+  if (layer.id === 'dwelling-density') {
+    const cats = Object.keys(DWELLING_DENSITY_COLOR);
+    const sa1Counts = cats.map((c) => Object.values(DWELLING_BY_SA1).filter((d) => d.category === c).length);
+    const bCounts = cats.map((c) => MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.density?.category === c).length);
+    return (
+      <>
+        <Section title="SA1s by density">
+          {cats.map((c, i) => (
+            <BarRow key={c} label={c} n={sa1Counts[i]} max={Math.max(...sa1Counts)} color={DWELLING_DENSITY_COLOR[c]} />
+          ))}
+          <p className="mt-1.5 text-sm text-ink-3">{SA1S.length - Object.keys(DWELLING_BY_SA1).length} SA1s have no value in the export.</p>
+        </Section>
+        <Section title="Council buildings by density">
+          {cats.map((c, i) => (
+            <BarRow key={c} label={c} n={bCounts[i]} max={Math.max(...bCounts)} color={DWELLING_DENSITY_COLOR[c]} />
+          ))}
+        </Section>
+      </>
+    );
+  }
+
+  if (PROXIMITY_SHAPES[layer.id]) {
+    const d = distancesTo(layer.id);
+    const sorted = MAPPED_BUILDINGS.filter((b) => Number.isFinite(d.get(b.id))).sort((a, b) => d.get(a.id)! - d.get(b.id)!);
+    if (sorted.length === 0) return null;
+    const median = d.get(sorted[Math.floor(sorted.length / 2)].id)!;
+    return (
+      <>
+        <FigureStrip>
+          <Figure label="Closest building" value={formatMetres(d.get(sorted[0].id)!)} />
+          <Figure label="Median distance" value={formatMetres(median)} sub={`across ${sorted.length} buildings`} />
+        </FigureStrip>
+        <Section title="Closest council buildings">
+          <BuildingList>
+            {sorted.slice(0, 6).map((b) => (
+              <BuildingRow
+                key={b.id}
+                b={b}
+                onOpen={onOpenBuilding}
+                right={<span className="num block text-base font-medium text-ink">{formatMetres(d.get(b.id)!)}</span>}
+              />
+            ))}
+          </BuildingList>
+        </Section>
+      </>
+    );
+  }
+
+  return null;
+}
+
 function LayerInfoPanel({
   layer,
   onClose,
+  onOpenBuilding,
 }: {
   layer: LayerDef;
   onClose: () => void;
+  onOpenBuilding: (id: string) => void;
 }) {
   return (
-    <RightPanelShell accent={layer.hi ?? ACCENT} eyebrow="Layer" title={layer.name} onClose={onClose}>
-      <div className="px-2.5 py-2">
-        <p className="text-md leading-[1.55] text-ink-2">{layer.note}</p>
-        <div className="num mt-2 text-xs text-ink-3">
-          Unit: {layer.unit} · {layer.source}
-        </div>
+    <RightPanelShell accent={layer.hi ?? ACCENT} eyebrow={GROUP_LABEL[layer.group]} title={layer.name} onClose={onClose}>
+      <div className="px-4 py-4">
+        <LayerFindings key={layer.id} layer={layer} onOpenBuilding={onOpenBuilding} />
+        <details className="group mt-6 border-t border-line pt-3">
+          <summary className="flex cursor-pointer list-none items-center justify-between text-base font-medium text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
+            About this data
+            <IconChevron size={13} className="transition-transform group-open:rotate-90" />
+          </summary>
+          <p className="mt-2 text-base leading-[1.55] text-ink-2">{layer.note}</p>
+          <dl className="mt-2 divide-y divide-line border-t border-line">
+            <FactRow label="Unit" value={layer.unit} />
+            <FactRow label="Source" value={layer.source} />
+          </dl>
+        </details>
       </div>
     </RightPanelShell>
   );
 }
-
 
 /* ------------------------------------------------------------------ *
  * Tab. Help
@@ -2707,18 +2899,17 @@ function HelpTab() {
         'What each tab does',
         <ul className="space-y-1.5">
           <li>
-            <span className="font-semibold text-ink">Layers.</span> Real
-            hazard and infrastructure layers from council's GIS export.
+            <span className="font-semibold text-ink">Layers.</span> Hazard and infrastructure layers from council's GIS export.
             Opacity sliders at the top and on each layer.
           </li>
           <li>
-            <span className="font-semibold text-ink">Assets.</span> The real
+            <span className="font-semibold text-ink">Assets.</span> The
             council buildings register, LGA-wide. Filter by ward, see condition
             and insured value, and choose which building types show on the map.
           </li>
           <li>
             <span className="font-semibold text-ink">Place.</span> The eight
-            real ABS SA2s, with the council buildings filed inside each.
+            ABS SA2s, with the council buildings filed inside each.
           </li>
           <li>
             <span className="font-semibold text-ink">Help.</span> This page.
@@ -2757,7 +2948,7 @@ function HelpTab() {
             Council's own seven categories for what a hazard actually costs,
             from Systems Cooperative's data and metrics table (12 Oct 2026).
             Reference only, nothing here is scored or linked to the map: the
-            table gives real indicator names but no agreed tolerance for any
+            table gives indicator names but no agreed tolerance for any
             of them yet.
           </p>
           <ul className="space-y-2">
@@ -2782,7 +2973,7 @@ function HelpTab() {
         <>
           <p>
             Population, SEIFA, hazard scores, climate scenarios, planning
-            capacity and ranking are not shown. No real figures for them have
+            capacity and ranking are not shown. No figures for them have
             been supplied, and the earlier demonstration values have been
             removed rather than kept on screen.
           </p>
@@ -2793,7 +2984,7 @@ function HelpTab() {
           <p className="mt-1.5">
             Planning & Land Use is a held, empty category rather than a hidden
             one: council's roads, stormwater and development zone exports
-            haven't been supplied yet, so there is nothing real to show there.
+            haven't been supplied yet, so there is nothing to show there.
           </p>
         </>,
       )}
@@ -2952,12 +3143,6 @@ const CONDITION_COLOR: Record<string, string> = {
   'Maintenance Required': '#D97706',
   'Requires Renewal': '#DC2626',
   'Asset Unserviceable': '#7C2D12',
-};
-const RISK_COLOR: Record<string, string> = {
-  'Low Risk': '#059669',
-  'Medium Risk': '#D97706',
-  'High Risk': '#EA580C',
-  'Extreme Risk': '#DC2626',
 };
 const NEUTRAL_TONE = '#9CA3AF';
 
@@ -3149,6 +3334,224 @@ function buildingsByHeatCategory(): { byCategory: Map<number, RealAsset[]>; byBu
   return { byCategory, byBuildingId };
 }
 
+/* ------------------------------------------------------------------ *
+ * Hazard profile per building
+ *
+ * For each mapped building: the heat cell it sits in (UHI category and
+ * SVI), which flood extents contain it, the dwelling density of its SA1,
+ * and how far it is from the nearest watercourse or waterbody. Each one
+ * is then ranked against every other mapped council building, so a
+ * reading says "higher than 80% of council buildings" instead of
+ * applying a cut-off nobody has agreed.
+ * ------------------------------------------------------------------ */
+
+const FLOOD_LAYER_IDS = ['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real'] as const;
+type FloodLayerId = (typeof FLOOD_LAYER_IDS)[number];
+const FLOOD_SHORT: Record<FloodLayerId, string> = {
+  'flood-1in5-real': '1 in 5',
+  'flood-1in20-real': '1 in 20',
+  'flood-1in100-real': '1 in 100',
+};
+/** Catchments each flood layer was supplied for, straight from the data. */
+function floodCatchments(layerId: string): string[] {
+  const rp = FLOOD_RETURN_PERIOD_BY_LAYER[layerId];
+  return rp ? floodContoursData.returnPeriods[rp].map((c) => c.catchment) : [];
+}
+
+const MAPPED_BUILDINGS = REAL_BUILDINGS.filter((b) => BUILDING_LOCATION[b.id]);
+
+interface Shape {
+  pts: LatLngTuple[];
+  bbox: RingBBox;
+  closed: boolean;
+}
+const toShape = (pts: LatLngTuple[], closed = false): Shape => ({ pts, bbox: bboxOf(pts), closed });
+
+/** Metres from a point to a line or ring, on a local flat projection
+ *  (accurate to well under a metre across the council area). */
+const M_PER_DEG = 111_320;
+function metresToShape(lat: number, lng: number, s: Shape): number {
+  const kx = M_PER_DEG * Math.cos((lat * Math.PI) / 180);
+  const p = s.pts;
+  if (p.length === 1) return Math.hypot((p[0][1] - lng) * kx, (p[0][0] - lat) * M_PER_DEG);
+  let best = Infinity;
+  const n = s.closed ? p.length : p.length - 1;
+  for (let i = 0; i < n; i++) {
+    const a = p[i];
+    const b = p[(i + 1) % p.length];
+    const ax = (a[1] - lng) * kx, ay = (a[0] - lat) * M_PER_DEG;
+    const dx = (b[1] - a[1]) * kx, dy = (b[0] - a[0]) * M_PER_DEG;
+    const len2 = dx * dx + dy * dy;
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
+    const d = Math.hypot(ax + t * dx, ay + t * dy);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+function nearestMetres(lat: number, lng: number, shapes: Shape[]): number {
+  const kx = M_PER_DEG * Math.cos((lat * Math.PI) / 180);
+  let best = Infinity;
+  for (const s of shapes) {
+    const bx = Math.max(s.bbox.lngLo - lng, 0, lng - s.bbox.lngHi) * kx;
+    const by = Math.max(s.bbox.latLo - lat, 0, lat - s.bbox.latHi) * M_PER_DEG;
+    if (Math.hypot(bx, by) >= best) continue;
+    if (s.closed && inBBox(lat, lng, s.bbox) && pointInRing(lat, lng, s.pts)) return 0;
+    const d = metresToShape(lat, lng, s);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+/** Line and point layers a building's distance can be measured to. */
+const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
+  watercourses: () => WATERCOURSES.map((l) => toShape(l)),
+  waterbodies: () => WATERBODIES.flatMap((poly) => poly.map((ring) => toShape(ring, true))),
+  railways: () => RAILWAYS.map((l) => toShape(l)),
+  'train-stations': () => TRAIN_STATIONS.map((p) => toShape([p])),
+  'pedestrian-network': () => pedestrianNetworkData.segments.map((s) => toShape(s.line as LatLngTuple[])),
+  'obstetric-hospitals': () => OBSTETRIC_HOSPITALS.map((p) => toShape([p])),
+};
+
+const distanceCache = new Map<string, Map<string, number>>();
+/** Metres from every mapped building to the nearest feature of a layer. */
+function distancesTo(layerId: string): Map<string, number> {
+  const hit = distanceCache.get(layerId);
+  if (hit) return hit;
+  const shapes = PROXIMITY_SHAPES[layerId]?.() ?? [];
+  const out = new Map<string, number>();
+  if (shapes.length > 0) {
+    for (const b of MAPPED_BUILDINGS) {
+      const loc = BUILDING_LOCATION[b.id];
+      out.set(b.id, nearestMetres(loc.lat, loc.lng, shapes));
+    }
+  }
+  distanceCache.set(layerId, out);
+  return out;
+}
+
+const DWELLING_BY_SA1 = dwellingDensityData.byCode as Record<string, { value: number; category: string }>;
+const SA1S_WITH_BBOX = SA1S.map((a) => ({ a, bbox: bboxOf(a.path) }));
+
+interface HazardProfile {
+  heat: { uhiCat: number; svi: number } | null;
+  /** Flood extents the building sits inside. */
+  flood: FloodLayerId[];
+  density: { category: string; value: number } | null;
+  waterM: number;
+  waterKind: 'watercourse' | 'waterbody';
+}
+
+let profileCache: Map<string, HazardProfile> | null = null;
+function hazardProfiles(): Map<string, HazardProfile> {
+  if (profileCache) return profileCache;
+  const floodRings = Object.fromEntries(FLOOD_LAYER_IDS.map((id) => [id, floodRingsFor(id)])) as Record<
+    FloodLayerId,
+    ReturnType<typeof floodRingsFor>
+  >;
+  const toCourse = distancesTo('watercourses');
+  const toBody = distancesTo('waterbodies');
+  const out = new Map<string, HazardProfile>();
+  for (const b of MAPPED_BUILDINGS) {
+    const { lat, lng } = BUILDING_LOCATION[b.id];
+    let heat: HazardProfile['heat'] = null;
+    for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+      if (rings.some(({ ring, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, ring))) {
+        heat = { uhiCat: cell.uhiCat, svi: cell.svi };
+        break;
+      }
+    }
+    const flood = FLOOD_LAYER_IDS.filter((id) =>
+      floodRings[id].some(({ ring, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, ring)),
+    );
+    const sa1 = SA1S_WITH_BBOX.find(({ a, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, a.path));
+    const d = sa1 ? DWELLING_BY_SA1[sa1.a.id] : undefined;
+    const c = toCourse.get(b.id) ?? Infinity;
+    const w = toBody.get(b.id) ?? Infinity;
+    out.set(b.id, {
+      heat,
+      flood,
+      density: d ? { category: d.category, value: d.value } : null,
+      waterM: Math.min(c, w),
+      waterKind: c <= w ? 'watercourse' : 'waterbody',
+    });
+  }
+  profileCache = out;
+  return out;
+}
+
+/** The most frequent flood extent a building sits inside, as a score:
+ *  3 = 1 in 5, 2 = 1 in 20, 1 = 1 in 100, 0 = outside every mapped one. */
+function floodScore(p: HazardProfile): number {
+  if (p.flood.includes('flood-1in5-real')) return 3;
+  if (p.flood.includes('flood-1in20-real')) return 2;
+  if (p.flood.includes('flood-1in100-real')) return 1;
+  return 0;
+}
+
+interface HazardReading {
+  key: 'flood' | 'heat' | 'svi' | 'water';
+  label: string;
+  value: string;
+  /** Share of the other mapped buildings with strictly lower exposure. */
+  share: number;
+  color: string;
+}
+
+function formatMetres(m: number): string {
+  if (!Number.isFinite(m)) return 'n/a';
+  if (m === 0) return 'on the water';
+  return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+/** Each hazard reading for one building, with where it sits among every
+ *  other mapped council building. Null when the building isn't mapped. */
+function hazardReadings(id: string): HazardReading[] | null {
+  const all = hazardProfiles();
+  const p = all.get(id);
+  if (!p) return null;
+  const others = [...all.entries()].filter(([k]) => k !== id).map(([, v]) => v);
+  const share = (score: (x: HazardProfile) => number | null) => {
+    const mine = score(p);
+    if (mine === null) return null;
+    const pool = others.map(score).filter((v): v is number => v !== null);
+    return pool.length ? pool.filter((v) => v < mine).length / pool.length : 0;
+  };
+  const out: HazardReading[] = [];
+  const fs = floodScore(p);
+  out.push({
+    key: 'flood',
+    label: 'Flood',
+    value: fs === 0 ? 'Outside every mapped extent' : `Inside the ${['', '1 in 100', '1 in 20', '1 in 5'][fs]} extent`,
+    share: share(floodScore)!,
+    color: LAYER_BY_ID['flood-1in20-real'].hi!,
+  });
+  if (p.heat) {
+    out.push({
+      key: 'heat',
+      label: 'Urban heat',
+      value: `UHI category ${p.heat.uhiCat} of 4`,
+      share: share((x) => x.heat?.uhiCat ?? null)!,
+      color: LAYER_BY_ID['heat-vuln'].hi!,
+    });
+    out.push({
+      key: 'svi',
+      label: 'Social vulnerability',
+      value: `SVI ${p.heat.svi.toFixed(2)}`,
+      share: share((x) => x.heat?.svi ?? null)!,
+      color: '#B45309',
+    });
+  }
+  out.push({
+    key: 'water',
+    label: 'Nearest water',
+    value: `${formatMetres(p.waterM)} to a ${p.waterKind}`,
+    share: share((x) => -x.waterM)!,
+    color: LAYER_BY_ID['watercourses'].hi!,
+  });
+  return out;
+}
+
 
 /* ------------------------------------------------------------------ *
  * Consequence framework
@@ -3168,186 +3571,271 @@ function buildingsByHeatCategory(): { byCategory: Map<number, RealAsset[]>; byBu
 
 
 
-/** One real building, expandable to its full register detail. Shared
- *  between the LGA-wide register list and the per-suburb building lists
- *  in Place, so a building reads identically wherever it turns up. */
-function BuildingCard({
-  b,
-  isOpen,
-  onToggle,
-}: {
-  b: RealAsset;
-  isOpen: boolean;
-  onToggle: () => void;
-}) {
-  const condColor = b.condition ? CONDITION_COLOR[b.condition] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-  const riskColor = b.inherentRisk ? RISK_COLOR[b.inherentRisk] ?? NEUTRAL_TONE : NEUTRAL_TONE;
-  const loc = BUILDING_LOCATION[b.id];
-  const located = !!loc;
+function formatMoney(v: number): string {
+  if (v >= 1e6) return `$${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1000) return `$${Math.round(v / 1000)}k`;
+  return `$${v}`;
+}
+
+const FLOOD_BY_SCORE = ['', '1 in 100', '1 in 20', '1 in 5'];
+
+/** A label on the left, its value on the right. The one way facts are
+ *  laid out anywhere in the app. */
+function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div
-      className={`rounded-[5px] border bg-white transition-colors ${isOpen ? 'border-accent' : 'border-line'}`}
-    >
-      <button onClick={onToggle} className="w-full px-2 py-1.5 text-left">
-        <div className="flex items-start justify-between gap-1.5">
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-base font-semibold text-ink">{b.name}</span>
-            <span className="num mt-[2px] block truncate text-2xs text-ink-3">
-              {b.buildingType ?? 'Not yet classified'}
-              {b.suburb ? ` · ${b.suburb}` : ''}
-              {!located && ' · not mapped'}
-            </span>
-          </span>
-          {b.insuredValue > 0 && (
-            <span className="num shrink-0 text-xs font-semibold text-ink-2">
-              ${(b.insuredValue / 1000).toFixed(0)}k
-            </span>
-          )}
-        </div>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {b.condition && (
-            <span className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2"><span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: condColor }} />
-              {b.condition}
-            </span>
-          )}
-          {b.inherentRisk && (
-            <span className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2"><span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: riskColor }} />
-              {b.inherentRisk}
-            </span>
-          )}
-        </div>
-      </button>
-      {isOpen && (
-        <div className="fade-up border-t border-line px-2 py-1.5">
-          {b.address && <DetailRow label="Address" value={`${b.address}${b.ward ? `, ${b.ward} ward` : ''}`} />}
-          {b.owner && <DetailRow label="Asset owner" value={b.owner} />}
-          {b.maintainer && <DetailRow label="Maintainer" value={b.maintainer} />}
-          {b.criticality && <DetailRow label="Criticality" value={b.criticality} />}
-          {(b.riskConsequence || b.riskLikelihood) && (
-            <DetailRow label="Risk rating" value={`${b.riskConsequence ?? 'unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`} />
-          )}
-          <DetailRow label="Register components" value={`${b.componentCount} component ${b.componentCount === 1 ? 'row' : 'rows'} under this asset in the source export`} />
-          <DetailRow
-            label="Map position"
-            value={
-              !located
-                ? 'Not shown on the map, no address in the register resolved to a location.'
-                : loc!.precision === 'site'
-                  ? 'Shown on the map, geocoded to the actual building or named place.'
-                  : 'Shown on the map as a hollow marker, geocoded to the street only, the address had no number so this is not the building itself.'
-            }
-          />
-        </div>
-      )}
+    <div className="flex gap-3 py-1.5">
+      <dt className="w-[92px] shrink-0 text-base text-ink-3">{label}</dt>
+      <dd className="min-w-0 flex-1 text-base leading-[1.45] text-ink">{value}</dd>
     </div>
   );
 }
 
+/** One headline figure in a two-up strip. */
+function Figure({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
+  return (
+    <div className="min-w-0 px-3">
+      <div className="text-sm text-ink-3">{label}</div>
+      <div className="num mt-1 truncate text-stat font-semibold leading-none text-ink">{value}</div>
+      {sub && <div className="num mt-1 text-sm text-ink-3">{sub}</div>}
+    </div>
+  );
+}
+
+function FigureStrip({ children }: { children: React.ReactNode }) {
+  return <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">{children}</div>;
+}
+
+/** A labelled count with a bar against the largest count in its group. */
+function BarRow({ label, n, max, color, onClick }: { label: string; n: number; max: number; color: string; onClick?: () => void }) {
+  const inner = (
+    <>
+      <span className="w-[108px] shrink-0 truncate text-left text-base text-ink-2">{label}</span>
+      <span className="h-[4px] flex-1 rounded-full bg-line">
+        <span className="block h-full rounded-full" style={{ width: `${max ? (n / max) * 100 : 0}%`, background: color }} />
+      </span>
+      <span className="num w-8 shrink-0 text-right text-base font-medium text-ink">{n}</span>
+    </>
+  );
+  return onClick ? (
+    <button onClick={onClick} className="flex w-full items-center gap-3 py-1 hover:opacity-80">
+      {inner}
+    </button>
+  ) : (
+    <div className="flex items-center gap-3 py-1">{inner}</div>
+  );
+}
+
+function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section className="mt-6 first:mt-0">
+      <PanelHeading right={right}>{title}</PanelHeading>
+      {children}
+    </section>
+  );
+}
+
+/** One building as one line: name, type and place, insured value, and
+ *  the flood and heat bands it sits in. Opens the full profile on the
+ *  right, so every building list in the app reads and behaves the same. */
+function BuildingRow({
+  b,
+  onOpen,
+  active,
+  right,
+}: {
+  b: RealAsset;
+  onOpen: (id: string) => void;
+  active?: boolean;
+  right?: React.ReactNode;
+}) {
+  const p = hazardProfiles().get(b.id);
+  const tags: string[] = [];
+  if (p) {
+    const fs = floodScore(p);
+    if (fs > 0) tags.push(`Flood ${FLOOD_BY_SCORE[fs]}`);
+    if (p.heat) tags.push(`UHI ${p.heat.uhiCat}`);
+  }
+  return (
+    <button
+      onClick={() => onOpen(b.id)}
+      aria-current={active || undefined}
+      className={`flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left transition-colors ${active ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+      style={active ? { boxShadow: `inset 2px 0 0 ${ACCENT}` } : undefined}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-lg font-medium text-ink">{b.name}</span>
+        <span className="mt-0.5 block truncate text-sm text-ink-3">
+          {b.buildingType ?? 'Not yet classified'}
+          {b.suburb ? ` · ${b.suburb}` : ''}
+          {!p && ' · not mapped'}
+        </span>
+      </span>
+      <span className="shrink-0 text-right">
+        {right ?? (b.insuredValue > 0 && <span className="num block text-base text-ink-2">{formatMoney(b.insuredValue)}</span>)}
+        {tags.length > 0 && <span className="num mt-0.5 block text-sm text-ink-3">{tags.join(' · ')}</span>}
+      </span>
+    </button>
+  );
+}
+
+function BuildingList({ children }: { children: React.ReactNode }) {
+  return <div className="divide-y divide-line overflow-hidden rounded-[8px] border border-line">{children}</div>;
+}
+
+const READING_VERB: Record<HazardReading['key'], string> = {
+  flood: 'More exposed than',
+  heat: 'Hotter than',
+  svi: 'Higher than',
+  water: 'Closer than',
+};
+const READING_NOUN: Record<HazardReading['key'], string> = {
+  flood: 'flood',
+  heat: 'urban heat',
+  svi: 'social vulnerability',
+  water: 'proximity to water',
+};
+
+/** The full profile for one building: hazards first, ranked against
+ *  every other mapped council building, then the register's own record. */
+function BuildingProfile({ b }: { b: RealAsset }) {
+  const loc = BUILDING_LOCATION[b.id];
+  const readings = hazardReadings(b.id);
+  const p = hazardProfiles().get(b.id);
+  const ranked = readings ? [...readings].sort((x, y) => y.share - x.share) : [];
+  const top = ranked[0];
+  const bottom = ranked[ranked.length - 1];
+  const others = MAPPED_BUILDINGS.length - 1;
+
+  return (
+    <>
+      <FigureStrip>
+        <Figure label="Insured value" value={b.insuredValue > 0 ? formatMoney(b.insuredValue) : 'None'} />
+        <Figure label="Inherent risk" value={<span className="text-xl">{b.inherentRisk ?? 'Not rated'}</span>} sub={b.condition ?? 'Condition not rated'} />
+      </FigureStrip>
+
+      {readings && p ? (
+        <Section title="Hazard profile">
+          {top && bottom && top.share !== bottom.share && (
+            <p className="mb-4 text-base leading-[1.55] text-ink-2">
+              Compared with the other {others} mapped council buildings, its greatest exposure is{' '}
+              <span className="font-semibold text-ink">{READING_NOUN[top.key]}</span> and its least is{' '}
+              <span className="font-semibold text-ink">{READING_NOUN[bottom.key]}</span>.
+            </p>
+          )}
+          <div className="space-y-4">
+            {readings.map((r) => (
+              <div key={r.key}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-base text-ink-3">{r.label}</span>
+                  <span className="text-right text-base font-medium text-ink">{r.value}</span>
+                </div>
+                <div className="mt-1.5 h-[4px] rounded-full bg-line">
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(r.share * 100, 1.5)}%`, background: r.color }} />
+                </div>
+                <div className="num mt-1 text-sm text-ink-3">
+                  {READING_VERB[r.key]} {Math.round(r.share * 100)}% of council buildings
+                </div>
+              </div>
+            ))}
+          </div>
+          <dl className="mt-4 divide-y divide-line border-t border-line">
+            {!p.heat && <FactRow label="Urban heat" value="Outside the heat grid's coverage" />}
+            {p.flood.length > 1 && <FactRow label="Flood extents" value={p.flood.map((f) => FLOOD_SHORT[f]).join(', ')} />}
+            <FactRow
+              label="Dwelling density"
+              value={p.density ? `${p.density.category} (Density 21: ${p.density.value})` : 'No value for its SA1'}
+            />
+          </dl>
+          <p className="mt-3 text-sm leading-[1.5] text-ink-3">
+            Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data yet.
+            {loc?.precision === 'street' && ' This building is placed at street level, so readings are for a point on its street.'}
+          </p>
+        </Section>
+      ) : (
+        <Section title="Hazard profile">
+          <p className="text-base leading-[1.55] text-ink-3">
+            Not on the map: no address in the register resolved to a location, so it can't be checked against the hazard layers.
+          </p>
+        </Section>
+      )}
+
+      <Section title="Register">
+        <dl className="divide-y divide-line">
+          <FactRow label="Condition" value={b.condition ?? 'Not rated'} />
+          <FactRow label="Criticality" value={b.criticality ?? 'Not rated'} />
+          {(b.riskConsequence || b.riskLikelihood) && (
+            <FactRow label="Risk basis" value={`${b.riskConsequence ?? 'Unrated'} consequence, ${b.riskLikelihood ?? 'unrated'} likelihood`} />
+          )}
+          {b.address && <FactRow label="Address" value={b.address} />}
+          {b.ward && <FactRow label="Ward" value={b.ward} />}
+          {b.owner && <FactRow label="Owner" value={b.owner} />}
+          {b.maintainer && <FactRow label="Maintainer" value={b.maintainer} />}
+          <FactRow label="Components" value={<span className="num">{b.componentCount}</span>} />
+        </dl>
+      </Section>
+    </>
+  );
+}
+
 /* ------------------------------------------------------------------ *
- * Map point panel
+ * Building panel
  *
- * Clicking a building dot is as deliberate an act as loading a
- * blueprint or opening a suburb, so it gets the same right-panel
- * treatment instead of a hover tooltip being the only way to read one.
- * One point can hold several buildings that geocoded to the same spot,
- * so this shows every real building filed there plus the small amount
- * of aggregate reading the register itself supports (count, insured
- * value, condition and risk mix), nothing modelled or invented.
+ * Opened by clicking a map dot, a building in any list, or a building
+ * picked in search. A dot can hold several buildings geocoded to the same
+ * spot: that shows the list first, and each opens its own profile.
  * ------------------------------------------------------------------ */
 
 function BuildingPointPanel({ ids, onClose }: { ids: string[]; onClose: () => void }) {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const buildings = ids
-    .map((id) => REAL_BUILDINGS_BY_ID.get(id))
-    .filter((b): b is RealAsset => !!b);
+  const [focus, setFocus] = useState<string | null>(null);
+  const idKey = ids.join(',');
+  useEffect(() => setFocus(null), [idKey]);
+  const buildings = ids.map((id) => REAL_BUILDINGS_BY_ID.get(id)).filter((b): b is RealAsset => !!b);
 
   if (buildings.length === 0) {
     return (
       <RightPanelShell accent={ACCENT} eyebrow="Map selection" title="No detail" onClose={onClose}>
-        <div className="px-2.5 py-2">
-          <p className="text-sm leading-[1.55] text-ink-2">
-            No register detail found for this point.
-          </p>
+        <div className="px-4 py-4 text-base text-ink-2">No register detail found for this point.</div>
+      </RightPanelShell>
+    );
+  }
+
+  const one = buildings.length === 1 ? buildings[0] : buildings.find((b) => b.id === focus) ?? null;
+  if (one) {
+    return (
+      <RightPanelShell accent={ACCENT} eyebrow={one.buildingType ?? 'Building'} title={one.name} onClose={onClose}>
+        <div className="px-4 py-4">
+          {buildings.length > 1 && (
+            <button
+              onClick={() => setFocus(null)}
+              className="mb-3 flex items-center gap-1 text-base text-ink-2 hover:text-ink"
+            >
+              <IconChevron size={13} className="rotate-180" />
+              All {buildings.length} buildings at this point
+            </button>
+          )}
+          <BuildingProfile b={one} />
         </div>
       </RightPanelShell>
     );
   }
 
-  const single = buildings.length === 1;
-  const totalInsured = buildings.reduce((n, b) => n + b.insuredValue, 0);
-  const conditionCounts = new Map<string, number>();
-  const riskCounts = new Map<string, number>();
-  for (const b of buildings) {
-    if (b.condition) conditionCounts.set(b.condition, (conditionCounts.get(b.condition) ?? 0) + 1);
-    if (b.inherentRisk) riskCounts.set(b.inherentRisk, (riskCounts.get(b.inherentRisk) ?? 0) + 1);
-  }
-
+  const total = buildings.reduce((n, b) => n + b.insuredValue, 0);
   return (
-    <RightPanelShell
-      accent={ACCENT}
-      eyebrow="Map selection"
-      title={single ? buildings[0].name : `${buildings.length} buildings here`}
-      onClose={onClose}
-    >
-      <div className="px-2.5 py-2">
-        {!single && (
-          <>
-            <PanelHeading>At this point</PanelHeading>
-            <div className="mb-3 grid grid-cols-2 gap-1.5">
-              <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs text-ink-3">Buildings</div>
-                <div className="num text-stat-sm font-semibold text-ink">{buildings.length}</div>
-              </div>
-              <div className="rounded-[5px] border border-line bg-white px-2 py-1.5">
-                <div className="text-xs text-ink-3">Insured value</div>
-                <div className="num text-stat-sm font-semibold text-ink">
-                  ${(totalInsured / 1e6).toFixed(1)}M
-                </div>
-              </div>
-            </div>
-            {(conditionCounts.size > 0 || riskCounts.size > 0) && (
-              <div className="mb-3 space-y-1">
-                {conditionCounts.size > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {[...conditionCounts.entries()].map(([label, n]) => {
-                      const c = CONDITION_COLOR[label] ?? NEUTRAL_TONE;
-                      return (
-                        <span key={label} className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2">
-                          <span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: c }} />
-                          {n} {label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-                {riskCounts.size > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {[...riskCounts.entries()].map(([label, n]) => {
-                      const c = RISK_COLOR[label] ?? NEUTRAL_TONE;
-                      return (
-                        <span key={label} className="inline-flex items-center gap-1 text-2xs font-medium text-ink-2">
-                          <span className="h-[7px] w-[7px] shrink-0 rounded-[2px]" style={{ background: c }} />
-                          {n} {label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
-        )}
-        <PanelHeading>{single ? 'Register detail' : 'Each building'}</PanelHeading>
-        <div className="space-y-1.5">
-          {buildings.map((b) => (
-            <BuildingCard
-              key={b.id}
-              b={b}
-              isOpen={single || openId === b.id}
-              onToggle={() => setOpenId((cur) => (cur === b.id ? null : b.id))}
-            />
-          ))}
-        </div>
+    <RightPanelShell accent={ACCENT} eyebrow="Map point" title={`${buildings.length} buildings here`} onClose={onClose}>
+      <div className="px-4 py-4">
+        <FigureStrip>
+          <Figure label="Buildings" value={buildings.length} />
+          <Figure label="Insured value" value={formatMoney(total)} />
+        </FigureStrip>
+        <Section title="Buildings">
+          <BuildingList>
+            {[...buildings]
+              .sort((a, b) => b.insuredValue - a.insuredValue)
+              .map((b) => (
+                <BuildingRow key={b.id} b={b} onOpen={setFocus} />
+              ))}
+          </BuildingList>
+        </Section>
       </div>
     </RightPanelShell>
   );
@@ -3468,7 +3956,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                   {isUnclassified && (
                     <Tip
                       label="Not yet classified"
-                      body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a real gap in the source register, not something dropped or guessed here."
+                      body="11 buildings in council's own register, all under the AMSCouncilOwnedProps or AMSPumpStations classes, carry no Building Type value on any of their component rows, Corporate Building, Shed, Clubroom or otherwise. That is a gap in the source register, not something dropped or guessed here."
                       side="top"
                     >
                       <span className="cursor-help text-ink-3">(i)</span>
@@ -3516,7 +4004,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
       {showOther && (
         <div className="fade-up mt-1 rounded-[5px] border border-line bg-surface-2 px-2 py-1.5">
           <p className="mb-1 text-2xs leading-[1.45] text-ink-3">
-            Real, in the same export, not classed as buildings, so kept
+            In the same export, not classed as buildings, so kept
             out of the toggle list above rather than folded in.
           </p>
           {otherCounts.filter((o) => o.count > 0).map((o) => (
@@ -3535,7 +4023,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
  *  paragraph sitting in the flow, so the panel opens on numbers and
  *  controls, not prose. */
 const BUILDINGS_REGISTER_EXPLAINER =
-  'Real physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Categories can be turned on and off below, the same toggle the map markers use. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
+  'Physical buildings from CCS_Buildings.xlsx, council’s own asset register, one row per building rather than per fitout or meter. Categories can be turned on and off below, the same toggle the map markers use. Map positions are geocoded from the register’s address field via OpenStreetMap, approximate, not surveyed. Buildings with no usable address are listed here but not mapped.';
 
 /* ------------------------------------------------------------------ *
  * Real buildings register
@@ -3550,6 +4038,8 @@ const BUILDINGS_REGISTER_EXPLAINER =
 interface RealBuildingsRegisterProps {
   offTypes: Set<string>;
   setOffTypes: (updater: (prev: Set<string>) => Set<string>) => void;
+  onOpenBuilding: (id: string) => void;
+  activeBuildingId: string | null;
 }
 
 function formatRegisterDate(iso: string): string {
@@ -3559,6 +4049,8 @@ function formatRegisterDate(iso: string): string {
 function RealBuildingsRegister({
   offTypes,
   setOffTypes,
+  onOpenBuilding,
+  activeBuildingId,
 }: RealBuildingsRegisterProps) {
   // Same step pattern as AssetTypeToggles below it: exactly one of
   // "manage types" or "browse the list" showing at a time, not two
@@ -3566,7 +4058,6 @@ function RealBuildingsRegister({
   // down the page.
   const [view, setView] = useState<'types' | 'list' | 'condition' | 'about' | null>(null);
   const selectView = (v: typeof view) => withViewTransition(() => setView(v));
-  const [openId, setOpenId] = useState<string | null>(null);
   // Browsing by category lives here, not in Manage types: that's a map
   // declutter control, this is exploring the register itself. null means
   // "haven't picked a scope yet", 'all' means every building, otherwise
@@ -3618,7 +4109,6 @@ function RealBuildingsRegister({
               onChange={(e) => {
                 setWard(e.target.value === '' ? null : e.target.value);
                 setListScope(null);
-                setOpenId(null);
               }}
               aria-label="Ward"
               className="rounded-[6px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
@@ -3871,16 +4361,11 @@ function RealBuildingsRegister({
                         ${(insured / 1e6).toFixed(1)}M
                       </span>
                     </div>
-                    <div className="max-h-[300px] space-y-1 overflow-y-auto thin-scroll pr-0.5">
+                    <BuildingList>
                       {buildings.map((b) => (
-                        <BuildingCard
-                          key={b.id}
-                          b={b}
-                          isOpen={openId === b.id}
-                          onToggle={() => setOpenId(openId === b.id ? null : b.id)}
-                        />
+                        <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} active={activeBuildingId === b.id} />
                       ))}
-                    </div>
+                    </BuildingList>
                   </div>
                 );
               })()}
@@ -4264,11 +4749,21 @@ export default function App() {
     setSelectedBuildingKey((cur) => (cur === key ? null : key));
     setSelectedBuildingIds(ids);
   }, []);
+  // Any building row, search result or ranked list opens that one
+  // building's profile on the right, ringed on the map if it's mapped.
+  const openBuilding = useCallback((id: string) => {
+    const loc = BUILDING_LOCATION[id];
+    setSelectedBuildingKey(loc ? `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}` : `id:${id}`);
+    setSelectedBuildingIds([id]);
+  }, []);
+  const activeBuildingId = selectedBuildingKey && selectedBuildingIds.length === 1 ? selectedBuildingIds[0] : null;
 
-  const rightPanelMode: 'blueprint' | 'building' | 'layer' | null = activeBlueprint
-    ? 'blueprint'
-    : selectedBuildingKey
-      ? 'building'
+  // A building opened from anywhere sits on top of a Blueprint or layer
+  // panel; closing it goes back to whichever was open underneath.
+  const rightPanelMode: 'blueprint' | 'building' | 'layer' | null = selectedBuildingKey
+    ? 'building'
+    : activeBlueprint
+      ? 'blueprint'
       : panelTab === 'layers' && layerInfoId
         ? 'layer'
         : null;
@@ -4301,6 +4796,8 @@ export default function App() {
       setLayerInfoId((cur) => (cur === id ? null : cur));
     } else {
       setLayerInfoId(id);
+      // The layer just turned on should be what the right panel shows.
+      setSelectedBuildingKey(null);
     }
   }, [checkedLayers]);
 
@@ -4331,6 +4828,7 @@ export default function App() {
       setCheckedLayers(new Set(BLUEPRINT_BY_ID[id].layers));
       setActiveBlueprint(id);
       setLayerInfoId(null);
+      setSelectedBuildingKey(null);
     },
     [activeBlueprint],
   );
@@ -4360,9 +4858,10 @@ export default function App() {
         setSearchFocusId(hit.id);
         if (suburbId) handleSelectSuburb(suburbId);
         if (loc) setFlyTarget({ lat: loc.lat, lng: loc.lng, zoom: 16, key: Date.now() });
+        openBuilding(hit.id);
       }
     },
-    [checkedLayers, toggleLayer, handleSelectSuburb],
+    [checkedLayers, toggleLayer, handleSelectSuburb, openBuilding],
   );
 
   // '/' or Ctrl/Cmd+K opens search from anywhere, unless the person is
@@ -4442,10 +4941,22 @@ export default function App() {
           )}
           {panelTab === 'assets' && (
             <div className="px-3 py-4">
-              <RealBuildingsRegister offTypes={buildingOffTypes} setOffTypes={setBuildingOffTypes} />
+              <RealBuildingsRegister
+                offTypes={buildingOffTypes}
+                setOffTypes={setBuildingOffTypes}
+                onOpenBuilding={openBuilding}
+                activeBuildingId={activeBuildingId}
+              />
             </div>
           )}
-          {panelTab === 'place' && <PlaceTab selectedId={selectedId} setSelectedId={setSelectedId} />}
+          {panelTab === 'place' && (
+            <PlaceTab
+              selectedId={selectedId}
+              setSelectedId={setSelectedId}
+              onOpenBuilding={openBuilding}
+              activeBuildingId={activeBuildingId}
+            />
+          )}
           {panelTab === 'help' && <HelpTab />}
         </div>
 
@@ -4491,13 +5002,18 @@ export default function App() {
           blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
           onClose={() => applyBlueprint(activeBlueprint)}
           onFocus={handleBlueprintFocus}
+          onOpenBuilding={openBuilding}
         />
       )}
       {rightPanelMode === 'building' && (
         <BuildingPointPanel ids={selectedBuildingIds} onClose={() => setSelectedBuildingKey(null)} />
       )}
       {rightPanelMode === 'layer' && layerInfoId && (
-        <LayerInfoPanel layer={LAYER_BY_ID[layerInfoId]} onClose={() => setLayerInfoId(null)} />
+        <LayerInfoPanel
+          layer={LAYER_BY_ID[layerInfoId]}
+          onClose={() => setLayerInfoId(null)}
+          onOpenBuilding={openBuilding}
+        />
       )}
     </div>
   );
