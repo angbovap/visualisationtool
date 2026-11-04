@@ -4294,7 +4294,6 @@ function CaseControls({
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-sm text-ink-3">How far around the hospital the layers are drawn. Readings don't change.</p>
       </Section>
 
       <Section title="About the site">
