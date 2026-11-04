@@ -54,6 +54,9 @@ import sa2IndicatorsData from '@/data/sa2Indicators.json';
 // The Queen Elizabeth Hospital's site outline and centre, from
 // OpenStreetMap (amenity=hospital) via Nominatim. Not council data.
 import tqehSiteData from '@/data/tqehSite.json';
+// StormwaterPipes.shp, built by scripts/build-stormwater.cjs: geometry
+// only (no attribute table was supplied).
+import stormwaterPipesData from '@/data/stormwaterPipes.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -359,6 +362,16 @@ const LAYERS: LayerDef[] = [
     note: 'Council\'s density category for 253 of the 257 SA1s, from the "Density 21" field and the breaks set in the CoCS_DwellingDensity2021 QGIS layer: Emp. Only (0, no dwellings), Very Low 0-10, Low 10-22, Medium 22-40, High 40-180. The other 4 SA1s have an overflowed value in the export and are left uncoloured. Council hasn\'t confirmed the unit or who produced the figures.',
     source: 'Council GIS export, CoCS_DwellingDensity2021.shp/.dbf, "Density 21" field, classified using the export\'s own QGIS symbology',
   },
+  {
+    id: 'stormwater-pipes',
+    name: 'Stormwater Pipes',
+    group: 'infrastructure',
+    kind: 'vector',
+    hi: '#15803D',
+    unit: 'pipe lines',
+    note: 'Council\'s stormwater pipe network across the LGA. Geometry only: the export came without its attribute table, so pipe diameter, material, age and flow direction are not known, and nothing about capacity is shown. Read as GDA2020 MGA Zone 54 (no .prj was supplied); the lines fall exactly on the LGA, which confirms it.',
+    source: 'Council GIS export, StormwaterPipes.shp (no .dbf or .prj), reprojected to WGS84',
+  },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -447,6 +460,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'obstetric-hospitals',
   'heat-vuln',
   'dwelling-density',
+  'stormwater-pipes',
 ]);
 
 interface RealBoundary {
@@ -1015,7 +1029,7 @@ function Switch({ on }: { on: boolean }) {
 /** A small drawing of how a layer looks on the map: a line for line
  *  layers, a dot for point layers, the actual category colours for the
  *  heat and density layers, an outlined fill for flood and water areas. */
-const LINE_LAYERS = new Set(['watercourses', 'railways', 'pedestrian-network']);
+const LINE_LAYERS = new Set(['watercourses', 'railways', 'pedestrian-network', 'stormwater-pipes']);
 const POINT_LAYERS = new Set(['train-stations', 'obstetric-hospitals']);
 function LayerGlyph({ l }: { l: LayerDef }) {
   const c = l.hi ?? ACCENT;
@@ -1373,6 +1387,17 @@ function MapView(props: MapViewProps) {
           }).bindTooltip('Train station', { direction: 'top', offset: [0, -3] }),
         );
       }
+    }
+
+    if (checkedLayers.has('stormwater-pipes')) {
+      push(
+        L.polyline(stormwaterPipesData.lines as LatLngTuple[][], {
+          color: LAYER_BY_ID['stormwater-pipes'].hi!,
+          weight: 1.2,
+          opacity: vecAlpha('stormwater-pipes'),
+          interactive: false,
+        }),
+      );
     }
 
     if (checkedLayers.has('pedestrian-network')) {
@@ -3415,6 +3440,35 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
     );
   }
 
+  if (layer.id === 'stormwater-pipes') {
+    const total = stormwaterPipesData.totalKm;
+    const inFlood = stormwaterPipesData.kmInFlood as Record<'1in5' | '1in20' | '1in100', number>;
+    const rows = FLOOD_LAYER_IDS.map((id) => ({ id, km: inFlood[FLOOD_RETURN_PERIOD_BY_LAYER[id]] }));
+    return (
+      <>
+        <FigureStrip>
+          <Figure label="Network" value={`${Math.round(total)} km`} sub={`${stormwaterPipesData.pipes.toLocaleString('en-AU')} pipe lines`} />
+          <Figure label="In 1 in 100 extent" value={`${Math.round(inFlood['1in100'])} km`} sub={`${pct(inFlood['1in100'] / total)} of the network`} />
+        </FigureStrip>
+        <Section title="Pipe length inside each flood extent">
+          {rows.map((r) => (
+            <div key={r.id} className="flex items-center gap-3 py-1">
+              <span className="w-[108px] shrink-0 text-base text-ink-2">{FLOOD_SHORT[r.id]}</span>
+              <span className="h-[4px] flex-1 rounded-full bg-line">
+                <span className="block h-full rounded-full" style={{ width: `${(r.km / total) * 100}%`, background: LAYER_BY_ID[r.id].hi }} />
+              </span>
+              <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{r.km.toFixed(1)} km</span>
+            </div>
+          ))}
+          <p className="mt-1.5 text-sm leading-[1.5] text-ink-3">
+            Long-term flood runs. Pipe size and capacity aren't in the export, so this shows where pipes sit, not how they
+            perform.
+          </p>
+        </Section>
+      </>
+    );
+  }
+
   if (PROXIMITY_SHAPES[layer.id]) {
     const d = distancesTo(layer.id);
     const sorted = MAPPED_BUILDINGS.filter((b) => Number.isFinite(d.get(b.id))).sort((a, b) => d.get(a.id)! - d.get(b.id)!);
@@ -3509,6 +3563,11 @@ interface TqehReading {
   stationM: number;
   railM: number;
   pedM: number;
+  /** Metres from the centre of the grounds to the nearest pipe. */
+  pipeM: number;
+  /** Metres of pipe inside the grounds, and of that inside the 1 in 100 extent. */
+  pipeInSiteM: number;
+  pipeInSiteFloodM: number;
   suburb: Suburb | null;
   buildings: { b: RealAsset; metres: number }[];
 }
@@ -3562,6 +3621,33 @@ function tqehLinks(): CaseLink[] {
   return out;
 }
 
+/** Pipe length inside the hospital grounds, sampled every 2 m. */
+function pipesInSite(): { pipeInSiteM: number; pipeInSiteFloodM: number } {
+  const site = bboxOf(TQEH_SITE);
+  const flood = floodRingsFor('flood-1in100-real');
+  let inSite = 0;
+  let inFlood = 0;
+  for (const shape of PROXIMITY_SHAPES['stormwater-pipes']()) {
+    const b = shape.bbox;
+    if (b.latHi < site.latLo || b.latLo > site.latHi || b.lngHi < site.lngLo || b.lngLo > site.lngHi) continue;
+    const pts = shape.pts;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [a, c] = [pts[i], pts[i + 1]];
+      const len = Math.hypot((c[1] - a[1]) * M_PER_DEG * Math.cos((a[0] * Math.PI) / 180), (c[0] - a[0]) * M_PER_DEG);
+      const steps = Math.max(1, Math.round(len / 2));
+      for (let k = 0; k < steps; k++) {
+        const t = (k + 0.5) / steps;
+        const la = a[0] + t * (c[0] - a[0]);
+        const ln = a[1] + t * (c[1] - a[1]);
+        if (!pointInRing(la, ln, TQEH_SITE)) continue;
+        inSite += len / steps;
+        if (flood.some(({ ring, bbox }) => inBBox(la, ln, bbox) && pointInRing(la, ln, ring))) inFlood += len / steps;
+      }
+    }
+  }
+  return { pipeInSiteM: inSite, pipeInSiteFloodM: inFlood };
+}
+
 let tqehCache: TqehReading | null = null;
 function tqehReading(): TqehReading {
   if (tqehCache) return tqehCache;
@@ -3586,6 +3672,8 @@ function tqehReading(): TqehReading {
     stationM: near('train-stations'),
     railM: near('railways'),
     pedM: near('pedestrian-network'),
+    pipeM: near('stormwater-pipes'),
+    ...pipesInSite(),
     suburb: sa2 ? SUBURB_BY_ID[SA2_CODE_TO_SUBURB_ID[sa2.code]] ?? null : null,
     buildings: MAPPED_BUILDINGS.map((b) => {
       const loc = BUILDING_LOCATION[b.id];
@@ -3669,7 +3757,7 @@ ${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
 </table>
 ${r.suburb ? `<h2>${esc(r.suburb.name)} indexes</h2><table>${indexRows}</table>` : ''}
 <h2>Assets and access</h2><table>
-${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Roads, stormwater, people', 'Waiting on council data')}
+${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m, of which ${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`)}${row('Nearest stormwater pipe', `${formatMetres(r.pipeM)} from the centre`)}${row('Roads, pipe sizes, people', 'Waiting on council data')}
 </table>
 <h2>Nearest council buildings</h2><table>
 ${groups
@@ -3967,11 +4055,20 @@ function TqehAssets({
         </dl>
       </Section>
 
+      <Section title="Stormwater" right={<ShowOnMap ids={['stormwater-pipes']} showLayers={showLayers} />}>
+        <dl className="divide-y divide-line">
+          <FactRow label="In the grounds" value={`${Math.round(r.pipeInSiteM)} m of pipe`} />
+          <FactRow label="In flood extent" value={`${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`} />
+          <FactRow label="Nearest pipe" value={`${formatMetres(r.pipeM)} from the centre`} />
+        </dl>
+        <p className="mt-1.5 text-sm leading-[1.5] text-ink-3">Pipe size and capacity weren't in the export.</p>
+      </Section>
+
       <Section title="Waiting on council">
         <p className="-mt-1 mb-1 text-sm text-ink-3">Shown here once council supplies the files.</p>
         <dl className="divide-y divide-line">
           <FactRow label="Roads" value={<span className="text-ink-2">Road network and hierarchy near the site</span>} />
-          <FactRow label="Stormwater" value={<span className="text-ink-2">Pipes, pits and hydraulics</span>} />
+          <FactRow label="Stormwater" value={<span className="text-ink-2">Pipe sizes, pits and hydraulics</span>} />
           <FactRow label="People" value={<span className="text-ink-2">Building usage and foot traffic</span>} />
         </dl>
       </Section>
@@ -4690,6 +4787,8 @@ function nearestMetres(lat: number, lng: number, shapes: Shape[]): number {
   return best;
 }
 
+let pipeShapeCache: Shape[] | null = null;
+
 /** Line and point layers a building's distance can be measured to. */
 const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
   watercourses: () => WATERCOURSES.map((l) => toShape(l)),
@@ -4698,6 +4797,7 @@ const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
   'train-stations': () => TRAIN_STATIONS.map((p) => toShape([p])),
   'pedestrian-network': () => pedestrianNetworkData.segments.map((s) => toShape(s.line as LatLngTuple[])),
   'obstetric-hospitals': () => OBSTETRIC_HOSPITALS.map((p) => toShape([p])),
+  'stormwater-pipes': () => (pipeShapeCache ??= (stormwaterPipesData.lines as LatLngTuple[][]).map((l) => toShape(l))),
 };
 
 const distanceCache = new Map<string, Map<string, number>>();

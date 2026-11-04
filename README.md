@@ -36,6 +36,12 @@ alone with no emit.
   - `ccsBuildingsGeocoded.json` — approximate map positions for 263 of
     those buildings, geocoded from the register's address field via
     OpenStreetMap Nominatim (see in-app tooltips for the precision caveat).
+  - `stormwaterPipes.json` — council's stormwater pipe network (geometry
+    only, no attributes), built by `scripts/build-stormwater.cjs`.
+  - `sa2Indicators.json` — measured per-suburb indexes, built by
+    `scripts/build-sa2-indicators.cjs` from the layers above.
+  - `tqehSite.json` — The Queen Elizabeth Hospital's grounds, from
+    OpenStreetMap (not council data).
 - `src/styles/globals.css` — design tokens; `fonts.css` — the Google Fonts
   import for IBM Plex Sans (one family for text and numbers).
 - `netlify.toml` / `.github/workflows/deploy-pages.yml` — deploy config for
