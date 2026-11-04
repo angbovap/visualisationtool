@@ -11,10 +11,11 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
-import { flushSync } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import type { Map as LeafletMap, Layer as LeafletLayer } from 'leaflet';
 
 // Real asset register export. See "Real buildings register" below for the
@@ -847,35 +848,102 @@ function Tip({
   children: React.ReactNode;
   side?: 'right' | 'left' | 'top';
 }) {
-  const [open, setOpen] = useState(false);
-  const pos =
-    side === 'left'
-      ? 'right-full mr-1.5 top-0'
-      : side === 'top'
-        ? 'bottom-full mb-1.5 left-0'
-        : 'left-full ml-1.5 top-0';
+  // Hover shows it; a click pins it open until a click elsewhere or Esc.
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const open = hover || pinned;
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
+  const [xy, setXy] = useState<{ x: number; y: number } | null>(null);
+
+  // Rendered into <body> with fixed coordinates, so a scrolling panel or
+  // the map's edge can never clip it. Placed on the preferred side, flipped
+  // if that side has no room, then clamped inside the window.
+  useLayoutEffect(() => {
+    if (!open) {
+      setXy(null);
+      return;
+    }
+    const t = triggerRef.current?.getBoundingClientRect();
+    const tip = tipRef.current?.getBoundingClientRect();
+    if (!t || !tip) return;
+    const gap = 6;
+    const m = 8;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let x: number;
+    let y: number;
+    if (side === 'top') {
+      x = t.left;
+      y = t.top - tip.height - gap;
+      if (y < m) y = t.bottom + gap;
+    } else {
+      const rightX = t.right + gap;
+      const leftX = t.left - tip.width - gap;
+      const fitsRight = rightX + tip.width <= vw - m;
+      const fitsLeft = leftX >= m;
+      x = side === 'left' ? (fitsLeft || !fitsRight ? leftX : rightX) : fitsRight || !fitsLeft ? rightX : leftX;
+      y = t.top;
+    }
+    x = Math.min(Math.max(x, m), vw - tip.width - m);
+    y = Math.min(Math.max(y, m), vh - tip.height - m);
+    setXy({ x, y });
+  }, [open, side]);
+
+  useEffect(() => {
+    if (!pinned) return;
+    const close = (e: MouseEvent) => {
+      if (!triggerRef.current?.contains(e.target as Node)) setPinned(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setPinned(false);
+    const off = () => setPinned(false);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    window.addEventListener('resize', off);
+    document.addEventListener('scroll', off, true);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', esc);
+      window.removeEventListener('resize', off);
+      document.removeEventListener('scroll', off, true);
+    };
+  }, [pinned]);
+
   return (
     <span
-      className="relative inline-flex"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      ref={triggerRef}
+      className="inline-flex"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={(e) => {
+        // A tip wrapped around a real button (the rail) leaves its clicks alone.
+        const ctl = (e.target as HTMLElement).closest('button, a');
+        if (ctl && triggerRef.current?.contains(ctl)) return;
+        // Don't let the click also toggle the row the (i) sits in.
+        e.stopPropagation();
+        e.preventDefault();
+        setPinned((p) => !p);
+      }}
     >
       {children}
-      {open && (
-        <span
-          className={`fade-up pointer-events-none absolute ${pos} z-[1400] w-[240px] rounded-[6px] border border-[#233634] bg-[#10201F] px-2 py-1.5 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]`}
-        >
-          <span className="block font-semibold text-white text-base mb-1">
-            {label}
-          </span>
-          <span className="block text-[#C2D2D1]">{body}</span>
-          {source && (
-            <span className="mt-1 block border-t border-[#25403E] pt-1 text-xs text-[#7E9997]">
-              Source: {source}
-            </span>
-          )}
-        </span>
-      )}
+      {open &&
+        createPortal(
+          <span
+            ref={tipRef}
+            role="tooltip"
+            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[6px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_6px_18px_rgba(0,0,0,0.28)]"
+            style={{ left: xy?.x ?? 0, top: xy?.y ?? 0, visibility: xy ? 'visible' : 'hidden' }}
+          >
+            <span className="mb-1 block text-base font-semibold text-white">{label}</span>
+            <span className="block text-[#C2D2D1]">{body}</span>
+            {source && (
+              <span className="mt-1 block border-t border-[#25403E] pt-1 text-xs text-[#7E9997]">
+                Source: {source}
+              </span>
+            )}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }
