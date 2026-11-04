@@ -1,4 +1,4 @@
-# CoCS Climate Risk Explorer
+# CoCS Climate Risk Tolerance Tool
 
 Climate risk decision-support tool for City of Charles Sturt council staff.
 Layers, an SA1/SA2 boundary map, a real building register and a real

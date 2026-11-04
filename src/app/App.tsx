@@ -1,5 +1,5 @@
 /*
- * CoCS Climate Risk Explorer
+ * CoCS Climate Risk Tolerance Tool
  * Decision-support surface for City of Charles Sturt council staff.
  *
  * Shows council's own GIS layers, the real ABS SA2 and SA1 boundaries and
@@ -1013,6 +1013,13 @@ function LayerGlyph({ l }: { l: LayerDef }) {
     body = ['Very Low', 'Low', 'Medium'].map((k, i) => (
       <rect key={k} x={1 + i * 5.4} y="2" width="5.4" height="8" fill={DWELLING_DENSITY_COLOR[k]} />
     ));
+  } else if (l.id === 'railways') {
+    body = (
+      <>
+        <path d="M1.5 6 H16.5" stroke={c} strokeWidth="3" />
+        <path d="M1.5 6 H16.5" stroke="#fff" strokeWidth="1" strokeDasharray="2 2.5" />
+      </>
+    );
   } else if (LINE_LAYERS.has(l.id)) {
     body = (
       <path
@@ -1023,6 +1030,13 @@ function LayerGlyph({ l }: { l: LayerDef }) {
         strokeLinecap="round"
         strokeDasharray={l.id === 'pedestrian-network' ? '0.5 3' : undefined}
       />
+    );
+  } else if (l.id === 'obstetric-hospitals') {
+    body = (
+      <>
+        <rect x="7.6" y="1.5" width="2.8" height="9" fill={c} />
+        <rect x="4.5" y="4.6" width="9" height="2.8" fill={c} />
+      </>
     );
   } else if (POINT_LAYERS.has(l.id)) {
     body = <circle cx="9" cy="6" r="3.5" fill={c} />;
@@ -1841,9 +1855,13 @@ function MapView(props: MapViewProps) {
         </div>
       )}
 
-      {ready && LRef.current && mapRef.current && (
-        <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
-      )}
+      {/* Bottom-left column: the locator (when zoomed in) above the legend. */}
+      <div className="pointer-events-none absolute bottom-4 left-3 z-[999] flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
+        {ready && LRef.current && mapRef.current && (
+          <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
+        )}
+        <MapLegend checkedLayers={checkedLayers} showBuildings={showBuildings} />
+      </div>
 
       <div className="absolute bottom-4 right-3 z-[999] flex flex-col items-center gap-2">
         <button
@@ -1885,6 +1903,111 @@ function MapView(props: MapViewProps) {
   );
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Map legend
+ *
+ * One entry per layer on the map, drawn the way the map draws it: the
+ * category colours for heat and dwelling density, a line or area or dot
+ * for everything else, plus the two building marker styles.
+ * ------------------------------------------------------------------ */
+
+function LegendScale({ items }: { items: { label: string; color: string; opacity?: number }[] }) {
+  return (
+    <div className="mt-1.5 space-y-1">
+      {items.map((it) => (
+        <div key={it.label} className="flex items-center gap-2">
+          <span
+            className="h-[10px] w-[18px] shrink-0"
+            style={{ background: it.color, opacity: it.opacity ?? 1, boxShadow: 'inset 0 0 0 1px rgba(20,32,31,0.08)' }}
+          />
+          <span className="text-sm text-ink-2">{it.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MapLegend({ checkedLayers, showBuildings }: { checkedLayers: Set<string>; showBuildings: boolean }) {
+  const [open, setOpen] = useState(true);
+  const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
+  if (layers.length === 0 && !showBuildings) return null;
+  return (
+    <div className="w-[208px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between px-3 py-2 text-base font-semibold text-ink"
+      >
+        Legend
+        <IconChevron size={12} className={`text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && (
+        <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
+          {layers.map((l) => {
+            if (l.id === 'heat-vuln') {
+              return (
+                <div key={l.id}>
+                  <div className="text-sm font-medium text-ink">Urban heat (UHI category)</div>
+                  <LegendScale
+                    items={[4, 3, 2].map((c) => ({
+                      label: `Category ${c}${c === 4 ? ', hottest' : c === 2 ? ', coolest' : ''}`,
+                      color: lerpHex(l.lo!, l.hi!, (c - 2) / 2),
+                      opacity: 0.75,
+                    }))}
+                  />
+                </div>
+              );
+            }
+            if (l.id === 'dwelling-density') {
+              return (
+                <div key={l.id}>
+                  <div className="text-sm font-medium text-ink">{l.name}</div>
+                  <LegendScale
+                    items={Object.entries(DWELLING_DENSITY_COLOR)
+                      .reverse()
+                      .map(([label, color]) => ({ label, color, opacity: 0.8 }))}
+                  />
+                </div>
+              );
+            }
+            return (
+              <div key={l.id} className="flex items-center gap-2">
+                <LayerGlyph l={l} />
+                <span className="text-sm text-ink">{l.name}</span>
+              </div>
+            );
+          })}
+          {showBuildings && (
+            <div>
+              <div className="text-sm font-medium text-ink">Council buildings</div>
+              <div className="mt-1.5 space-y-1">
+                <div className="flex items-center gap-2">
+                  <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                    <circle cx="9" cy="6" r="4.5" fill={ACCENT} stroke="#fff" strokeWidth="1.2" />
+                  </svg>
+                  <span className="text-sm text-ink-2">At the building</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                    <circle cx="9" cy="6" r="4" fill="#fff" fillOpacity="0.5" stroke={ACCENT} strokeWidth="1.6" />
+                  </svg>
+                  <span className="text-sm text-ink-2">Street-level position</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                    <circle cx="9" cy="6" r="5.5" fill={ACCENT} stroke="#fff" strokeWidth="1.2" />
+                  </svg>
+                  <span className="text-sm text-ink-2">Larger: several at one point</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ *
  * Locator map
@@ -1977,7 +2100,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in absolute bottom-4 left-3 z-[999] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+    <div className="fade-in overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -4760,7 +4883,7 @@ function LandingScreen({ onGuide, onSkip }: { onGuide: () => void; onSkip: () =>
           className="landing-in mt-6 text-display font-semibold leading-tight text-ink"
           style={{ animationDelay: '140ms' }}
         >
-          CoCS Climate Risk Explorer
+          CoCS Climate Risk Tolerance Tool
         </div>
         <div
           className="landing-in num mt-2 text-xs font-semibold text-ink-3"
