@@ -257,32 +257,32 @@ const LAYERS: LayerDef[] = [
   },
   {
     id: 'flood-1in5-real',
-    name: 'Flood 1 in 5',
+    name: 'Flood 1 in 5 (long-term)',
     group: 'hazard',
     kind: 'vector',
     hi: '#1D4ED8',
     unit: 'flood polygons',
-    note: '1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 5 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
     id: 'flood-1in20-real',
-    name: 'Flood 1 in 20',
+    name: 'Flood 1 in 20 (long-term)',
     group: 'hazard',
     kind: 'vector',
     hi: '#2563EB',
     unit: 'flood polygons',
-    note: '1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
     id: 'flood-1in100-real',
-    name: 'Flood 1 in 100',
+    name: 'Flood 1 in 100 (long-term)',
     group: 'hazard',
     kind: 'vector',
     hi: '#1E3A8A',
     unit: 'flood polygons',
-    note: '1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied.',
+    note: '1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -3636,7 +3636,7 @@ ${groups
 <h2>Risk tolerance</h2><table>
 ${CONSEQUENCE_CATEGORIES.map((c) => row(c.name, [sheet[c.name]?.tolerance || 'Not set', sheet[c.name]?.notes].filter(Boolean).join(' | '))).join('')}
 </table>
-<p class="note">Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Location from the state obstetric hospitals layer. Indexes are measured from the supplied layers, not scored.</p>
+<p class="note">Flood extents are long-term runs as labelled in the supplied files (River Torrens to 2050), not current conditions. Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Location from the state obstetric hospitals layer. Indexes are measured from the supplied layers, not scored.</p>
 </body></html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
@@ -3742,7 +3742,7 @@ function TqehHazard({
             />
           ))}
         </dl>
-        <p className="mt-1.5 text-sm text-ink-3">1 in 20 covers three catchments; 1 in 5 has no Trimmer data yet.</p>
+        <p className="mt-1.5 text-sm text-ink-3">Long-term runs (River Torrens to 2050), not current conditions. 1 in 20 covers three catchments; 1 in 5 has no Trimmer data yet.</p>
       </Section>
 
       <Section title="Heat and water">
@@ -4874,7 +4874,7 @@ function BuildingProfile({ b }: { b: RealAsset }) {
             />
           </dl>
           <p className="mt-3 text-sm leading-[1.5] text-ink-3">
-            Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data yet.
+            Flood extents are long-term runs (River Torrens to 2050), not current conditions. Data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data yet.
             {loc?.precision === 'street' && ' This building is placed at street level, so readings are for a point on its street.'}
           </p>
         </Section>
