@@ -133,3 +133,34 @@ input[type='range']::-moz-range-thumb {
    delay elapses, so the stagger reads as sequenced, not just offset. */
 @keyframes landingIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .landing-in { animation: landingIn 480ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* The Queen Elizabeth Hospital marker: a raised badge on a soft ground
+   shadow, with one faint ring pulsing slowly at its base. Noticeable,
+   not loud: low opacity, long period, and still for reduced motion. */
+.tqeh-pin { position: relative; width: 40px; height: 44px; cursor: pointer; }
+.tqeh-pin__shadow {
+  position: absolute; left: 50%; bottom: 2px; width: 18px; height: 6px;
+  transform: translateX(-50%); border-radius: 50%;
+  background: rgba(20, 32, 31, 0.28); filter: blur(1.5px);
+}
+.tqeh-pin__pulse {
+  position: absolute; left: 50%; bottom: 0; width: 34px; height: 12px;
+  transform: translateX(-50%); border-radius: 50%;
+  border: 1.5px solid rgba(200, 16, 46, 0.55);
+  animation: tqehPulse 2.8s ease-out infinite;
+}
+.tqeh-pin__badge {
+  position: absolute; left: 50%; bottom: 9px; width: 26px; height: 26px;
+  transform: translateX(-50%); border-radius: 7px; background: #fff;
+  border: 2px solid #C8102E; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 3px 0 #9E0C24, 0 6px 12px rgba(20, 32, 31, 0.22);
+  transition: transform 160ms ease-out;
+}
+.tqeh-pin:hover .tqeh-pin__badge { transform: translateX(-50%) translateY(-2px); }
+@keyframes tqehPulse {
+  0% { opacity: 0.9; transform: translateX(-50%) scale(0.55); }
+  70%, 100% { opacity: 0; transform: translateX(-50%) scale(1.25); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tqeh-pin__pulse { animation: none; opacity: 0.35; }
+}

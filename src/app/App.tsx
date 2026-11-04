@@ -1763,15 +1763,20 @@ function MapView(props: MapViewProps) {
     const map = mapRef.current;
     if (!ready || !L || !map) return;
     const icon = L.divIcon({
-      html: `<div style="width:22px;height:22px;border-radius:5px;background:#fff;border:2px solid #C8102E;box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
-        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="4.6" y="0.5" width="2.8" height="11" fill="#C8102E"/><rect x="0.5" y="4.6" width="11" height="2.8" fill="#C8102E"/></svg>
+      html: `<div class="tqeh-pin">
+        <span class="tqeh-pin__pulse"></span>
+        <span class="tqeh-pin__shadow"></span>
+        <span class="tqeh-pin__badge">
+          <svg width="13" height="13" viewBox="0 0 12 12"><rect x="4.6" y="0.5" width="2.8" height="11" fill="#C8102E"/><rect x="0.5" y="4.6" width="11" height="2.8" fill="#C8102E"/></svg>
+        </span>
       </div>`,
       className: '',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11],
+      iconSize: [40, 44],
+      // Anchored at the base of the shadow, so the badge stands above the site.
+      iconAnchor: [20, 40],
     });
     const marker = L.marker([TQEH.lat, TQEH.lng], { icon, zIndexOffset: 1000, keyboard: true, title: TQEH.label })
-      .bindTooltip(TQEH.label, { permanent: true, direction: 'right', offset: [14, 0], className: 'building-label' })
+      .bindTooltip(TQEH.label, { permanent: true, direction: 'right', offset: [8, -22], className: 'building-label' })
       .on('click', () => onOpenCaseRef.current())
       .addTo(map);
     return () => {
