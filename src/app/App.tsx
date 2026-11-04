@@ -3669,7 +3669,7 @@ ${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
 </table>
 ${r.suburb ? `<h2>${esc(r.suburb.name)} indexes</h2><table>${indexRows}</table>` : ''}
 <h2>Assets and access</h2><table>
-${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Roads', "Waiting on council's road data")}
+${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Roads, stormwater, people', 'Waiting on council data')}
 </table>
 <h2>Nearest council buildings</h2><table>
 ${groups
@@ -3964,7 +3964,15 @@ function TqehAssets({
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
           <FactRow label="Railway" value={formatMetres(r.railM)} />
           <FactRow label="Pedestrian route" value={formatMetres(r.pedM)} />
-          <FactRow label="Roads" value={<span className="text-ink-3">Waiting on council's road data</span>} />
+        </dl>
+      </Section>
+
+      <Section title="Waiting on council">
+        <p className="-mt-1 mb-1 text-sm text-ink-3">Shown here once council supplies the files.</p>
+        <dl className="divide-y divide-line">
+          <FactRow label="Roads" value={<span className="text-ink-2">Road network and hierarchy near the site</span>} />
+          <FactRow label="Stormwater" value={<span className="text-ink-2">Pipes, pits and hydraulics</span>} />
+          <FactRow label="People" value={<span className="text-ink-2">Building usage and foot traffic</span>} />
         </dl>
       </Section>
 
