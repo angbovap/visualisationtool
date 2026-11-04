@@ -2906,27 +2906,6 @@ function PlaceTab({
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
       <div className="px-3 py-4">
-        <PanelHeading>Suburbs</PanelHeading>
-        <div className="grid grid-cols-2 gap-2">
-          {SUBURBS.map((s) => {
-            const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSelectedId(s.id)}
-                className="flex min-h-[78px] flex-col justify-between rounded-[8px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
-              >
-                <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
-                <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
-                  {bs.length} buildings
-                  <br />
-                  {bs.filter(inFlood).length} in a flood extent
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
         <Section title="Compare suburbs">
           <IndexPicker value={indexId} onChange={setIndexId} />
           <div className="mt-2 flex gap-2">
@@ -3001,6 +2980,29 @@ function PlaceTab({
             ));
           })()}
         </Section>
+
+        <section className="mt-6">
+        <PanelHeading>Suburbs</PanelHeading>
+        <div className="grid grid-cols-2 gap-2">
+          {SUBURBS.map((s) => {
+            const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
+            return (
+              <button
+                key={s.id}
+                onClick={() => setSelectedId(s.id)}
+                className="flex min-h-[78px] flex-col justify-between rounded-[8px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
+              >
+                <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
+                <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
+                  {bs.length} buildings
+                  <br />
+                  {bs.filter(inFlood).length} in a flood extent
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        </section>
       </div>
     );
   }
