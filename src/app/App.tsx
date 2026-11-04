@@ -1215,8 +1215,10 @@ interface MapViewProps {
     lng: number;
     label: string;
     links?: CaseLink[];
-    /** Flood drawn only around the site, and the edge of that window. */
-    area?: { ring: LatLngTuple[]; flood: LatLngTuple[][] };
+    /** Layers drawn only around the site, the edge of that window, and
+     *  which of them are switched on. */
+    area?: CaseArea;
+    show?: Set<CaseLayer>;
   } | null;
   /** Clicking the always-on TQEH marker opens its case study. */
   onOpenCase: () => void;
@@ -1787,22 +1789,57 @@ function MapView(props: MapViewProps) {
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight) return;
     const added: LeafletLayer[] = [];
-    if (highlight.area) {
-      const fc = LAYER_BY_ID['flood-1in100-real'].hi!;
-      for (const r of highlight.area.flood) {
+    const show = highlight.show ?? new Set<CaseLayer>();
+    const area = highlight.area;
+    if (area) {
+      if (show.has('heat')) {
+        const def = LAYER_BY_ID['heat-vuln'];
+        for (const h of area.heat) {
+          added.push(
+            L.polygon(h.ring, {
+              stroke: false,
+              fillColor: lerpHex(def.lo!, def.hi!, (h.cat - 2) / 2),
+              fillOpacity: 0.6,
+              interactive: true,
+            })
+              .bindTooltip(`UHI category ${h.cat} · SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
+              .addTo(map),
+          );
+        }
+      }
+      for (const [key, id] of [
+        ['flood100', 'flood-1in100-real'],
+        ['flood20', 'flood-1in20-real'],
+        ['flood5', 'flood-1in5-real'],
+      ] as const) {
+        if (!show.has(key)) continue;
+        const fc = LAYER_BY_ID[id].hi!;
+        for (const r of area.flood[id]) {
+          added.push(
+            L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.3, interactive: false }).addTo(map),
+          );
+        }
+      }
+      if (show.has('pipes') && area.pipes.length) {
         added.push(
-          L.polygon(r, { stroke: true, color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.32, interactive: false }).addTo(map),
+          L.polyline(area.pipes, { color: LAYER_BY_ID['stormwater-pipes'].hi!, weight: 1.8, opacity: 0.95, interactive: false }).addTo(map),
         );
       }
+      if (show.has('buildings')) {
+        for (const g of area.buildings) {
+          added.push(
+            L.circleMarker([g.lat, g.lng], { radius: 5, color: '#fff', weight: 1.4, fillColor: ACCENT, fillOpacity: 1 })
+              .bindTooltip(g.ids.length > 1 ? `${g.names[0]} and ${g.ids.length - 1} more` : g.names[0], {
+                direction: 'top',
+                offset: [0, -4],
+              })
+              .on('click', () => onSelectBuildingPoint(`${g.lat.toFixed(6)},${g.lng.toFixed(6)}`, g.ids))
+              .addTo(map),
+          );
+        }
+      }
       added.push(
-        L.polygon(highlight.area.ring, {
-          color: '#4A5A59',
-          weight: 1,
-          dashArray: '3 4',
-          opacity: 0.7,
-          fill: false,
-          interactive: false,
-        }).addTo(map),
+        L.polygon(area.ring, { color: '#4A5A59', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false }).addTo(map),
       );
     }
     added.push(
@@ -1814,7 +1851,7 @@ function MapView(props: MapViewProps) {
         interactive: false,
       }).addTo(map),
     );
-    for (const link of highlight.links ?? []) {
+    for (const link of show.has('lines') ? highlight.links ?? [] : []) {
       added.push(
         L.polyline([[highlight.lat, highlight.lng], link.to], {
           color: '#14201F',
@@ -2065,7 +2102,8 @@ function MapView(props: MapViewProps) {
           checkedLayers={checkedLayers}
           showBuildings={showBuildings}
           shade={suburbShade}
-          caseArea={!!highlight?.area}
+          caseShow={highlight?.area ? highlight.show : undefined}
+          caseRadius={highlight?.area?.radius}
         />
       </div>
 
@@ -2138,12 +2176,14 @@ function MapLegend({
   checkedLayers,
   showBuildings,
   shade,
-  caseArea,
+  caseShow,
+  caseRadius,
 }: {
   checkedLayers: Set<string>;
   showBuildings: boolean;
   shade: SuburbShade | null;
-  caseArea?: boolean;
+  caseShow?: Set<CaseLayer>;
+  caseRadius?: number;
 }) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
@@ -2159,19 +2199,20 @@ function MapLegend({
       </button>
       {open && (
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
-          {caseArea && (
+          {caseShow && (
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
-                  <rect x="1.5" y="2" width="15" height="8" fill="#1E3A8A" fillOpacity="0.32" stroke="#1E3A8A" strokeWidth="0.8" />
-                </svg>
-                <span className="text-sm text-ink">Flood 1 in 100 (long-term), near TQEH</span>
-              </div>
+              <div className="text-sm font-medium text-ink">Around TQEH</div>
+              {CASE_LAYER_DEFS.filter((d) => caseShow.has(d.id)).map((d) => (
+                <div key={d.id} className="flex items-center gap-2">
+                  <CaseGlyph id={d.id} />
+                  <span className="text-sm text-ink-2">{d.label}</span>
+                </div>
+              ))}
               <div className="flex items-center gap-2">
                 <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
                   <path d="M1.5 6 H16.5" stroke="#4A5A59" strokeWidth="1.2" strokeDasharray="3 3" />
                 </svg>
-                <span className="text-sm text-ink-2">Area shown, {TQEH_AREA_M} m around</span>
+                <span className="text-sm text-ink-2">Area shown, {caseRadius} m around</span>
               </div>
             </div>
           )}
@@ -3814,9 +3855,10 @@ function pipesInSite(): { pipeInSiteM: number; pipeInSiteFloodM: number } {
   return { pipeInSiteM: inSite, pipeInSiteFloodM: inFlood };
 }
 
-/** How far around the hospital the case study draws the flood extent.
- *  A display window only: nothing is measured against it. */
-const TQEH_AREA_M = 600;
+/** Sizes the case study's map area can be drawn at. A display window
+ *  only: no reading is measured against it. */
+const TQEH_AREA_OPTIONS = [400, 600, 1000] as const;
+type TqehRadius = (typeof TQEH_AREA_OPTIONS)[number];
 
 function circleRing(lat: number, lng: number, m: number, n = 72): LatLngTuple[] {
   const dLat = m / 111_320;
@@ -3857,18 +3899,87 @@ function clipRing(subject: LatLngTuple[], clip: LatLngTuple[]): LatLngTuple[] {
   return out;
 }
 
-let tqehAreaCache: { ring: LatLngTuple[]; flood: LatLngTuple[][] } | null = null;
-/** The 1 in 100 extent within TQEH_AREA_M of the hospital, and the circle itself. */
-function tqehArea(): { ring: LatLngTuple[]; flood: LatLngTuple[][] } {
-  if (tqehAreaCache) return tqehAreaCache;
-  const ring = circleRing(TQEH.lat, TQEH.lng, TQEH_AREA_M);
+/** What the case study can draw around the site, each cut to the area. */
+type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'buildings' | 'lines';
+
+interface CaseArea {
+  radius: number;
+  ring: LatLngTuple[];
+  flood: Record<FloodLayerId, LatLngTuple[][]>;
+  heat: { ring: LatLngTuple[]; cat: number; svi: number }[];
+  pipes: LatLngTuple[][];
+  buildings: { lat: number; lng: number; names: string[]; ids: string[] }[];
+}
+
+const tqehAreaCache = new Map<number, CaseArea>();
+/** Every local layer within \`radius\` metres of the hospital. */
+function tqehArea(radius: number): CaseArea {
+  const hit = tqehAreaCache.get(radius);
+  if (hit) return hit;
+  const ring = circleRing(TQEH.lat, TQEH.lng, radius);
   const box = bboxOf(ring);
-  const flood = floodRingsFor('flood-1in100-real')
-    .filter(({ bbox: b }) => !(b.latHi < box.latLo || b.latLo > box.latHi || b.lngHi < box.lngLo || b.lngLo > box.lngHi))
-    .map(({ ring: r }) => clipRing(r, ring))
-    .filter((r) => r.length >= 3);
-  tqehAreaCache = { ring, flood };
-  return tqehAreaCache;
+  const touches = (b: RingBBox) => !(b.latHi < box.latLo || b.latLo > box.latHi || b.lngHi < box.lngLo || b.lngLo > box.lngHi);
+  const kx = M_PER_DEG * Math.cos((TQEH.lat * Math.PI) / 180);
+  const within = ([la, ln]: LatLngTuple) => Math.hypot((ln - TQEH.lng) * kx, (la - TQEH.lat) * M_PER_DEG) <= radius;
+
+  const flood = Object.fromEntries(
+    FLOOD_LAYER_IDS.map((id) => [
+      id,
+      floodRingsFor(id)
+        .filter(({ bbox }) => touches(bbox))
+        .map(({ ring: r }) => clipRing(r, ring))
+        .filter((r) => r.length >= 3),
+    ]),
+  ) as Record<FloodLayerId, LatLngTuple[][]>;
+
+  const heat = HEAT_CELLS_WITH_BBOX.flatMap(({ cell, rings }) =>
+    rings
+      .filter(({ bbox }) => touches(bbox))
+      .map(({ ring: r }) => ({ ring: clipRing(r, ring), cat: cell.uhiCat, svi: cell.svi }))
+      .filter((h) => h.ring.length >= 3),
+  );
+
+  // Pipes: the runs of each line that stay inside the area.
+  const pipes: LatLngTuple[][] = [];
+  for (const shape of PROXIMITY_SHAPES['stormwater-pipes']()) {
+    if (!touches(shape.bbox)) continue;
+    let run: LatLngTuple[] = [];
+    for (const pt of shape.pts) {
+      if (within(pt)) run.push(pt);
+      else {
+        if (run.length >= 2) pipes.push(run);
+        run = [];
+      }
+    }
+    if (run.length >= 2) pipes.push(run);
+  }
+
+  const byPoint = new Map<string, { lat: number; lng: number; names: string[]; ids: string[] }>();
+  for (const b of MAPPED_BUILDINGS) {
+    const loc = BUILDING_LOCATION[b.id];
+    if (!within([loc.lat, loc.lng])) continue;
+    const key = `${loc.lat.toFixed(6)},${loc.lng.toFixed(6)}`;
+    const g = byPoint.get(key) ?? { lat: loc.lat, lng: loc.lng, names: [], ids: [] };
+    g.names.push(b.name);
+    g.ids.push(b.id);
+    byPoint.set(key, g);
+  }
+
+  const out: CaseArea = { radius, ring, flood, heat, pipes, buildings: [...byPoint.values()] };
+  tqehAreaCache.set(radius, out);
+  return out;
+}
+
+/** Grounds area in hectares, from the OSM outline. */
+function siteHectares(): number {
+  const kx = M_PER_DEG * Math.cos((TQEH.lat * Math.PI) / 180);
+  let a = 0;
+  for (let i = 0; i < TQEH_SITE.length; i++) {
+    const p = TQEH_SITE[i];
+    const q = TQEH_SITE[(i + 1) % TQEH_SITE.length];
+    a += (p[1] * kx) * (q[0] * M_PER_DEG) - (q[1] * kx) * (p[0] * M_PER_DEG);
+  }
+  return Math.abs(a) / 2 / 10_000;
 }
 
 let tqehCache: TqehReading | null = null;
@@ -4017,17 +4128,17 @@ type CaseId = (typeof CASE_STUDIES)[number]['id'];
 function CasesTab({
   caseId,
   setCaseId,
-  showLayers,
-  onOpenBuilding,
-  onOpenBuildings,
-  onOpenSuburb,
+  show,
+  setShow,
+  radius,
+  setRadius,
 }: {
   caseId: CaseId | null;
   setCaseId: (id: CaseId | null) => void;
-  showLayers: (ids: string[]) => void;
-  onOpenBuilding: (id: string) => void;
-  onOpenBuildings: (ids: string[]) => void;
-  onOpenSuburb: (id: string) => void;
+  show: Set<CaseLayer>;
+  setShow: (v: Set<CaseLayer>) => void;
+  radius: TqehRadius;
+  setRadius: (v: TqehRadius) => void;
 }) {
   const c = CASE_STUDIES.find((x) => x.id === caseId);
   if (!c) {
@@ -4058,14 +4169,143 @@ function CasesTab({
     );
   }
   return (
+    <CaseControls
+      onBack={() => setCaseId(null)}
+      name={c.name}
+      show={show}
+      setShow={setShow}
+      radius={radius}
+      setRadius={setRadius}
+    />
+  );
+}
+
+const CASE_LAYER_DEFS: { id: CaseLayer; label: string }[] = [
+  { id: 'flood100', label: 'Flood 1 in 100 (long-term)' },
+  { id: 'flood20', label: 'Flood 1 in 20 (long-term)' },
+  { id: 'flood5', label: 'Flood 1 in 5 (long-term)' },
+  { id: 'heat', label: 'Urban heat cells' },
+  { id: 'pipes', label: 'Stormwater pipes' },
+  { id: 'buildings', label: 'Council buildings' },
+  { id: 'lines', label: 'Distance lines' },
+];
+
+/** The legend and switch drawing for each case layer, as on the map. */
+function CaseGlyph({ id }: { id: CaseLayer }) {
+  if (id === 'flood100' || id === 'flood20' || id === 'flood5') {
+    const l = LAYER_BY_ID[{ flood100: 'flood-1in100-real', flood20: 'flood-1in20-real', flood5: 'flood-1in5-real' }[id]];
+    return <LayerGlyph l={l} />;
+  }
+  if (id === 'heat') return <LayerGlyph l={LAYER_BY_ID['heat-vuln']} />;
+  if (id === 'pipes') return <LayerGlyph l={LAYER_BY_ID['stormwater-pipes']} />;
+  if (id === 'buildings') {
+    return (
+      <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
+        <circle cx="9" cy="6" r="4.5" fill={ACCENT} stroke="#fff" strokeWidth="1.2" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
+      <path d="M1.5 6 H13" stroke="#14201F" strokeWidth="1.6" strokeDasharray="3 2.5" />
+      <circle cx="14.5" cy="6" r="2.5" fill="#14201F" />
+    </svg>
+  );
+}
+
+/** Left panel for an open case: what to draw around the site, how far
+ *  around, and the site's own facts. The report itself sits on the right. */
+function CaseControls({
+  onBack,
+  name,
+  show,
+  setShow,
+  radius,
+  setRadius,
+}: {
+  onBack: () => void;
+  name: string;
+  show: Set<CaseLayer>;
+  setShow: (v: Set<CaseLayer>) => void;
+  radius: TqehRadius;
+  setRadius: (v: TqehRadius) => void;
+}) {
+  const r = tqehReading();
+  const area = tqehArea(radius);
+  const share = (id: FloodLayerId) => r.flood.find((f) => f.id === id)!.share;
+  const detail: Record<CaseLayer, string> = {
+    flood100: `${pct(share('flood-1in100-real'))} of the grounds`,
+    flood20: `${pct(share('flood-1in20-real'))} of the grounds`,
+    flood5: `${pct(share('flood-1in5-real'))} of the grounds`,
+    heat: r.heatHere
+      ? `Category ${r.heatHere.uhiCat} at the site`
+      : r.nearestHeat
+        ? `Nearest cell ${formatMetres(r.nearestHeat.metres)}, category ${r.nearestHeat.uhiCat}`
+        : 'No cells nearby',
+    pipes: `${Math.round(r.pipeInSiteM)} m in the grounds`,
+    buildings: `${area.buildings.reduce((n, g) => n + g.ids.length, 0)} within ${radius} m`,
+    lines: 'To the nearest station, water and heat cell',
+  };
+  const toggle = (id: CaseLayer) => {
+    const next = new Set(show);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setShow(next);
+  };
+
+  return (
     <div className="px-3 py-4">
-      <BackBar onBack={() => setCaseId(null)} parent="Case studies" title={c.name} />
-      <TqehTab
-        showLayers={showLayers}
-        onOpenBuilding={onOpenBuilding}
-        onOpenBuildings={onOpenBuildings}
-        onOpenSuburb={onOpenSuburb}
-      />
+      <BackBar onBack={onBack} parent="Case studies" title={name} />
+      <p className="text-base leading-[1.55] text-ink-2">The report is on the right. Choose what to draw around the site here.</p>
+
+      <Section title="Show around the site">
+        <div className="divide-y divide-line overflow-hidden rounded-[8px] border border-line">
+          {CASE_LAYER_DEFS.map((d) => {
+            const on = show.has(d.id);
+            return (
+              <button
+                key={d.id}
+                onClick={() => toggle(d.id)}
+                aria-pressed={on}
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-surface-2"
+              >
+                <CaseGlyph id={d.id} />
+                <span className="min-w-0 flex-1">
+                  <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{d.label}</span>
+                  <span className="num mt-0.5 block truncate text-sm text-ink-3">{detail[d.id]}</span>
+                </span>
+                <Switch on={on} />
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Area shown">
+        <div className="flex gap-1.5">
+          {TQEH_AREA_OPTIONS.map((m) => (
+            <button
+              key={m}
+              onClick={() => setRadius(m)}
+              aria-pressed={radius === m}
+              className={`num flex-1 rounded-[6px] border px-2 py-1.5 text-base transition-colors ${radius === m ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+            >
+              {m < 1000 ? `${m} m` : `${m / 1000} km`}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1.5 text-sm text-ink-3">How far around the hospital the layers are drawn. Readings don't change.</p>
+      </Section>
+
+      <Section title="About the site">
+        <dl className="divide-y divide-line">
+          <FactRow label="Address" value="Woodville Road, Woodville South" />
+          {r.suburb && <FactRow label="SA2" value={r.suburb.name} />}
+          <FactRow label="Grounds" value={`${siteHectares().toFixed(1)} ha`} />
+          <FactRow label="Operator" value="State health service, not a council asset" />
+          <FactRow label="Outline" value="OpenStreetMap (amenity=hospital)" />
+        </dl>
+      </Section>
     </div>
   );
 }
@@ -4149,17 +4389,6 @@ function Glance({ label, value, sub }: { label: string; value: string; sub: stri
   );
 }
 
-/** "Show on map" beside a section heading: turns that section's layers on. */
-function ShowOnMap({ ids, showLayers }: { ids: string[]; showLayers: (ids: string[]) => void }) {
-  return (
-    <button onClick={() => showLayers(ids)} className="text-sm font-medium text-accent hover:text-ink">
-      Show on map
-    </button>
-  );
-}
-
-const TQEH_FLOOD_LAYERS = ['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real'];
-
 function TqehHazard({
   r,
   showLayers,
@@ -4172,7 +4401,7 @@ function TqehHazard({
   const { sel: scenario } = React.useContext(ScenarioContext);
   return (
     <>
-      <Section title="Flood" right={<ShowOnMap ids={TQEH_FLOOD_LAYERS} showLayers={showLayers} />}>
+      <Section title="Flood">
         <dl className="divide-y divide-line">
           {r.flood.map((f) => (
             <div key={f.id} className="flex items-baseline justify-between gap-3 py-1.5">
@@ -4189,7 +4418,7 @@ function TqehHazard({
         </p>
       </Section>
 
-      <Section title="Heat" right={<ShowOnMap ids={['heat-vuln']} showLayers={showLayers} />}>
+      <Section title="Heat">
         <dl className="divide-y divide-line">
           {r.heatHere ? (
             <>
@@ -4209,7 +4438,7 @@ function TqehHazard({
         </dl>
       </Section>
 
-      <Section title="Water" right={<ShowOnMap ids={['watercourses', 'waterbodies']} showLayers={showLayers} />}>
+      <Section title="Water">
         <dl className="divide-y divide-line">
           <FactRow label="Nearest" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
         </dl>
@@ -4275,7 +4504,7 @@ function TqehAssets({
     <>
       <Section
         title="Access"
-        right={<ShowOnMap ids={['train-stations', 'railways', 'pedestrian-network']} showLayers={showLayers} />}
+       
       >
         <dl className="divide-y divide-line">
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
@@ -4284,7 +4513,7 @@ function TqehAssets({
         </dl>
       </Section>
 
-      <Section title="Stormwater" right={<ShowOnMap ids={['stormwater-pipes']} showLayers={showLayers} />}>
+      <Section title="Stormwater">
         <dl className="divide-y divide-line">
           <FactRow label="In the grounds" value={`${Math.round(r.pipeInSiteM)} m of pipe`} />
           <FactRow label="In flood extent" value={`${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`} />
@@ -6341,8 +6570,11 @@ export default function App() {
   const [indexId, setIndexId] = useState<IndexId>('flood100');
   // SPECULATIVE scenario for the suburb comparison; 'today' is the data as supplied.
   const [scenario, setScenario] = useState<ScenarioSel>({ scenario: 'today', year: 2050 });
-  // The case study open in the Case studies tab, if any.
+  // The case study open in the Case studies tab, if any, and what its
+  // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
+  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['flood100', 'lines']));
+  const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
   );
@@ -6411,9 +6643,13 @@ export default function App() {
 
   // A building opened from anywhere sits on top of a Blueprint or layer
   // panel; closing it goes back to whichever was open underneath.
-  const rightPanelMode: 'blueprint' | 'building' | 'layer' | null = selectedBuildingKey
+  // An open case study shows its report on the right; a building opened
+  // from that report sits on top of it.
+  const rightPanelMode: 'blueprint' | 'building' | 'layer' | 'case' | null = selectedBuildingKey
     ? 'building'
-    : activeBlueprint
+    : panelTab === 'cases' && caseId
+      ? 'case'
+      : activeBlueprint
       ? 'blueprint'
       : panelTab === 'layers' && layerInfoId
         ? 'layer'
@@ -6568,8 +6804,8 @@ export default function App() {
   }, []);
   const highlight = useMemo(() => {
     const c = CASE_STUDIES.find((x) => x.id === caseId);
-    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks(), area: tqehArea() } : null;
-  }, [panelTab, caseId]);
+    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks(), area: tqehArea(caseRadius), show: caseShow } : null;
+  }, [panelTab, caseId, caseRadius, caseShow]);
 
   // Place's suburb comparison shades the map while it's showing.
   const suburbShade = useMemo<SuburbShade | null>(() => {
@@ -6674,10 +6910,10 @@ export default function App() {
             <CasesTab
               caseId={caseId}
               setCaseId={openCase}
-              showLayers={showLayers}
-              onOpenBuilding={openBuilding}
-              onOpenBuildings={openBuildings}
-              onOpenSuburb={handleSelectSuburb}
+              show={caseShow}
+              setShow={setCaseShow}
+              radius={caseRadius}
+              setRadius={setCaseRadius}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -6733,6 +6969,23 @@ export default function App() {
         <SourceYears snapshot={snapshot} />
       </main>
 
+      {rightPanelMode === 'case' && caseId && (
+        <RightPanelShell
+          accent="#C8102E"
+          eyebrow="Case study report"
+          title={CASE_STUDIES.find((x) => x.id === caseId)!.name}
+          onClose={() => openCase(null)}
+        >
+          <div className="px-4 py-4">
+            <TqehTab
+              showLayers={showLayers}
+              onOpenBuilding={openBuilding}
+              onOpenBuildings={openBuildings}
+              onOpenSuburb={handleSelectSuburb}
+            />
+          </div>
+        </RightPanelShell>
+      )}
       {rightPanelMode === 'blueprint' && activeBlueprint && (
         <BlueprintPanel
           blueprint={BLUEPRINT_BY_ID[activeBlueprint]}
