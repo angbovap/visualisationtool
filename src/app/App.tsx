@@ -1831,7 +1831,7 @@ function MapView(props: MapViewProps) {
       )}
 
       {hovered && (
-        <div className="pointer-events-none absolute bottom-3 left-3 z-[999] w-[240px]">
+        <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
           <div className="fade-up rounded-[6px] border border-line bg-white/96 p-2 shadow-[0_2px_12px_rgba(20,32,31,0.12)] backdrop-blur">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
@@ -1839,6 +1839,10 @@ function MapView(props: MapViewProps) {
             </div>
           </div>
         </div>
+      )}
+
+      {ready && LRef.current && mapRef.current && (
+        <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
       )}
 
       <div className="absolute bottom-4 right-3 z-[999] flex flex-col items-center gap-2">
@@ -1881,6 +1885,109 @@ function MapView(props: MapViewProps) {
   );
 }
 
+
+/* ------------------------------------------------------------------ *
+ * Locator map
+ *
+ * A small fixed map of the whole council area in the corner, with a box
+ * showing what the main map is looking at, so a zoomed-in view always
+ * says where in the LGA it is. Clicking it moves the main map there.
+ * ------------------------------------------------------------------ */
+
+function LocatorMap({
+  L,
+  main,
+  selectedId,
+}: {
+  L: typeof import('leaflet');
+  main: LeafletMap;
+  selectedId: string | null;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const miniRef = useRef<LeafletMap | null>(null);
+  const selRef = useRef<LeafletLayer | null>(null);
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    if (!open || !ref.current) return;
+    const mini = L.map(ref.current, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      touchZoom: false,
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mini);
+    for (const s of SUBURBS) {
+      L.polygon(s.path, { color: '#9AA8A7', weight: 0.6, fill: false, interactive: false }).addTo(mini);
+    }
+    L.polygon(LGA_BOUNDARY.ring, { color: ACCENT, weight: 1.4, fillColor: ACCENT, fillOpacity: 0.05, interactive: false }).addTo(mini);
+    mini.fitBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [6, 6] });
+    const box = L.rectangle(main.getBounds(), {
+      color: '#14201F',
+      weight: 1.5,
+      fillColor: '#14201F',
+      fillOpacity: 0.08,
+      interactive: false,
+    }).addTo(mini);
+    const sync = () => box.setBounds(main.getBounds());
+    main.on('move zoom resize', sync);
+    mini.on('click', (e) => main.panTo(e.latlng));
+    miniRef.current = mini;
+    return () => {
+      main.off('move zoom resize', sync);
+      mini.remove();
+      miniRef.current = null;
+      selRef.current = null;
+    };
+  }, [open, L, main]);
+
+  // The suburb open in Place, shaded so it's findable at a glance.
+  useEffect(() => {
+    const mini = miniRef.current;
+    if (!mini) return;
+    selRef.current?.remove();
+    selRef.current = null;
+    const s = selectedId ? SUBURB_BY_ID[selectedId] : null;
+    if (s) {
+      selRef.current = L.polygon(s.path, { stroke: false, fillColor: ACCENT, fillOpacity: 0.3, interactive: false }).addTo(mini);
+    }
+  }, [selectedId, open, L]);
+
+  // The locator's tiles are CARTO's, credited alongside the main basemap.
+  useEffect(() => {
+    const credit = 'Locator: &copy; CARTO, OpenStreetMap';
+    main.attributionControl?.addAttribution(credit);
+    return () => {
+      main.attributionControl?.removeAttribution(credit);
+    };
+  }, [main]);
+
+  return (
+    <div className="absolute bottom-4 left-3 z-[999] w-[188px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
+      <div className="flex items-center justify-between px-2.5 py-1.5">
+        <span className="text-sm font-medium text-ink-2">Where you are</span>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="text-sm text-ink-3 hover:text-ink"
+          aria-expanded={open}
+        >
+          {open ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {open && (
+        <div
+          ref={ref}
+          className="h-[150px] w-full cursor-pointer border-t border-line"
+          title="Click to move the map here"
+        />
+      )}
+    </div>
+  );
+}
 
 /* ------------------------------------------------------------------ *
  * Tab 1. Layers
