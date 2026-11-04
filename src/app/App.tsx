@@ -51,6 +51,9 @@ import dwellingDensityData from '@/data/dwellingDensity.json';
 // Measured per-SA2 indicators, built by scripts/build-sa2-indicators.cjs
 // from the layers above. No weights or cut-offs, see that script.
 import sa2IndicatorsData from '@/data/sa2Indicators.json';
+// The Queen Elizabeth Hospital's site outline and centre, from
+// OpenStreetMap (amenity=hospital) via Nominatim. Not council data.
+import tqehSiteData from '@/data/tqehSite.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -1775,11 +1778,20 @@ function MapView(props: MapViewProps) {
       // Anchored at the base of the shadow, so the badge stands above the site.
       iconAnchor: [20, 40],
     });
+    const grounds = L.polygon(TQEH_SITE, {
+      color: '#C8102E',
+      weight: 1.5,
+      dashArray: '4 3',
+      fillColor: '#C8102E',
+      fillOpacity: 0.06,
+      interactive: false,
+    }).addTo(map);
     const marker = L.marker([TQEH.lat, TQEH.lng], { icon, zIndexOffset: 1000, keyboard: true, title: TQEH.label })
       .bindTooltip(TQEH.label, { permanent: true, direction: 'right', offset: [8, -22], className: 'building-label' })
       .on('click', () => onOpenCaseRef.current())
       .addTo(map);
     return () => {
+      grounds.remove();
       marker.remove();
     };
   }, [ready]);
@@ -3448,14 +3460,16 @@ function LayerInfoPanel({
 /* ------------------------------------------------------------------ *
  * Use case: The Queen Elizabeth Hospital
  *
- * One site looked at three ways, all measured at the hospital's point
- * from the state obstetric hospitals layer (the one point of that layer
- * inside the LGA, Woodville South): the hazards there, the assets and
- * access around it, and a risk tolerance sheet the workshop fills in.
- * Nothing here is pre-filled: tolerances start blank.
+ * One site looked at three ways, all measured at the centre of the
+ * hospital's grounds as mapped in OpenStreetMap (Woodville Road,
+ * Woodville South): the hazards there, the assets and access around it,
+ * and a risk tolerance sheet the workshop fills in. The state obstetric
+ * hospitals layer's point sits about 700 m east of the hospital, so it
+ * isn't used for the location. Tolerances start blank.
  * ------------------------------------------------------------------ */
 
-const TQEH = { lat: OBSTETRIC_HOSPITALS[0][0], lng: OBSTETRIC_HOSPITALS[0][1], label: 'The Queen Elizabeth Hospital' };
+const TQEH = { lat: tqehSiteData.centre[0], lng: tqehSiteData.centre[1], label: 'The Queen Elizabeth Hospital' };
+const TQEH_SITE = tqehSiteData.ring as LatLngTuple[];
 
 const floodShapeCache = new Map<FloodLayerId, Shape[]>();
 function floodShapes(id: FloodLayerId): Shape[] {
@@ -3468,7 +3482,9 @@ function floodShapes(id: FloodLayerId): Shape[] {
 }
 
 interface TqehReading {
-  flood: { id: FloodLayerId; metres: number }[];
+  /** Per extent: metres from the centre of the grounds to the extent
+   *  (0 = the centre is inside), and the share of the grounds inside. */
+  flood: { id: FloodLayerId; metres: number; share: number }[];
   heatHere: { uhiCat: number; svi: number } | null;
   nearestHeat: { uhiCat: number; svi: number; metres: number } | null;
   waterM: number;
@@ -3478,6 +3494,28 @@ interface TqehReading {
   pedM: number;
   suburb: Suburb | null;
   buildings: { b: RealAsset; metres: number }[];
+}
+
+/** Points 8 m apart covering the hospital grounds. */
+const TQEH_SITE_POINTS: LatLngTuple[] = (() => {
+  const box = bboxOf(TQEH_SITE);
+  const dLat = 8 / 111_320;
+  const dLng = 8 / (111_320 * Math.cos((TQEH.lat * Math.PI) / 180));
+  const pts: LatLngTuple[] = [];
+  for (let la = box.latLo + dLat / 2; la < box.latHi; la += dLat)
+    for (let ln = box.lngLo + dLng / 2; ln < box.lngHi; ln += dLng) if (pointInRing(la, ln, TQEH_SITE)) pts.push([la, ln]);
+  return pts;
+})();
+/** Share of the grounds inside a flood extent. */
+function siteShareIn(id: FloodLayerId): number {
+  const rings = floodRingsFor(id);
+  const hit = TQEH_SITE_POINTS.filter(([la, ln]) => rings.some(({ ring, bbox }) => inBBox(la, ln, bbox) && pointInRing(la, ln, ring)));
+  return TQEH_SITE_POINTS.length ? hit.length / TQEH_SITE_POINTS.length : 0;
+}
+/** How a flood extent relates to the site, in words. */
+function floodAtSite(f: TqehReading['flood'][number]): string {
+  if (f.share > 0) return `${pct(f.share)} of the grounds inside`;
+  return `${formatMetres(f.metres)} outside the grounds' centre`;
 }
 
 let tqehCache: TqehReading | null = null;
@@ -3496,7 +3534,7 @@ function tqehReading(): TqehReading {
   const wb = near('waterbodies');
   const sa2 = SA2_BOUNDARIES.find((s) => pointInRing(lat, lng, s.ring));
   tqehCache = {
-    flood: FLOOD_LAYER_IDS.map((id) => ({ id, metres: nearestMetres(lat, lng, floodShapes(id)) })),
+    flood: FLOOD_LAYER_IDS.map((id) => ({ id, metres: nearestMetres(lat, lng, floodShapes(id)), share: siteShareIn(id) })),
     heatHere,
     nearestHeat,
     waterM: Math.min(wc, wb),
@@ -3544,49 +3582,6 @@ function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; 
   );
 }
 
-function TqehTab({
-  showLayers,
-  onOpenBuilding,
-  onOpenBuildings,
-  onOpenSuburb,
-}: {
-  showLayers: (ids: string[]) => void;
-  onOpenBuilding: (id: string) => void;
-  onOpenBuildings: (ids: string[]) => void;
-  onOpenSuburb: (id: string) => void;
-}) {
-  const [view, setView] = useState<'hazard' | 'assets' | 'tolerance'>('hazard');
-  const r = tqehReading();
-
-  return (
-    <div>
-      <p className="mb-3 text-base leading-[1.55] text-ink-2">
-        Woodville South{r.suburb ? ` (${r.suburb.name} SA2)` : ''}. Every reading below is measured at the hospital's point.
-      </p>
-      <button
-        onClick={() => downloadTqehReport(r)}
-        className="mb-4 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
-      >
-        Download report
-      </button>
-      <TabStrip
-        value={view}
-        onChange={setView}
-        tabs={[
-          { id: 'hazard', label: 'Hazard' },
-          { id: 'assets', label: 'Assets' },
-          { id: 'tolerance', label: 'Risk tolerance' },
-        ]}
-      />
-      {view === 'hazard' && <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />}
-      {view === 'assets' && (
-        <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
-      )}
-      {view === 'tolerance' && <TqehTolerance />}
-    </div>
-  );
-}
-
 /** The case study as a standalone, printable HTML report: every reading
  *  from the three sections plus the tolerance sheet as filled in so far. */
 function downloadTqehReport(r: TqehReading) {
@@ -3624,7 +3619,7 @@ th{width:40%;font-weight:500;color:#4A5A59}.note{color:#7E8D8C;font-size:12px;ma
 <h1>The Queen Elizabeth Hospital</h1>
 <p class="sub">Case study, CoCS Climate Risk Tolerance Tool. Woodville South${r.suburb ? ` (${esc(r.suburb.name)} SA2)` : ''}. Generated ${new Date().toLocaleDateString('en-AU')}.</p>
 <h2>Hazard</h2><table>
-${r.flood.map((f) => row(`Flood ${FLOOD_SHORT[f.id]}`, f.metres === 0 ? 'Inside the extent' : `${formatMetres(f.metres)} to the nearest edge`)).join('')}
+${r.flood.map((f) => row(`Flood ${FLOOD_SHORT[f.id]}`, floodAtSite(f))).join('')}
 ${heatRow}
 ${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
 </table>
@@ -3641,7 +3636,7 @@ ${groups
 <h2>Risk tolerance</h2><table>
 ${CONSEQUENCE_CATEGORIES.map((c) => row(c.name, [sheet[c.name]?.tolerance || 'Not set', sheet[c.name]?.notes].filter(Boolean).join(' | '))).join('')}
 </table>
-<p class="note">Flood extents are long-term runs as labelled in the supplied files (River Torrens to 2050), not current conditions. Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Location from the state obstetric hospitals layer. Indexes are measured from the supplied layers, not scored.</p>
+<p class="note">Flood extents are long-term runs as labelled in the supplied files (River Torrens to 2050), not current conditions. Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Site from OpenStreetMap (amenity=hospital); readings at the centre of the grounds. Indexes are measured from the supplied layers, not scored.</p>
 </body></html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
@@ -3674,7 +3669,7 @@ function CasesTab({
   const c = CASE_STUDIES.find((x) => x.id === caseId);
   if (!c) {
     const r = tqehReading();
-    const inside = r.flood.find((f) => f.metres === 0);
+    const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
     return (
       <div className="px-3 py-4">
         <PanelHeading>Case studies</PanelHeading>
@@ -3689,7 +3684,7 @@ function CasesTab({
                 <span className="block text-lg font-medium text-ink">{x.name}</span>
                 <span className="mt-0.5 block text-sm text-ink-3">
                   {x.where}
-                  {inside ? ` · in the ${FLOOD_SHORT[inside.id]} flood extent` : ''}
+                  {inside ? ` · ${pct(inside.share)} of grounds in the ${FLOOD_SHORT[inside.id]} flood extent` : ''}
                 </span>
               </span>
               <IconChevron size={13} className="shrink-0 text-ink-3" />
@@ -3712,6 +3707,95 @@ function CasesTab({
   );
 }
 
+function TqehTab({
+  showLayers,
+  onOpenBuilding,
+  onOpenBuildings,
+  onOpenSuburb,
+}: {
+  showLayers: (ids: string[]) => void;
+  onOpenBuilding: (id: string) => void;
+  onOpenBuildings: (ids: string[]) => void;
+  onOpenSuburb: (id: string) => void;
+}) {
+  const [view, setView] = useState<'hazard' | 'assets' | 'tolerance'>('hazard');
+  const r = tqehReading();
+  const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
+
+  return (
+    <div>
+      <p className="text-base leading-[1.55] text-ink-2">
+        Woodville South{r.suburb ? `, ${r.suburb.name} SA2` : ''}. A state hospital, not a council asset. Readings are
+        measured at the centre of its grounds (outlined on the map).
+      </p>
+
+      {/* At a glance: the four readings people ask about first. */}
+      <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[8px] border border-line bg-line">
+        <Glance
+          label="Flood"
+          value={inside ? `${pct(inside.share)} of grounds` : 'Outside'}
+          sub={inside ? `in the ${FLOOD_SHORT[inside.id]} extent` : 'every mapped extent'}
+        />
+        <Glance
+          label="Urban heat"
+          value={r.heatHere ? `Category ${r.heatHere.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
+          sub={r.heatHere ? 'at the site' : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.metres)}` : 'no heat data'}
+        />
+        <Glance label="Nearest water" value={formatMetres(r.waterM)} sub={`to a ${r.waterKind}`} />
+        <Glance label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
+      </div>
+
+      <div className="mt-6">
+        <TabStrip
+          value={view}
+          onChange={setView}
+          tabs={[
+            { id: 'hazard', label: 'Hazard' },
+            { id: 'assets', label: 'Assets' },
+            { id: 'tolerance', label: 'Risk tolerance' },
+          ]}
+        />
+      </div>
+      {view === 'hazard' && <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />}
+      {view === 'assets' && (
+        <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
+      )}
+      {view === 'tolerance' && <TqehTolerance />}
+
+      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
+        <span className="text-sm leading-[1.45] text-ink-3">All readings and the tolerance sheet, as one file.</span>
+        <button
+          onClick={() => downloadTqehReport(r)}
+          className="shrink-0 rounded-[6px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+        >
+          Download report
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Glance({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="bg-white px-3 py-2.5">
+      <div className="text-sm text-ink-3">{label}</div>
+      <div className="num mt-0.5 text-xl font-semibold leading-tight text-ink">{value}</div>
+      <div className="mt-0.5 text-sm text-ink-3">{sub}</div>
+    </div>
+  );
+}
+
+/** "Show on map" beside a section heading: turns that section's layers on. */
+function ShowOnMap({ ids, showLayers }: { ids: string[]; showLayers: (ids: string[]) => void }) {
+  return (
+    <button onClick={() => showLayers(ids)} className="text-sm font-medium text-accent hover:text-ink">
+      Show on map
+    </button>
+  );
+}
+
+const TQEH_FLOOD_LAYERS = ['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real'];
+
 function TqehHazard({
   r,
   showLayers,
@@ -3721,53 +3805,61 @@ function TqehHazard({
   showLayers: (ids: string[]) => void;
   onOpenSuburb: (id: string) => void;
 }) {
-  const inside = r.flood.filter((f) => f.metres === 0);
   return (
     <>
-      <FigureStrip>
-        <Figure
-          label="Flood"
-          value={<span className="text-xl">{inside.length ? `In ${FLOOD_SHORT[inside[0].id]}` : 'Outside'}</span>}
-          sub={inside.length ? 'mapped extent' : 'every mapped extent'}
-        />
-        <Figure
-          label="Urban heat"
-          value={<span className="text-xl">{r.heatHere ? `Category ${r.heatHere.uhiCat}` : 'Off grid'}</span>}
-          sub={r.heatHere ? `SVI ${r.heatHere.svi.toFixed(2)}` : 'no cell at the site'}
-        />
-      </FigureStrip>
-
-      <Section title="Flood extents">
+      <Section title="Flood" right={<ShowOnMap ids={TQEH_FLOOD_LAYERS} showLayers={showLayers} />}>
         <dl className="divide-y divide-line">
           {r.flood.map((f) => (
-            <FactRow
-              key={f.id}
-              label={FLOOD_SHORT[f.id]}
-              value={f.metres === 0 ? 'Inside the extent' : `${formatMetres(f.metres)} to the nearest edge`}
-            />
+            <div key={f.id} className="flex items-baseline justify-between gap-3 py-1.5">
+              <dt className="text-base text-ink-2">{FLOOD_SHORT[f.id]}</dt>
+              <dd className={`num text-right text-base ${f.share > 0 ? 'font-semibold text-ink' : 'text-ink-2'}`}>
+                {floodAtSite(f)}
+              </dd>
+            </div>
           ))}
         </dl>
-        <p className="mt-1.5 text-sm text-ink-3">Long-term runs (River Torrens to 2050), not current conditions. 1 in 20 covers three catchments; 1 in 5 has no Trimmer data yet.</p>
+        <p className="mt-1.5 text-sm leading-[1.5] text-ink-3">
+          Long-term runs (River Torrens to 2050), not current conditions. 1 in 20 covers three catchments; 1 in 5 has
+          no Trimmer data yet.
+        </p>
       </Section>
 
-      <Section title="Heat and water">
+      <Section title="Heat" right={<ShowOnMap ids={['heat-vuln']} showLayers={showLayers} />}>
         <dl className="divide-y divide-line">
           {r.heatHere ? (
-            <FactRow label="Heat cell" value={`UHI category ${r.heatHere.uhiCat}, SVI ${r.heatHere.svi.toFixed(2)}`} />
+            <>
+              <FactRow label="UHI category" value={`${r.heatHere.uhiCat} of 4, at the site`} />
+              <FactRow label="SVI" value={r.heatHere.svi.toFixed(2)} />
+            </>
+          ) : r.nearestHeat ? (
+            <>
+              <FactRow label="At the site" value="Not covered by the heat grid" />
+              <FactRow label="Nearest cell" value={`${formatMetres(r.nearestHeat.metres)} away`} />
+              <FactRow label="UHI category" value={`${r.nearestHeat.uhiCat} of 4`} />
+              <FactRow label="SVI" value={r.nearestHeat.svi.toFixed(2)} />
+            </>
           ) : (
-            r.nearestHeat && (
-              <FactRow
-                label="Nearest heat cell"
-                value={`${formatMetres(r.nearestHeat.metres)} away, UHI category ${r.nearestHeat.uhiCat}, SVI ${r.nearestHeat.svi.toFixed(2)}`}
-              />
-            )
+            <FactRow label="At the site" value="No heat data nearby" />
           )}
-          <FactRow label="Nearest water" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
+        </dl>
+      </Section>
+
+      <Section title="Water" right={<ShowOnMap ids={['watercourses', 'waterbodies']} showLayers={showLayers} />}>
+        <dl className="divide-y divide-line">
+          <FactRow label="Nearest" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
         </dl>
       </Section>
 
       {r.suburb && (
-        <Section title={`${r.suburb.name} indexes`}>
+        <Section
+          title={`${r.suburb.name} compared`}
+          right={
+            <button onClick={() => onOpenSuburb(r.suburb!.id)} className="text-sm font-medium text-accent hover:text-ink">
+              Open in Place
+            </button>
+          }
+        >
+          <p className="-mt-1 mb-1 text-sm text-ink-3">The hospital's suburb, ranked against the other seven.</p>
           <dl className="divide-y divide-line">
             {INDEXES.filter((d) => d.group !== 'Assets').map((def) => {
               const row = rankSuburbs(def).find((x) => x.s.id === r.suburb!.id)!;
@@ -3782,18 +3874,8 @@ function TqehHazard({
               );
             })}
           </dl>
-          <button onClick={() => onOpenSuburb(r.suburb!.id)} className="mt-2 text-base font-medium text-accent hover:text-ink">
-            Open {r.suburb.name} in Place
-          </button>
         </Section>
       )}
-
-      <button
-        onClick={() => showLayers(['flood-1in5-real', 'flood-1in20-real', 'flood-1in100-real', 'heat-vuln', 'watercourses', 'waterbodies'])}
-        className="mt-6 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
-      >
-        Show these hazards on the map
-      </button>
     </>
   );
 }
@@ -3818,13 +3900,17 @@ function TqehAssets({
     else groups.push({ name: b.name, items: [b], metres });
   }
   const shown = groups.slice(0, n);
+  const dist = (m: number) => <span className="num shrink-0 pt-[1px] text-base font-medium text-ink">{formatMetres(m)}</span>;
   return (
     <>
-      <Section title="Access">
+      <Section
+        title="Access"
+        right={<ShowOnMap ids={['train-stations', 'railways', 'pedestrian-network']} showLayers={showLayers} />}
+      >
         <dl className="divide-y divide-line">
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
           <FactRow label="Railway" value={formatMetres(r.railM)} />
-          <FactRow label="Pedestrian network" value={formatMetres(r.pedM)} />
+          <FactRow label="Pedestrian route" value={formatMetres(r.pedM)} />
           <FactRow label="Roads" value={<span className="text-ink-3">Waiting on council's road data</span>} />
         </dl>
       </Section>
@@ -3833,42 +3919,25 @@ function TqehAssets({
         <BuildingList>
           {shown.map((g) =>
             g.items.length === 1 ? (
-              <BuildingRow
-                key={g.name}
-                b={g.items[0]}
-                onOpen={onOpenBuilding}
-                right={<span className="num block text-base font-medium text-ink">{formatMetres(g.metres)}</span>}
-              />
+              <BuildingRow key={g.name} b={g.items[0]} onOpen={onOpenBuilding} right={dist(g.metres)} />
             ) : (
-              <BuildingGroupRow
-                key={g.name}
-                name={g.name}
-                items={g.items}
-                onOpen={onOpenBuildings}
-                right={<span className="num shrink-0 pt-[1px] text-base font-medium text-ink">{formatMetres(g.metres)}</span>}
-              />
+              <BuildingGroupRow key={g.name} name={g.name} items={g.items} onOpen={onOpenBuildings} right={dist(g.metres)} />
             ),
           )}
         </BuildingList>
-        {n < 24 && (
+        {n < groups.length && n < 24 && (
           <button onClick={() => setN((v) => v + 6)} className="mt-2 text-base font-medium text-accent hover:text-ink">
             Show more
           </button>
         )}
       </Section>
-
-      <button
-        onClick={() => showLayers(['train-stations', 'railways', 'pedestrian-network', 'obstetric-hospitals'])}
-        className="mt-6 w-full rounded-[8px] border border-line px-3 py-2 text-base font-medium text-ink hover:border-ink-3"
-      >
-        Show access layers on the map
-      </button>
     </>
   );
 }
 
 function TqehTolerance() {
   const [sheet, setSheet] = useState<ToleranceSheet>(() => (typeof window === 'undefined' ? {} : loadTolerance()));
+  const [open, setOpen] = useState<string | null>(null);
   const update = (name: string, field: 'tolerance' | 'notes', v: string) => {
     setSheet((prev) => {
       const next = { ...prev, [name]: { ...(prev[name] ?? { tolerance: '', notes: '' }), [field]: v } };
@@ -3882,60 +3951,62 @@ function TqehTolerance() {
   };
   const filled = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
 
-  const download = () => {
-    const q = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const rows = [
-      ['Consequence category', 'Metrics', 'Tolerance', 'Notes'],
-      ...CONSEQUENCE_CATEGORIES.map((c) => [c.name, c.indicators, sheet[c.name]?.tolerance ?? '', sheet[c.name]?.notes ?? '']),
-    ];
-    const blob = new Blob([rows.map((row) => row.map(q).join(',')).join('\n')], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'tqeh-risk-tolerance.csv';
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
   return (
     <>
-      <p className="mb-4 text-base leading-[1.55] text-ink-2">
-        Council's seven consequence categories. Record the tolerance agreed for TQEH against each one. Saved in this
-        browser; download to share.
-      </p>
-      <div className="mb-4 flex items-center justify-between">
-        <span className="num text-sm text-ink-3">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <p className="text-base leading-[1.55] text-ink-2">The tolerance agreed for TQEH under each of council's consequence categories.</p>
+        <span className="num shrink-0 text-sm text-ink-3">
           {filled} of {CONSEQUENCE_CATEGORIES.length} set
         </span>
-        <button onClick={download} className="rounded-[6px] border border-line px-2 py-1 text-sm font-medium text-ink hover:border-ink-3">
-          Download CSV
-        </button>
       </div>
-      <div className="space-y-4">
-        {CONSEQUENCE_CATEGORIES.map((c) => (
-          <div key={c.name} className="rounded-[8px] border border-line p-3">
-            <div className="text-base font-semibold text-ink">{c.name}</div>
-            <div className="mt-0.5 text-sm leading-[1.45] text-ink-3">{c.indicators}</div>
-            <label className="mt-2.5 block text-sm text-ink-2">
-              Tolerance
-              <input
-                value={sheet[c.name]?.tolerance ?? ''}
-                onChange={(e) => update(c.name, 'tolerance', e.target.value)}
-                placeholder="Not set"
-                className="mt-1 block w-full rounded-[6px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
-              />
-            </label>
-            <label className="mt-2 block text-sm text-ink-2">
-              Notes
-              <textarea
-                value={sheet[c.name]?.notes ?? ''}
-                onChange={(e) => update(c.name, 'notes', e.target.value)}
-                rows={2}
-                className="mt-1 block w-full resize-y rounded-[6px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
-              />
-            </label>
-          </div>
-        ))}
+      <div className="divide-y divide-line rounded-[8px] border border-line">
+        {CONSEQUENCE_CATEGORIES.map((c) => {
+          const isOpen = open === c.name;
+          const value = sheet[c.name]?.tolerance.trim();
+          return (
+            <div key={c.name}>
+              <button
+                onClick={() => setOpen(isOpen ? null : c.name)}
+                aria-expanded={isOpen}
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-2"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-base font-medium text-ink">{c.name}</span>
+                  <span className={`mt-0.5 block truncate text-sm ${value ? 'text-ink-2' : 'text-ink-3'}`}>
+                    {value || 'Not set'}
+                  </span>
+                </span>
+                <IconChevron size={12} className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+              </button>
+              {isOpen && (
+                <div className="px-3 pb-3">
+                  <p className="text-sm leading-[1.45] text-ink-3">Measured by: {c.indicators}</p>
+                  <label className="mt-2.5 block text-sm text-ink-2">
+                    Tolerance
+                    <input
+                      autoFocus
+                      value={sheet[c.name]?.tolerance ?? ''}
+                      onChange={(e) => update(c.name, 'tolerance', e.target.value)}
+                      placeholder="Not set"
+                      className="mt-1 block w-full rounded-[6px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
+                    />
+                  </label>
+                  <label className="mt-2 block text-sm text-ink-2">
+                    Notes
+                    <textarea
+                      value={sheet[c.name]?.notes ?? ''}
+                      onChange={(e) => update(c.name, 'notes', e.target.value)}
+                      rows={2}
+                      className="mt-1 block w-full resize-y rounded-[6px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
+      <p className="mt-2 text-sm text-ink-3">Saved in this browser. The report download includes it.</p>
     </>
   );
 }
