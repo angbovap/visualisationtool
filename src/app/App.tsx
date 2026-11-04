@@ -262,7 +262,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#1D4ED8',
     unit: 'flood polygons',
-    note: '1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
+    note: '1 in 5 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, WC and West Lakes catchments. Trimmer has not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not current conditions. Council has not confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 5 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -272,7 +272,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#2563EB',
     unit: 'flood polygons',
-    note: '1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
+    note: '1 in 20 flood polygons for the River Torrens, TRDA and Trimmer catchments only. The rest have not been supplied, so this is not the full picture. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not current conditions. Council has not confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 20 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
@@ -282,7 +282,7 @@ const LAYERS: LayerDef[] = [
     kind: 'vector',
     hi: '#1E3A8A',
     unit: 'flood polygons',
-    note: '1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not today's. Council hasn't confirmed what the long-term assumption is.',
+    note: '1 in 100 flood polygons for the Meakin, PAT, Port Road, River Torrens, TE, TRDA, Trimmer, WC and West Lakes catchments, every catchment supplied so far. No depth is shown, the attribute tables were not supplied. Every file is a long-term run as labelled in the supplied file names ("longterm"; River Torrens "LT2050", a 2050 horizon), so these are future extents, not current conditions. Council has not confirmed what the long-term assumption is.',
     source: 'Council GIS export, flood contour polygons per catchment, 1 in 100 ARI, reprojected from GDA2020 MGA Zone 54',
   },
   {
