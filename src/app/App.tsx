@@ -1187,6 +1187,8 @@ interface MapViewProps {
   suburbShade: SuburbShade | null;
   /** A point the current view is about (the TQEH use case), ringed. */
   highlight: { lat: number; lng: number; label: string } | null;
+  /** Clicking the always-on TQEH marker opens its case study. */
+  onOpenCase: () => void;
 }
 
 interface SuburbShade {
@@ -1221,6 +1223,7 @@ function MapView(props: MapViewProps) {
     flyTarget,
     suburbShade,
     highlight,
+    onOpenCase,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -1741,27 +1744,40 @@ function MapView(props: MapViewProps) {
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight) return;
     const ring = L.circleMarker([highlight.lat, highlight.lng], {
-      radius: 11,
+      radius: 17,
       color: '#14201F',
       weight: 2,
       fill: false,
       interactive: false,
-    })
-      .bindTooltip(highlight.label, { permanent: true, direction: 'right', offset: [12, 0], className: 'building-label' })
-      .addTo(map);
-    const dot = L.circleMarker([highlight.lat, highlight.lng], {
-      radius: 4,
-      color: '#fff',
-      weight: 1.5,
-      fillColor: '#14201F',
-      fillOpacity: 1,
-      interactive: false,
     }).addTo(map);
     return () => {
       ring.remove();
-      dot.remove();
     };
   }, [ready, highlight]);
+
+  /* -- The Queen Elizabeth Hospital, marked at all times. ---------- */
+  const onOpenCaseRef = useRef(onOpenCase);
+  onOpenCaseRef.current = onOpenCase;
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map) return;
+    const icon = L.divIcon({
+      html: `<div style="width:22px;height:22px;border-radius:5px;background:#fff;border:2px solid #C8102E;box-shadow:0 1px 4px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="4.6" y="0.5" width="2.8" height="11" fill="#C8102E"/><rect x="0.5" y="4.6" width="11" height="2.8" fill="#C8102E"/></svg>
+      </div>`,
+      className: '',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+    const marker = L.marker([TQEH.lat, TQEH.lng], { icon, zIndexOffset: 1000, keyboard: true, title: TQEH.label })
+      .bindTooltip(TQEH.label, { permanent: true, direction: 'right', offset: [14, 0], className: 'building-label' })
+      .on('click', () => onOpenCaseRef.current())
+      .addTo(map);
+    return () => {
+      marker.remove();
+    };
+  }, [ready]);
 
   /* -- Hover. Kept separate so it never rebuilds the stack. -------- */
   useEffect(() => {
@@ -2000,7 +2016,6 @@ function MapLegend({
 }) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
-  if (layers.length === 0 && !showBuildings && !shade) return null;
   return (
     <div className="w-[208px] overflow-hidden rounded-[8px] border border-line bg-white shadow-[0_4px_18px_rgba(20,32,31,0.16)]">
       <button
@@ -2060,6 +2075,14 @@ function MapLegend({
               </div>
             );
           })}
+          <div className="flex items-center gap-2">
+            <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden>
+              <rect x="3" y="1" width="12" height="12" rx="3" fill="#fff" stroke="#C8102E" strokeWidth="1.6" />
+              <rect x="7.9" y="3.5" width="2.2" height="7" fill="#C8102E" />
+              <rect x="5.5" y="5.9" width="7" height="2.2" fill="#C8102E" />
+            </svg>
+            <span className="text-sm text-ink">The Queen Elizabeth Hospital</span>
+          </div>
           {showBuildings && (
             <div>
               <div className="text-sm font-medium text-ink">Council buildings</div>
@@ -6167,6 +6190,10 @@ export default function App() {
             flyTarget={flyTarget}
             suburbShade={suburbShade}
             highlight={highlight}
+            onOpenCase={() => {
+              setPanelTab('cases');
+              openCase('tqeh');
+            }}
           />
         </div>
 
