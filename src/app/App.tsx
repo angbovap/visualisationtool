@@ -1210,7 +1210,14 @@ interface MapViewProps {
    *  and the legend's low/high ends. */
   suburbShade: SuburbShade | null;
   /** A point the current view is about (the TQEH use case), ringed. */
-  highlight: { lat: number; lng: number; label: string; links?: CaseLink[] } | null;
+  highlight: {
+    lat: number;
+    lng: number;
+    label: string;
+    links?: CaseLink[];
+    /** Flood drawn only around the site, and the edge of that window. */
+    area?: { ring: LatLngTuple[]; flood: LatLngTuple[][] };
+  } | null;
   /** Clicking the always-on TQEH marker opens its case study. */
   onOpenCase: () => void;
 }
@@ -1780,6 +1787,24 @@ function MapView(props: MapViewProps) {
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight) return;
     const added: LeafletLayer[] = [];
+    if (highlight.area) {
+      const fc = LAYER_BY_ID['flood-1in100-real'].hi!;
+      for (const r of highlight.area.flood) {
+        added.push(
+          L.polygon(r, { stroke: true, color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.32, interactive: false }).addTo(map),
+        );
+      }
+      added.push(
+        L.polygon(highlight.area.ring, {
+          color: '#4A5A59',
+          weight: 1,
+          dashArray: '3 4',
+          opacity: 0.7,
+          fill: false,
+          interactive: false,
+        }).addTo(map),
+      );
+    }
     added.push(
       L.circleMarker([highlight.lat, highlight.lng], {
         radius: 17,
@@ -2036,7 +2061,12 @@ function MapView(props: MapViewProps) {
         {ready && LRef.current && mapRef.current && (
           <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
         )}
-        <MapLegend checkedLayers={checkedLayers} showBuildings={showBuildings} shade={suburbShade} />
+        <MapLegend
+          checkedLayers={checkedLayers}
+          showBuildings={showBuildings}
+          shade={suburbShade}
+          caseArea={!!highlight?.area}
+        />
       </div>
 
       <div className="absolute bottom-4 right-3 z-[999] flex flex-col items-center gap-2">
@@ -2108,10 +2138,12 @@ function MapLegend({
   checkedLayers,
   showBuildings,
   shade,
+  caseArea,
 }: {
   checkedLayers: Set<string>;
   showBuildings: boolean;
   shade: SuburbShade | null;
+  caseArea?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
@@ -2127,6 +2159,22 @@ function MapLegend({
       </button>
       {open && (
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
+          {caseArea && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                  <rect x="1.5" y="2" width="15" height="8" fill="#1E3A8A" fillOpacity="0.32" stroke="#1E3A8A" strokeWidth="0.8" />
+                </svg>
+                <span className="text-sm text-ink">Flood 1 in 100 (long-term), near TQEH</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                  <path d="M1.5 6 H16.5" stroke="#4A5A59" strokeWidth="1.2" strokeDasharray="3 3" />
+                </svg>
+                <span className="text-sm text-ink-2">Area shown, {TQEH_AREA_M} m around</span>
+              </div>
+            </div>
+          )}
           {shade && (
             <div>
               <div className="text-sm font-medium text-ink">Suburbs: {shade.label}</div>
@@ -3766,6 +3814,63 @@ function pipesInSite(): { pipeInSiteM: number; pipeInSiteFloodM: number } {
   return { pipeInSiteM: inSite, pipeInSiteFloodM: inFlood };
 }
 
+/** How far around the hospital the case study draws the flood extent.
+ *  A display window only: nothing is measured against it. */
+const TQEH_AREA_M = 600;
+
+function circleRing(lat: number, lng: number, m: number, n = 72): LatLngTuple[] {
+  const dLat = m / 111_320;
+  const dLng = m / (111_320 * Math.cos((lat * Math.PI) / 180));
+  return Array.from({ length: n }, (_, i) => {
+    const t = (i / n) * 2 * Math.PI;
+    return [lat + dLat * Math.sin(t), lng + dLng * Math.cos(t)] as LatLngTuple;
+  });
+}
+
+/** Sutherland-Hodgman: a ring cut to a convex window (the circle). */
+function clipRing(subject: LatLngTuple[], clip: LatLngTuple[]): LatLngTuple[] {
+  let out = subject;
+  for (let i = 0; i < clip.length && out.length > 0; i++) {
+    const a = clip[i];
+    const b = clip[(i + 1) % clip.length];
+    // Counter-clockwise window (circleRing runs that way in lat/lng).
+    const inside = (p: LatLngTuple) => (b[1] - a[1]) * (p[0] - a[0]) - (b[0] - a[0]) * (p[1] - a[1]) >= 0;
+    const cross = (p: LatLngTuple, q: LatLngTuple): LatLngTuple => {
+      const x1 = p[1], y1 = p[0], x2 = q[1], y2 = q[0], x3 = a[1], y3 = a[0], x4 = b[1], y4 = b[0];
+      const d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+      const t = d === 0 ? 0 : ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d;
+      return [y1 + t * (y2 - y1), x1 + t * (x2 - x1)];
+    };
+    const input = out;
+    out = [];
+    for (let j = 0; j < input.length; j++) {
+      const cur = input[j];
+      const prev = input[(j + input.length - 1) % input.length];
+      if (inside(cur)) {
+        if (!inside(prev)) out.push(cross(prev, cur));
+        out.push(cur);
+      } else if (inside(prev)) {
+        out.push(cross(prev, cur));
+      }
+    }
+  }
+  return out;
+}
+
+let tqehAreaCache: { ring: LatLngTuple[]; flood: LatLngTuple[][] } | null = null;
+/** The 1 in 100 extent within TQEH_AREA_M of the hospital, and the circle itself. */
+function tqehArea(): { ring: LatLngTuple[]; flood: LatLngTuple[][] } {
+  if (tqehAreaCache) return tqehAreaCache;
+  const ring = circleRing(TQEH.lat, TQEH.lng, TQEH_AREA_M);
+  const box = bboxOf(ring);
+  const flood = floodRingsFor('flood-1in100-real')
+    .filter(({ bbox: b }) => !(b.latHi < box.latLo || b.latLo > box.latHi || b.lngHi < box.lngLo || b.lngLo > box.lngHi))
+    .map(({ ring: r }) => clipRing(r, ring))
+    .filter((r) => r.length >= 3);
+  tqehAreaCache = { ring, flood };
+  return tqehAreaCache;
+}
+
 let tqehCache: TqehReading | null = null;
 function tqehReading(): TqehReading {
   if (tqehCache) return tqehCache;
@@ -3902,10 +4007,9 @@ const CASE_STUDIES = [
     name: 'The Queen Elizabeth Hospital',
     where: 'Woodville South · state hospital',
     point: TQEH,
-    // Turned on when the case opens, and off again when it closes. Just
-    // the extent that reaches the grounds most; the measure lines cover
-    // the station, water and heat.
-    layers: ['flood-1in100-real'],
+    // Layers turned on when the case opens (and off when it closes).
+    // None: the case draws its own local flood extent instead.
+    layers: [] as string[],
   },
 ] as const;
 type CaseId = (typeof CASE_STUDIES)[number]['id'];
@@ -6447,8 +6551,9 @@ export default function App() {
       setLayerInfoId(null);
       setSelectedBuildingKey(null);
       setCheckedLayers((prev) => {
-        caseAddedRef.current = [...new Set([...caseAddedRef.current, ...c.layers.filter((l) => !prev.has(l))])];
-        return new Set([...prev, ...c.layers]);
+        const layers: readonly string[] = c.layers;
+        caseAddedRef.current = [...new Set([...caseAddedRef.current, ...layers.filter((l) => !prev.has(l))])];
+        return new Set([...prev, ...layers]);
       });
       setFlyTarget({ lat: c.point.lat, lng: c.point.lng, zoom: 15, key: Date.now() });
     } else {
@@ -6463,7 +6568,7 @@ export default function App() {
   }, []);
   const highlight = useMemo(() => {
     const c = CASE_STUDIES.find((x) => x.id === caseId);
-    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks() } : null;
+    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks(), area: tqehArea() } : null;
   }, [panelTab, caseId]);
 
   // Place's suburb comparison shades the map while it's showing.
