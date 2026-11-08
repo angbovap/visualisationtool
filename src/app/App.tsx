@@ -5763,7 +5763,7 @@ const ROLE_LABEL: Record<string, string> = {
 /** "PORT ROAD" -> "Port Road", "SOUTH RD (PORT RD TO MANTON ST)" kept readable. */
 function roadName(n: string | null): string {
   if (!n) return 'Unnamed road';
-  return n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\bRd\b/g, 'Rd');
+  return n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\bTo\b/g, 'to');
 }
 function roadRoles(n: string | null): string[] {
   const roles = (majorRoadsData.rolesByName as Record<string, string[]>)[n ?? ''] ?? [];
