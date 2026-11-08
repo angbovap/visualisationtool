@@ -1833,10 +1833,30 @@ function MapView(props: MapViewProps) {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight) return;
+    // Case layers get their own panes above the normal overlays: first the
+    // fade outside the area, then everything drawn for the case on top.
+    for (const [name, z] of [['caseMask', '410'], ['caseContent', '420']] as const) {
+      if (!map.getPane(name)) map.createPane(name).style.zIndex = z;
+    }
     const added: LeafletLayer[] = [];
     const show = highlight.show ?? new Set<CaseLayer>();
     const area = highlight.area;
     if (area) {
+      const world: LatLngTuple[] = [
+        [-36.5, 136.5],
+        [-36.5, 141],
+        [-33, 141],
+        [-33, 136.5],
+      ];
+      added.push(
+        L.polygon([world, area.ring], {
+          stroke: false,
+          fillColor: darkBase ? '#0B1211' : '#F6F8F8',
+          fillOpacity: darkBase ? 0.72 : 0.82,
+          interactive: false,
+          pane: 'caseMask',
+        }).addTo(map),
+      );
       if (show.has('heat')) {
         const def = LAYER_BY_ID['heat-vuln'];
         for (const h of area.heat) {
@@ -1845,8 +1865,7 @@ function MapView(props: MapViewProps) {
               stroke: false,
               fillColor: lerpHex(def.lo!, def.hi!, (h.cat - 2) / 2),
               fillOpacity: 0.6,
-              interactive: true,
-            })
+              interactive: true, pane: 'caseContent', })
               .bindTooltip(`UHI category ${h.cat} · SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
               .addTo(map),
           );
@@ -1861,7 +1880,7 @@ function MapView(props: MapViewProps) {
         const fc = LAYER_BY_ID[id].hi!;
         for (const r of area.flood[id]) {
           added.push(
-            L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.3, interactive: false }).addTo(map),
+            L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.3, interactive: false, pane: 'caseContent' }).addTo(map),
           );
         }
       }
@@ -1872,15 +1891,14 @@ function MapView(props: MapViewProps) {
               color: c.color,
               weight: c.id === '0' ? 1.4 : 2.2,
               opacity: 0.95,
-              interactive: false,
-            }).addTo(map),
+              interactive: false, pane: 'caseContent', }).addTo(map),
           );
         }
       }
       if (show.has('buildings')) {
         for (const g of area.buildings) {
           added.push(
-            L.circleMarker([g.lat, g.lng], { radius: 5, color: '#fff', weight: 1.4, fillColor: ACCENT, fillOpacity: 1 })
+            L.circleMarker([g.lat, g.lng], { radius: 5, color: '#fff', weight: 1.4, fillColor: ACCENT, fillOpacity: 1, pane: 'caseContent' })
               .bindTooltip(g.ids.length > 1 ? `${g.names[0]} and ${g.ids.length - 1} more` : g.names[0], {
                 direction: 'top',
                 offset: [0, -4],
@@ -1891,7 +1909,7 @@ function MapView(props: MapViewProps) {
         }
       }
       added.push(
-        L.polygon(area.ring, { color: '#4A5A59', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false }).addTo(map),
+        L.polygon(area.ring, { color: '#4A5A59', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false, pane: 'caseContent' }).addTo(map),
       );
     }
     added.push(
@@ -1900,8 +1918,7 @@ function MapView(props: MapViewProps) {
         color: '#14201F',
         weight: 2,
         fill: false,
-        interactive: false,
-      }).addTo(map),
+        interactive: false, pane: 'caseContent', }).addTo(map),
     );
     for (const link of show.has('lines') ? highlight.links ?? [] : []) {
       added.push(
@@ -1910,9 +1927,8 @@ function MapView(props: MapViewProps) {
           weight: 1.6,
           opacity: 0.8,
           dashArray: '5 4',
-          interactive: false,
-        }).addTo(map),
-        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, fillColor: '#14201F', fillOpacity: 1, interactive: false })
+          interactive: false, pane: 'caseContent', }).addTo(map),
+        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, fillColor: '#14201F', fillOpacity: 1, interactive: false, pane: 'caseContent' })
           .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
           .addTo(map),
       );
@@ -1920,7 +1936,18 @@ function MapView(props: MapViewProps) {
     return () => {
       for (const l of added) l.remove();
     };
-  }, [ready, highlight]);
+  }, [ready, highlight, darkBase]);
+
+  // Opening a case, or changing its area, fits the map to that area.
+  const caseRadius = highlight?.area?.radius;
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map || !highlight?.area) return;
+    map.flyToBounds(L.latLngBounds(highlight.area.ring), { padding: [36, 36], duration: 0.8 });
+    // Only when the area itself changes, not on every switch toggle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, caseRadius, highlight?.lat, highlight?.lng]);
 
   /* -- The Queen Elizabeth Hospital, marked at all times. ---------- */
   const onOpenCaseRef = useRef(onOpenCase);
@@ -7060,7 +7087,6 @@ export default function App() {
         caseAddedRef.current = [...new Set([...caseAddedRef.current, ...layers.filter((l) => !prev.has(l))])];
         return new Set([...prev, ...layers]);
       });
-      setFlyTarget({ lat: c.point.lat, lng: c.point.lng, zoom: 15, key: Date.now() });
     } else {
       const added = caseAddedRef.current;
       caseAddedRef.current = [];
