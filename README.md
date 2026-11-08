@@ -40,6 +40,10 @@ alone with no emit.
     only, no attributes), built by `scripts/build-stormwater.cjs`.
   - `sa2Indicators.json` — measured per-suburb indexes, built by
     `scripts/build-sa2-indicators.cjs` from the layers above.
+  - `majorRoads.json` — the state's classified roads (DIT Functional
+    Hierarchy, CC BY 3.0 AU), built by `scripts/build-roads.cjs`.
+  - `sa1Indicators.json` — measured per-SA1 inputs for the Priority mix
+    layer, built by `scripts/build-sa1-indicators.cjs`.
   - `tqehSite.json` — The Queen Elizabeth Hospital's grounds, from
     OpenStreetMap (not council data).
 - `src/styles/globals.css` — design tokens; `fonts.css` — the Google Fonts

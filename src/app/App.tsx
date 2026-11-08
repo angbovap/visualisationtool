@@ -60,6 +60,9 @@ import tqehSiteData from '@/data/tqehSite.json';
 // StormwaterPipes.shp, built by scripts/build-stormwater.cjs: geometry
 // only (no attribute table was supplied).
 import stormwaterPipesData from '@/data/stormwaterPipes.json';
+// The state's classified roads (DIT Functional Hierarchy), built by
+// scripts/build-roads.cjs. Not council's road register.
+import majorRoadsData from '@/data/majorRoads.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
 // cells well under a hectare, each carrying a real Urban Heat Island
@@ -366,6 +369,16 @@ const LAYERS: LayerDef[] = [
     source: 'Council GIS export, CoCS_DwellingDensity2021.shp/.dbf, "Density 21" field, classified using the export\'s own QGIS symbology',
   },
   {
+    id: 'major-roads',
+    name: 'Major Roads',
+    group: 'transport',
+    kind: 'vector',
+    hi: '#374151',
+    unit: 'classified road lines',
+    note: 'The state\'s classified roads inside the LGA: the Priority Network and Strategic Routes (major traffic and freight), Peak Hour Routes, and high and standard frequency bus corridors. Where a road plays several roles it is drawn under the most important one, and every role is listed when you hover it. Not council\'s road register: local streets aren\'t included.',
+    source: "SA Government (DIT), Functional Hierarchy for South Australia's Land Transport Network, data.sa.gov.au, CC BY 3.0 AU",
+  },
+  {
     id: 'priority-mix',
     name: 'Priority mix (your weights)',
     group: 'vulnerability',
@@ -475,6 +488,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'dwelling-density',
   'stormwater-pipes',
   'priority-mix',
+  'major-roads',
 ]);
 
 interface RealBoundary {
@@ -1050,7 +1064,7 @@ function Switch({ on }: { on: boolean }) {
 /** A small drawing of how a layer looks on the map: a line for line
  *  layers, a dot for point layers, the actual category colours for the
  *  heat and density layers, an outlined fill for flood and water areas. */
-const LINE_LAYERS = new Set(['watercourses', 'railways', 'pedestrian-network', 'stormwater-pipes']);
+const LINE_LAYERS = new Set(['watercourses', 'railways', 'pedestrian-network', 'stormwater-pipes', 'major-roads']);
 const POINT_LAYERS = new Set(['train-stations', 'obstetric-hospitals']);
 function LayerGlyph({ l }: { l: LayerDef }) {
   const c = l.hi ?? ACCENT;
@@ -1061,6 +1075,13 @@ function LayerGlyph({ l }: { l: LayerDef }) {
     body = ['Very Low', 'Low', 'Medium'].map((k, i) => (
       <rect key={k} x={1 + i * 5.4} y="2" width="5.4" height="8" fill={DWELLING_DENSITY_COLOR[k]} />
     ));
+  } else if (l.id === 'major-roads') {
+    body = (
+      <>
+        <path d="M1.5 6 H16.5" stroke="#fff" strokeWidth="5" />
+        <path d="M1.5 6 H16.5" stroke="#111827" strokeWidth="3" />
+      </>
+    );
   } else if (l.id === 'priority-mix') {
     body = PRIORITY_COLORS.map((c, i) => <rect key={c} x={1 + i * 3.2} y="2" width="3.2" height="8" fill={c} />);
   } else if (l.id === 'stormwater-pipes') {
@@ -1289,6 +1310,7 @@ function MapView(props: MapViewProps) {
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
+  const { by: roadBy } = React.useContext(RoadColourContext);
   const baseDef = BASEMAP_BY_ID[basemap] ?? BASEMAPS[0];
   const darkBase = !!baseDef.dark;
 
@@ -1422,6 +1444,30 @@ function MapView(props: MapViewProps) {
             fillOpacity: vecAlpha('train-stations'),
           }).bindTooltip('Train station', { direction: 'top', offset: [0, -3] }),
         );
+      }
+    }
+
+    if (checkedLayers.has('major-roads')) {
+      const alpha = vecAlpha('major-roads');
+      if (roadBy === 'flood') {
+        const runs = roadRunsByFlood();
+        for (const c of [...PIPE_CLASSES].reverse()) {
+          push(L.polyline(runs[c.id], { color: '#fff', weight: 6, opacity: alpha * 0.9, interactive: false }));
+          push(L.polyline(runs[c.id], { color: c.color, weight: 3.6, opacity: alpha, interactive: false }));
+        }
+      } else {
+        // Least important first, so the main roads draw on top.
+        for (const style of [...ROAD_ROLES].reverse()) {
+          for (const r of ROADS.filter((x) => x.role === style.role)) {
+            push(L.polyline(r.line, { color: '#fff', weight: style.weight + 2.4, opacity: alpha * 0.9, interactive: false }));
+            push(
+              L.polyline(r.line, { color: style.color, weight: style.weight, opacity: alpha }).bindTooltip(
+                `${roadName(r.name)} · ${roadRoles(r.name).join(', ') || style.label}`,
+                { sticky: true, direction: 'top', offset: [0, -4] },
+              ),
+            );
+          }
+        }
       }
     }
 
@@ -1803,6 +1849,7 @@ function MapView(props: MapViewProps) {
   }, [
     ready,
     priorityW,
+    roadBy,
     suburbShade,
     checkedLayers,
     overlayOpacity,
@@ -1884,6 +1931,18 @@ function MapView(props: MapViewProps) {
           added.push(
             L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.3, interactive: false, pane: 'caseContent' }).addTo(map),
           );
+        }
+      }
+      if (show.has('roads')) {
+        for (const style of [...ROAD_ROLES].reverse()) {
+          for (const rd of area.roads.filter((x) => x.role === style.role)) {
+            added.push(
+              L.polyline(rd.line, { color: '#fff', weight: style.weight + 2.4, opacity: 0.95, interactive: false, pane: 'caseContent' }).addTo(map),
+              L.polyline(rd.line, { color: style.color, weight: style.weight, opacity: 1, pane: 'caseContent' })
+                .bindTooltip(`${roadName(rd.name)} · ${roadRoles(rd.name).join(', ') || style.label}`, { sticky: true, direction: 'top', offset: [0, -4] })
+                .addTo(map),
+            );
+          }
         }
       }
       if (show.has('pipes')) {
@@ -2325,6 +2384,9 @@ function MapLegend({
                 </div>
               );
             }
+            if (l.id === 'major-roads') {
+              return <RoadLegend key={l.id} />;
+            }
             if (l.id === 'priority-mix') {
               return (
                 <div key={l.id}>
@@ -2401,6 +2463,29 @@ function MapLegend({
               </div>
             </div>
           )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoadLegend() {
+  const { by } = React.useContext(RoadColourContext);
+  return (
+    <div>
+      <div className="text-sm font-medium text-ink">Major roads{by === 'flood' ? ', by flood' : ''}</div>
+      {by === 'flood' ? (
+        <LegendScale items={PIPE_CLASSES.map((c) => ({ label: c.label, color: c.color }))} />
+      ) : (
+        <div className="mt-1.5 space-y-1">
+          {ROAD_ROLES.map((r) => (
+            <div key={r.role} className="flex items-center gap-2">
+              <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden>
+                <path d="M1 5 H17" stroke={r.color} strokeWidth={Math.min(r.weight, 4)} />
+              </svg>
+              <span className="text-sm text-ink-2">{r.label}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -3159,6 +3244,69 @@ const PriorityContext = React.createContext<{ w: PriorityWeights; setW: (w: Prio
   setW: () => {},
 });
 
+function RoadFindings() {
+  const { by, set } = React.useContext(RoadColourContext);
+  const total = majorRoadsData.totalKm;
+  const inFlood = majorRoadsData.kmInFlood as Record<'1in5' | '1in20' | '1in100', number>;
+  const byRole = majorRoadsData.kmByRole as Record<string, number>;
+  const worst = Object.entries(majorRoadsData.kmIn1in100ByRoad as Record<string, number>).slice(0, 8);
+  return (
+    <>
+      <FigureStrip>
+        <Figure label="Classified roads" value={`${Math.round(total)} km`} />
+        <Figure label="In 1 in 100 extent" value={`${Math.round(inFlood['1in100'])} km`} sub={`${pct(inFlood['1in100'] / total)} of it`} />
+      </FigureStrip>
+
+      <Section title="Colour roads by">
+        <div className="flex gap-1.5">
+          {(
+            [
+              ['role', 'Road role'],
+              ['flood', 'Flood exposure'],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => set(id)}
+              aria-pressed={by === id}
+              className={`flex-1 rounded-[3px] border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Most road in the 1 in 100 extent">
+        {worst.map(([name, kmv]) => (
+          <div key={name} className="flex items-center gap-3 py-1">
+            <span className="w-[120px] shrink-0 truncate text-base text-ink-2" title={roadName(name)}>
+              {roadName(name)}
+            </span>
+            <span className="h-[4px] flex-1 rounded-full bg-line">
+              <span className="block h-full rounded-full" style={{ width: `${(kmv / worst[0][1]) * 100}%`, background: '#EAB308' }} />
+            </span>
+            <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{kmv.toFixed(1)} km</span>
+          </div>
+        ))}
+        <p className="mt-1.5 text-sm text-ink-3">Long-term flood runs. Divided roads count each carriageway.</p>
+      </Section>
+
+      <Section title="Length by role">
+        {ROAD_ROLES.filter((r) => byRole[r.role]).map((r) => (
+          <div key={r.role} className="flex items-center gap-3 py-1">
+            <span className="w-[120px] shrink-0 truncate text-base text-ink-2">{r.label}</span>
+            <span className="h-[4px] flex-1 rounded-full bg-line">
+              <span className="block h-full rounded-full" style={{ width: `${(byRole[r.role] / total) * 100}%`, background: r.color }} />
+            </span>
+            <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{byRole[r.role].toFixed(1)} km</span>
+          </div>
+        ))}
+      </Section>
+    </>
+  );
+}
+
 function PriorityFindings() {
   const { w, setW } = React.useContext(PriorityContext);
   const total = PRIORITY_INPUTS.reduce((n, i) => n + w[i.id], 0);
@@ -3903,6 +4051,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
   }
 
   if (layer.id === 'priority-mix') return <PriorityFindings />;
+  if (layer.id === 'major-roads') return <RoadFindings />;
 
   if (layer.id === 'stormwater-pipes') {
     const total = stormwaterPipesData.totalKm;
@@ -4029,6 +4178,8 @@ interface TqehReading {
   pedM: number;
   /** Metres from the centre of the grounds to the nearest pipe. */
   pipeM: number;
+  /** Nearest classified road to the centre of the grounds. */
+  road: { name: string; roles: string[]; m: number } | null;
   /** Metres of pipe inside the grounds, and of that inside the 1 in 100 extent. */
   pipeInSiteM: number;
   pipeInSiteFloodM: number;
@@ -4157,7 +4308,7 @@ function clipRing(subject: LatLngTuple[], clip: LatLngTuple[]): LatLngTuple[] {
 }
 
 /** What the case study can draw around the site, each cut to the area. */
-type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'buildings' | 'lines' | 'focus';
+type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'roads' | 'buildings' | 'lines' | 'focus';
 
 interface CaseArea {
   radius: number;
@@ -4165,6 +4316,7 @@ interface CaseArea {
   flood: Record<FloodLayerId, LatLngTuple[][]>;
   heat: { ring: LatLngTuple[]; cat: number; svi: number }[];
   pipes: Record<PipeClass, LatLngTuple[][]>;
+  roads: { line: LatLngTuple[]; role: string; name: string | null }[];
   buildings: { lat: number; lng: number; names: string[]; ids: string[] }[];
 }
 
@@ -4199,6 +4351,21 @@ function tqehArea(radius: number): CaseArea {
   // Pipes: the stretches inside the area, coloured by flood class.
   const pipes = pipeRuns(within);
 
+  // Roads: the stretches inside the area, kept with their role.
+  const roads: CaseArea['roads'] = [];
+  for (const rd of ROADS) {
+    let run: LatLngTuple[] = [];
+    const flush = () => {
+      if (run.length >= 2) roads.push({ line: run, role: rd.role, name: rd.name });
+      run = [];
+    };
+    for (const pt of rd.line) {
+      if (within(pt)) run.push(pt);
+      else flush();
+    }
+    flush();
+  }
+
   const byPoint = new Map<string, { lat: number; lng: number; names: string[]; ids: string[] }>();
   for (const b of MAPPED_BUILDINGS) {
     const loc = BUILDING_LOCATION[b.id];
@@ -4210,7 +4377,7 @@ function tqehArea(radius: number): CaseArea {
     byPoint.set(key, g);
   }
 
-  const out: CaseArea = { radius, ring, flood, heat, pipes, buildings: [...byPoint.values()] };
+  const out: CaseArea = { radius, ring, flood, heat, pipes, roads, buildings: [...byPoint.values()] };
   tqehAreaCache.set(radius, out);
   return out;
 }
@@ -4252,6 +4419,14 @@ function tqehReading(): TqehReading {
     railM: near('railways'),
     pedM: near('pedestrian-network'),
     pipeM: near('stormwater-pipes'),
+    road: (() => {
+      let best: { name: string; roles: string[]; m: number } | null = null;
+      for (const rd of ROADS) {
+        const m = nearestMetres(lat, lng, [toShape(rd.line)]);
+        if (!best || m < best.m) best = { name: roadName(rd.name), roles: roadRoles(rd.name), m };
+      }
+      return best;
+    })(),
     ...pipesInSite(),
     suburb: sa2 ? SUBURB_BY_ID[SA2_CODE_TO_SUBURB_ID[sa2.code]] ?? null : null,
     buildings: MAPPED_BUILDINGS.map((b) => {
@@ -4336,7 +4511,7 @@ ${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
 </table>
 ${r.suburb ? `<h2>${esc(r.suburb.name)} indexes${sel.scenario === 'today' ? '' : `, ${esc(scenarioName(sel))} (speculative placeholder figures)`}</h2><table>${indexRows}</table>` : ''}
 <h2>Assets and access</h2><table>
-${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m, of which ${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`)}${row('Nearest stormwater pipe', `${formatMetres(r.pipeM)} from the centre`)}${row('Roads, pipe sizes, people', 'Waiting on council data')}
+${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m, of which ${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`)}${row('Nearest stormwater pipe', `${formatMetres(r.pipeM)} from the centre`)}${r.road ? row('Nearest major road', `${r.road.name}, ${formatMetres(r.road.m)}`) : ''}${row('Local streets, pipe sizes, people', 'Waiting on council data')}
 </table>
 <h2>Nearest council buildings</h2><table>
 ${groups
@@ -4431,6 +4606,7 @@ const CASE_LAYER_DEFS: { id: CaseLayer; label: string }[] = [
   { id: 'flood5', label: 'Flood 1 in 5 (long-term)' },
   { id: 'heat', label: 'Urban heat cells' },
   { id: 'pipes', label: 'Stormwater pipes' },
+  { id: 'roads', label: 'Major roads' },
   { id: 'buildings', label: 'Council buildings' },
   { id: 'lines', label: 'Distance lines' },
 ];
@@ -4443,6 +4619,7 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   }
   if (id === 'heat') return <LayerGlyph l={LAYER_BY_ID['heat-vuln']} />;
   if (id === 'pipes') return <LayerGlyph l={LAYER_BY_ID['stormwater-pipes']} />;
+  if (id === 'roads') return <LayerGlyph l={LAYER_BY_ID['major-roads']} />;
   if (id === 'buildings') {
     return (
       <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
@@ -4488,6 +4665,7 @@ function CaseControls({
         ? `Nearest cell ${formatMetres(r.nearestHeat.metres)}, category ${r.nearestHeat.uhiCat}`
         : 'No cells nearby',
     pipes: `${Math.round(r.pipeInSiteM)} m in the grounds`,
+    roads: r.road ? `${r.road.name}, ${formatMetres(r.road.m)}` : 'None nearby',
     buildings: `${area.buildings.reduce((n, g) => n + g.ids.length, 0)} within ${radius} m`,
     lines: 'To the nearest station, water and heat cell',
     focus: 'Fades the map outside the area',
@@ -4767,6 +4945,12 @@ function TqehAssets({
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
           <FactRow label="Railway" value={formatMetres(r.railM)} />
           <FactRow label="Pedestrian route" value={formatMetres(r.pedM)} />
+          {r.road && (
+            <FactRow
+              label="Major road"
+              value={`${r.road.name}, ${formatMetres(r.road.m)}${r.road.roles.length ? ` (${r.road.roles.join(', ').toLowerCase()})` : ''}`}
+            />
+          )}
         </dl>
       </Section>
 
@@ -4782,7 +4966,7 @@ function TqehAssets({
       <Section title="Waiting on council">
         <p className="-mt-1 mb-1 text-sm text-ink-3">Shown here once council supplies the files.</p>
         <dl className="divide-y divide-line">
-          <FactRow label="Roads" value={<span className="text-ink-2">Road network and hierarchy near the site</span>} />
+          <FactRow label="Local streets" value={<span className="text-ink-2">Council's full road register</span>} />
           <FactRow label="Stormwater" value={<span className="text-ink-2">Pipe sizes, pits and hydraulics</span>} />
           <FactRow label="People" value={<span className="text-ink-2">Building usage and foot traffic</span>} />
         </dl>
@@ -5555,6 +5739,71 @@ function pipeRuns(keep?: (pt: LatLngTuple) => boolean): Record<PipeClass, LatLng
 }
 let pipeRunCache: Record<PipeClass, LatLngTuple[][]> | null = null;
 
+/* Major roads ----------------------------------------------------------- */
+interface RoadPiece {
+  name: string | null;
+  role: string;
+  line: LatLngTuple[];
+  segClass: string;
+}
+const ROADS = majorRoadsData.roads as RoadPiece[];
+const ROAD_ROLES: { role: string; label: string; color: string; weight: number }[] = [
+  { role: 'Priority Network', label: 'Priority Network', color: '#111827', weight: 4.2 },
+  { role: 'Strategic Routes', label: 'Strategic route', color: '#4B5563', weight: 3.4 },
+  { role: 'Peak Hour Routes', label: 'Peak hour route', color: '#8B95A1', weight: 2.8 },
+  { role: 'High Frequency Corridor', label: 'Bus corridor, high frequency', color: '#7C3AED', weight: 2.6 },
+  { role: 'Standard Frequency Corridor', label: 'Bus corridor, standard', color: '#B39DF0', weight: 2 },
+];
+const ROAD_ROLE = Object.fromEntries(ROAD_ROLES.map((r) => [r.role, r]));
+const ROLE_LABEL: Record<string, string> = {
+  ...Object.fromEntries(ROAD_ROLES.map((r) => [r.role, r.label])),
+  'Freight Routes - Primary': 'Primary freight route',
+  'Major Local Freight Routes': 'Local freight route',
+};
+/** "PORT ROAD" -> "Port Road", "SOUTH RD (PORT RD TO MANTON ST)" kept readable. */
+function roadName(n: string | null): string {
+  if (!n) return 'Unnamed road';
+  return n.toLowerCase().replace(/\b([a-z])/g, (c) => c.toUpperCase()).replace(/\bRd\b/g, 'Rd');
+}
+function roadRoles(n: string | null): string[] {
+  const roles = (majorRoadsData.rolesByName as Record<string, string[]>)[n ?? ''] ?? [];
+  return roles.map((r) => ROLE_LABEL[r] ?? r);
+}
+/** Stretches of a road piece by flood class, optionally cut to `keep`. */
+function roadRunsByFlood(keep?: (pt: LatLngTuple) => boolean): Record<PipeClass, LatLngTuple[][]> {
+  const out: Record<PipeClass, LatLngTuple[][]> = { '0': [], '1': [], '2': [], '3': [] };
+  for (const r of ROADS) {
+    let run: LatLngTuple[] = [];
+    let cls: PipeClass | null = null;
+    const flush = () => {
+      if (cls && run.length >= 2) out[cls].push(run);
+      run = [];
+      cls = null;
+    };
+    for (let i = 0; i < r.line.length - 1; i++) {
+      const c = r.segClass[i] as PipeClass;
+      if (keep && !(keep(r.line[i]) && keep(r.line[i + 1]))) {
+        flush();
+        continue;
+      }
+      if (c !== cls) {
+        flush();
+        cls = c;
+        run = [r.line[i]];
+      }
+      run.push(r.line[i + 1]);
+    }
+    flush();
+  }
+  return out;
+}
+/** How the road layer is coloured, chosen in its panel. */
+type RoadColour = 'role' | 'flood';
+const RoadColourContext = React.createContext<{ by: RoadColour; set: (v: RoadColour) => void }>({
+  by: 'role',
+  set: () => {},
+});
+
 /** Line and point layers a building's distance can be measured to. */
 const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
   watercourses: () => WATERCOURSES.map((l) => toShape(l)),
@@ -5564,6 +5813,7 @@ const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
   'pedestrian-network': () => pedestrianNetworkData.segments.map((s) => toShape(s.line as LatLngTuple[])),
   'obstetric-hospitals': () => OBSTETRIC_HOSPITALS.map((p) => toShape([p])),
   'stormwater-pipes': () => (pipeShapeCache ??= (stormwaterPipesData.lines as LatLngTuple[][]).map((l) => toShape(l))),
+  'major-roads': () => ROADS.map((r) => toShape(r.line)),
 };
 
 const distanceCache = new Map<string, Map<string, number>>();
@@ -6881,6 +7131,8 @@ export default function App() {
   // Weights for the Priority mix layer, set by whoever is using the tool.
   const [priorityW, setPriorityW] = useState<PriorityWeights>(EQUAL_WEIGHTS);
   const priorityCtx = useMemo(() => ({ w: priorityW, setW: setPriorityW }), [priorityW]);
+  const [roadBy, setRoadBy] = useState<RoadColour>('role');
+  const roadCtx = useMemo(() => ({ by: roadBy, set: setRoadBy }), [roadBy]);
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
@@ -7151,6 +7403,7 @@ export default function App() {
   return (
     <ScenarioContext.Provider value={scenarioCtx}>
     <PriorityContext.Provider value={priorityCtx}>
+    <RoadColourContext.Provider value={roadCtx}>
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
@@ -7316,6 +7569,7 @@ export default function App() {
         />
       )}
     </div>
+    </RoadColourContext.Provider>
     </PriorityContext.Provider>
     </ScenarioContext.Provider>
   );
