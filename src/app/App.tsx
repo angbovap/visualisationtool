@@ -51,6 +51,9 @@ import dwellingDensityData from '@/data/dwellingDensity.json';
 // Measured per-SA2 indicators, built by scripts/build-sa2-indicators.cjs
 // from the layers above. No weights or cut-offs, see that script.
 import sa2IndicatorsData from '@/data/sa2Indicators.json';
+// Measured per-SA1 inputs for the Priority mix layer, built by
+// scripts/build-sa1-indicators.cjs. The weighting is chosen in the tool.
+import sa1IndicatorsData from '@/data/sa1Indicators.json';
 // The Queen Elizabeth Hospital's site outline and centre, from
 // OpenStreetMap (amenity=hospital) via Nominatim. Not council data.
 import tqehSiteData from '@/data/tqehSite.json';
@@ -363,6 +366,16 @@ const LAYERS: LayerDef[] = [
     source: 'Council GIS export, CoCS_DwellingDensity2021.shp/.dbf, "Density 21" field, classified using the export\'s own QGIS symbology',
   },
   {
+    id: 'priority-mix',
+    name: 'Priority mix (your weights)',
+    group: 'vulnerability',
+    kind: 'vector',
+    hi: '#D7191C',
+    unit: 'SA1 areas, lower to higher',
+    note: 'Each SA1 is measured on four things from the supplied layers: share of its area in the 1 in 100 flood extent, the average UHI category and SVI of its heat cells, and its Density 21 value. Each is turned into a rank against the other SA1s (0 = lowest, 100 = highest), then averaged using the weights you set. Nothing is weighted for you: all four start equal. Where an SA1 has no value for something (the heat grid covers part of the LGA only), it is averaged over the rest, and its tooltip says so.',
+    source: 'Built from the flood, heat and dwelling density layers by scripts/build-sa1-indicators.cjs',
+  },
+  {
     id: 'stormwater-pipes',
     name: 'Stormwater Pipes',
     group: 'infrastructure',
@@ -461,6 +474,7 @@ const WORKSHOP_LAYER_IDS = new Set([
   'heat-vuln',
   'dwelling-density',
   'stormwater-pipes',
+  'priority-mix',
 ]);
 
 interface RealBoundary {
@@ -1047,6 +1061,12 @@ function LayerGlyph({ l }: { l: LayerDef }) {
     body = ['Very Low', 'Low', 'Medium'].map((k, i) => (
       <rect key={k} x={1 + i * 5.4} y="2" width="5.4" height="8" fill={DWELLING_DENSITY_COLOR[k]} />
     ));
+  } else if (l.id === 'priority-mix') {
+    body = PRIORITY_COLORS.map((c, i) => <rect key={c} x={1 + i * 3.2} y="2" width="3.2" height="8" fill={c} />);
+  } else if (l.id === 'stormwater-pipes') {
+    body = PIPE_CLASSES.map((c, i) => (
+      <path key={c.id} d={`M${1.5 + i * 3.9} 6 H${1.5 + (i + 1) * 3.9}`} stroke={c.color} strokeWidth="2.4" />
+    ));
   } else if (l.id === 'railways') {
     body = (
       <>
@@ -1270,6 +1290,7 @@ function MapView(props: MapViewProps) {
   const [dimOutside, setDimOutside] = useState(true);
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
+  const { w: priorityW } = React.useContext(PriorityContext);
   const baseDef = BASEMAP_BY_ID[basemap] ?? BASEMAPS[0];
   const darkBase = !!baseDef.dark;
 
@@ -1406,15 +1427,40 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    if (checkedLayers.has('priority-mix')) {
+      const scores = priorityScores(priorityW);
+      const alpha = vecAlpha('priority-mix');
+      for (const a of SA1S) {
+        const sc = scores.get(a.id);
+        if (!sc || sc.score === null) continue;
+        const missing = sc.missing.length
+          ? ` · no ${sc.missing.map((m) => PRIORITY_INPUTS.find((i) => i.id === m)!.label.toLowerCase()).join(' or ')} data`
+          : '';
+        push(
+          L.polygon(a.path, {
+            color: '#fff',
+            weight: 0.5,
+            opacity: alpha * 0.8,
+            fillColor: priorityColor(sc.score),
+            fillOpacity: alpha * 0.72,
+            interactive: true,
+          }).bindTooltip(`Priority ${Math.round(sc.score * 100)} of 100${missing}`, { direction: 'top', offset: [0, -3] }),
+        );
+      }
+    }
+
     if (checkedLayers.has('stormwater-pipes')) {
-      push(
-        L.polyline(stormwaterPipesData.lines as LatLngTuple[][], {
-          color: LAYER_BY_ID['stormwater-pipes'].hi!,
-          weight: 1.2,
-          opacity: vecAlpha('stormwater-pipes'),
-          interactive: false,
-        }),
-      );
+      const runs = (pipeRunCache ??= pipeRuns());
+      for (const c of [...PIPE_CLASSES].reverse()) {
+        push(
+          L.polyline(runs[c.id], {
+            color: c.color,
+            weight: c.id === '0' ? 1.1 : 2,
+            opacity: vecAlpha('stormwater-pipes') * (c.id === '0' ? 0.75 : 1),
+            interactive: false,
+          }),
+        );
+      }
     }
 
     if (checkedLayers.has('pedestrian-network')) {
@@ -1758,6 +1804,7 @@ function MapView(props: MapViewProps) {
     };
   }, [
     ready,
+    priorityW,
     suburbShade,
     checkedLayers,
     overlayOpacity,
@@ -1820,10 +1867,17 @@ function MapView(props: MapViewProps) {
           );
         }
       }
-      if (show.has('pipes') && area.pipes.length) {
-        added.push(
-          L.polyline(area.pipes, { color: LAYER_BY_ID['stormwater-pipes'].hi!, weight: 1.8, opacity: 0.95, interactive: false }).addTo(map),
-        );
+      if (show.has('pipes')) {
+        for (const c of [...PIPE_CLASSES].reverse()) {
+          added.push(
+            L.polyline(area.pipes[c.id], {
+              color: c.color,
+              weight: c.id === '0' ? 1.4 : 2.2,
+              opacity: 0.95,
+              interactive: false,
+            }).addTo(map),
+          );
+        }
       }
       if (show.has('buildings')) {
         for (const g of area.buildings) {
@@ -2241,6 +2295,30 @@ function MapLegend({
                       opacity: 0.75,
                     }))}
                   />
+                </div>
+              );
+            }
+            if (l.id === 'priority-mix') {
+              return (
+                <div key={l.id}>
+                  <div className="text-sm font-medium text-ink">Priority mix, your weights</div>
+                  <div className="mt-1.5 flex h-[8px] w-full overflow-hidden">
+                    {PRIORITY_COLORS.map((c) => (
+                      <span key={c} className="flex-1" style={{ background: c, opacity: 0.85 }} />
+                    ))}
+                  </div>
+                  <div className="mt-0.5 flex justify-between text-sm text-ink-3">
+                    <span>Lower</span>
+                    <span>Higher</span>
+                  </div>
+                </div>
+              );
+            }
+            if (l.id === 'stormwater-pipes') {
+              return (
+                <div key={l.id}>
+                  <div className="text-sm font-medium text-ink">Stormwater pipes, by flood</div>
+                  <LegendScale items={PIPE_CLASSES.map((c) => ({ label: c.label, color: c.color }))} />
                 </div>
               );
             }
@@ -2980,6 +3058,156 @@ function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexI
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Priority mix
+ *
+ * The person using the tool sets the weights; the inputs are measured.
+ * Each input is ranked across the SA1s that have a value (0 lowest,
+ * 1 highest), then the ranks are averaged with the chosen weights.
+ * ------------------------------------------------------------------ */
+
+type PriorityKey = 'flood' | 'heat' | 'svi' | 'density';
+type PriorityWeights = Record<PriorityKey, number>;
+const PRIORITY_INPUTS: { id: PriorityKey; label: string; how: string; field: 'flood' | 'uhi' | 'svi' | 'density' }[] = [
+  { id: 'flood', label: 'Flood', how: 'Share of the area in the 1 in 100 extent', field: 'flood' },
+  { id: 'heat', label: 'Urban heat', how: 'Average UHI category of its heat cells', field: 'uhi' },
+  { id: 'svi', label: 'Social vulnerability', how: 'Average SVI of its heat cells', field: 'svi' },
+  { id: 'density', label: 'Dwelling density', how: 'Its Density 21 value', field: 'density' },
+];
+const EQUAL_WEIGHTS: PriorityWeights = { flood: 5, heat: 5, svi: 5, density: 5 };
+const SA1_IND = sa1IndicatorsData.bySa1 as Record<
+  string,
+  { flood: number | null; uhi: number | null; svi: number | null; cells: number; density: number | null }
+>;
+/** Rank of every SA1's value on one input, 0 (lowest) to 1 (highest), ties averaged. */
+const PRIORITY_RANK: Record<PriorityKey, Map<string, number>> = Object.fromEntries(
+  PRIORITY_INPUTS.map(({ id, field }) => {
+    const vals = Object.entries(SA1_IND)
+      .filter(([, v]) => v[field] !== null)
+      .map(([code, v]) => ({ code, v: v[field] as number }))
+      .sort((a, b) => a.v - b.v);
+    const out = new Map<string, number>();
+    let i = 0;
+    while (i < vals.length) {
+      let j = i;
+      while (j + 1 < vals.length && vals[j + 1].v === vals[i].v) j++;
+      const r = vals.length > 1 ? (i + j) / 2 / (vals.length - 1) : 0.5;
+      for (let k = i; k <= j; k++) out.set(vals[k].code, r);
+      i = j + 1;
+    }
+    return [id, out];
+  }),
+) as Record<PriorityKey, Map<string, number>>;
+
+interface PriorityScore {
+  score: number | null;
+  missing: PriorityKey[];
+}
+function priorityScores(w: PriorityWeights): Map<string, PriorityScore> {
+  const out = new Map<string, PriorityScore>();
+  for (const a of SA1S) {
+    let sum = 0;
+    let wsum = 0;
+    const missing: PriorityKey[] = [];
+    for (const { id } of PRIORITY_INPUTS) {
+      if (w[id] <= 0) continue;
+      const r = PRIORITY_RANK[id].get(a.id);
+      if (r === undefined) {
+        missing.push(id);
+        continue;
+      }
+      sum += r * w[id];
+      wsum += w[id];
+    }
+    out.set(a.id, { score: wsum > 0 ? sum / wsum : null, missing });
+  }
+  return out;
+}
+/** Five steps, lower (blue) to higher (red). */
+const PRIORITY_COLORS = ['#2C7BB6', '#ABD9E9', '#FFFFBF', '#FDAE61', '#D7191C'];
+const priorityColor = (score: number) => PRIORITY_COLORS[Math.min(4, Math.floor(score * 5))];
+
+const PriorityContext = React.createContext<{ w: PriorityWeights; setW: (w: PriorityWeights) => void }>({
+  w: EQUAL_WEIGHTS,
+  setW: () => {},
+});
+
+function PriorityFindings() {
+  const { w, setW } = React.useContext(PriorityContext);
+  const total = PRIORITY_INPUTS.reduce((n, i) => n + w[i.id], 0);
+  const scores = priorityScores(w);
+  const bySuburb = SUBURBS.map((sub) => {
+    const vals = SA1S.filter((a) => a.parentId === sub.id)
+      .map((a) => scores.get(a.id)?.score)
+      .filter((v): v is number => v !== null && v !== undefined);
+    return { sub, avg: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 };
+  }).sort((a, b) => b.avg - a.avg);
+  const top = [...scores.entries()]
+    .filter(([, v]) => v.score !== null)
+    .sort((a, b) => b[1].score! - a[1].score!)
+    .slice(0, 5);
+  const isEqual = PRIORITY_INPUTS.every((i) => w[i.id] === EQUAL_WEIGHTS[i.id]);
+
+  return (
+    <>
+      <Section
+        title="Your weights"
+        right={
+          !isEqual && (
+            <button onClick={() => setW(EQUAL_WEIGHTS)} className="text-sm font-medium text-accent hover:text-ink">
+              Reset to equal
+            </button>
+          )
+        }
+      >
+        <div className="space-y-3">
+          {PRIORITY_INPUTS.map((i) => (
+            <label key={i.id} className="block">
+              <span className="flex items-baseline justify-between">
+                <span className="text-base font-medium text-ink">{i.label}</span>
+                <span className="num text-base text-ink-2">{total ? Math.round((w[i.id] / total) * 100) : 0}%</span>
+              </span>
+              <input
+                type="range"
+                min={0}
+                max={10}
+                step={1}
+                value={w[i.id]}
+                onChange={(e) => setW({ ...w, [i.id]: Number(e.target.value) })}
+                className="mt-1 w-full"
+                aria-label={`${i.label} weight`}
+              />
+              <span className="block text-sm text-ink-3">{i.how}</span>
+            </label>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Suburbs, by average score">
+        {bySuburb.map((r) => (
+          <BarRow key={r.sub.id} label={r.sub.name} n={Math.round(r.avg * 100)} max={100} color={priorityColor(r.avg)} />
+        ))}
+      </Section>
+
+      <Section title="Highest scoring areas">
+        <dl className="divide-y divide-line">
+          {top.map(([code, v]) => {
+            const a = SA1S.find((x) => x.id === code)!;
+            return (
+              <div key={code} className="flex items-baseline justify-between gap-3 py-1.5">
+                <dt className="min-w-0 truncate text-base text-ink-2">
+                  {SUBURB_BY_ID[a.parentId]?.name} <span className="num text-sm text-ink-3">SA1 {code}</span>
+                </dt>
+                <dd className="num text-base font-semibold text-ink">{Math.round(v.score! * 100)}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      </Section>
+    </>
+  );
+}
+
 /** Several register rows filed under one name (one site with many
  *  buildings, e.g. an aged care facility) as one line. Opens the list of
  *  them on the right, where each has its own profile. */
@@ -3647,6 +3875,8 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
     );
   }
 
+  if (layer.id === 'priority-mix') return <PriorityFindings />;
+
   if (layer.id === 'stormwater-pipes') {
     const total = stormwaterPipesData.totalKm;
     const inFlood = stormwaterPipesData.kmInFlood as Record<'1in5' | '1in20' | '1in100', number>;
@@ -3662,7 +3892,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
             <div key={r.id} className="flex items-center gap-3 py-1">
               <span className="w-[108px] shrink-0 text-base text-ink-2">{FLOOD_SHORT[r.id]}</span>
               <span className="h-[4px] flex-1 rounded-full bg-line">
-                <span className="block h-full rounded-full" style={{ width: `${(r.km / total) * 100}%`, background: LAYER_BY_ID[r.id].hi }} />
+                <span className="block h-full rounded-full" style={{ width: `${(r.km / total) * 100}%`, background: PIPE_CLASSES.find((c) => c.label.includes(FLOOD_SHORT[r.id]))!.color }} />
               </span>
               <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{r.km.toFixed(1)} km</span>
             </div>
@@ -3907,7 +4137,7 @@ interface CaseArea {
   ring: LatLngTuple[];
   flood: Record<FloodLayerId, LatLngTuple[][]>;
   heat: { ring: LatLngTuple[]; cat: number; svi: number }[];
-  pipes: LatLngTuple[][];
+  pipes: Record<PipeClass, LatLngTuple[][]>;
   buildings: { lat: number; lng: number; names: string[]; ids: string[] }[];
 }
 
@@ -3939,20 +4169,8 @@ function tqehArea(radius: number): CaseArea {
       .filter((h) => h.ring.length >= 3),
   );
 
-  // Pipes: the runs of each line that stay inside the area.
-  const pipes: LatLngTuple[][] = [];
-  for (const shape of PROXIMITY_SHAPES['stormwater-pipes']()) {
-    if (!touches(shape.bbox)) continue;
-    let run: LatLngTuple[] = [];
-    for (const pt of shape.pts) {
-      if (within(pt)) run.push(pt);
-      else {
-        if (run.length >= 2) pipes.push(run);
-        run = [];
-      }
-    }
-    if (run.length >= 2) pipes.push(run);
-  }
+  // Pipes: the stretches inside the area, coloured by flood class.
+  const pipes = pipeRuns(within);
 
   const byPoint = new Map<string, { lat: number; lng: number; names: string[]; ids: string[] }>();
   for (const b of MAPPED_BUILDINGS) {
@@ -5245,6 +5463,50 @@ function nearestMetres(lat: number, lng: number, shapes: Shape[]): number {
 }
 
 let pipeShapeCache: Shape[] | null = null;
+
+/** Pipe stretches by the most frequent flood extent they sit in, from
+ *  segClass in stormwaterPipes.json. 3 = 1 in 5 ... 0 = outside. */
+type PipeClass = '0' | '1' | '2' | '3';
+const PIPE_CLASSES: { id: PipeClass; label: string; color: string }[] = [
+  { id: '3', label: 'In the 1 in 5 extent', color: '#B91C1C' },
+  { id: '2', label: 'In the 1 in 20 extent', color: '#EA580C' },
+  { id: '1', label: 'In the 1 in 100 extent', color: '#EAB308' },
+  { id: '0', label: 'Outside every extent', color: '#7DB3E8' },
+];
+/** Runs of consecutive same-class stretches, optionally only where both
+ *  ends pass `keep` (used to cut the network to the TQEH area). */
+function pipeRuns(keep?: (pt: LatLngTuple) => boolean): Record<PipeClass, LatLngTuple[][]> {
+  const out: Record<PipeClass, LatLngTuple[][]> = { '0': [], '1': [], '2': [], '3': [] };
+  const lines = stormwaterPipesData.lines as LatLngTuple[][];
+  const classes = stormwaterPipesData.segClass as string[];
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    const cls = classes[li];
+    let run: LatLngTuple[] = [];
+    let runCls: PipeClass | null = null;
+    const flush = () => {
+      if (runCls && run.length >= 2) out[runCls].push(run);
+      run = [];
+      runCls = null;
+    };
+    for (let i = 0; i < line.length - 1; i++) {
+      const c = cls[i] as PipeClass;
+      if (keep && !(keep(line[i]) && keep(line[i + 1]))) {
+        flush();
+        continue;
+      }
+      if (c !== runCls) {
+        flush();
+        runCls = c;
+        run = [line[i]];
+      }
+      run.push(line[i + 1]);
+    }
+    flush();
+  }
+  return out;
+}
+let pipeRunCache: Record<PipeClass, LatLngTuple[][]> | null = null;
 
 /** Line and point layers a building's distance can be measured to. */
 const PROXIMITY_SHAPES: Record<string, () => Shape[]> = {
@@ -6569,6 +6831,9 @@ export default function App() {
   const [indexId, setIndexId] = useState<IndexId>('flood100');
   // SPECULATIVE scenario for the suburb comparison; 'today' is the data as supplied.
   const [scenario, setScenario] = useState<ScenarioSel>({ scenario: 'today', year: 2050 });
+  // Weights for the Priority mix layer, set by whoever is using the tool.
+  const [priorityW, setPriorityW] = useState<PriorityWeights>(EQUAL_WEIGHTS);
+  const priorityCtx = useMemo(() => ({ w: priorityW, setW: setPriorityW }), [priorityW]);
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
@@ -6839,6 +7104,7 @@ export default function App() {
 
   return (
     <ScenarioContext.Provider value={scenarioCtx}>
+    <PriorityContext.Provider value={priorityCtx}>
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
@@ -7004,6 +7270,7 @@ export default function App() {
         />
       )}
     </div>
+    </PriorityContext.Provider>
     </ScenarioContext.Provider>
   );
 }

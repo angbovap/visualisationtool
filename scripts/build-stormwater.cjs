@@ -9,7 +9,8 @@
  * reprojected from EPSG:7854 to WGS84 lat/lng. Coordinates are rounded to
  * 6 decimals (about 0.1 m); nothing is simplified or clipped.
  *
- * It also measures how much of the network's length lies inside each
+ * It also records, for every stretch of pipe, the most frequent flood
+ * extent it sits in (segClass), and measures how much of the network's length lies inside each
  * flood extent (by testing points every 5 m along every pipe), so the app
  * can show that without doing the work on every load.
  */
@@ -85,8 +86,19 @@ const extents = Object.fromEntries(
 
 let total = 0;
 const insideLen = { '1in5': 0, '1in20': 0, '1in100': 0 };
+// Per pipe, one digit per stretch between vertices: the most frequent
+// flood extent its midpoint sits in (3 = 1 in 5, 2 = 1 in 20,
+// 1 = 1 in 100, 0 = outside every mapped extent).
+const segClass = [];
+const inExt = (k, la, ln) => extents[k].some(({ ring, box }) => inBox(la, ln, box) && inRing(la, ln, ring));
 for (const line of lines) {
+  let digits = '';
   for (let i = 0; i < line.length - 1; i++) {
+    {
+      const ma = (line[i][0] + line[i + 1][0]) / 2;
+      const mn = (line[i][1] + line[i + 1][1]) / 2;
+      digits += inExt('1in5', ma, mn) ? '3' : inExt('1in20', ma, mn) ? '2' : inExt('1in100', ma, mn) ? '1' : '0';
+    }
     const a = line[i];
     const c = line[i + 1];
     const L = segLen(a, c);
@@ -101,6 +113,7 @@ for (const line of lines) {
       }
     }
   }
+  segClass.push(digits);
 }
 
 const result = {
@@ -110,6 +123,7 @@ const result = {
   totalKm: Number((total / 1000).toFixed(1)),
   kmInFlood: Object.fromEntries(Object.entries(insideLen).map(([k, v]) => [k, Number((v / 1000).toFixed(1))])),
   lines,
+  segClass,
 };
 fs.writeFileSync(out, JSON.stringify(result) + '\n');
 console.log(
