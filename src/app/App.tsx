@@ -1865,7 +1865,7 @@ function MapView(props: MapViewProps) {
               stroke: false,
               fillColor: lerpHex(def.lo!, def.hi!, (h.cat - 2) / 2),
               fillOpacity: 0.6,
-              interactive: true, pane: 'caseContent', })
+              interactive: true, pane: 'caseContent' })
               .bindTooltip(`UHI category ${h.cat} · SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
               .addTo(map),
           );
@@ -1891,7 +1891,7 @@ function MapView(props: MapViewProps) {
               color: c.color,
               weight: c.id === '0' ? 1.4 : 2.2,
               opacity: 0.95,
-              interactive: false, pane: 'caseContent', }).addTo(map),
+              interactive: false, pane: 'caseContent' }).addTo(map),
           );
         }
       }
@@ -1918,7 +1918,7 @@ function MapView(props: MapViewProps) {
         color: '#14201F',
         weight: 2,
         fill: false,
-        interactive: false, pane: 'caseContent', }).addTo(map),
+        interactive: false, pane: 'caseContent' }).addTo(map),
     );
     for (const link of show.has('lines') ? highlight.links ?? [] : []) {
       added.push(
@@ -1927,7 +1927,7 @@ function MapView(props: MapViewProps) {
           weight: 1.6,
           opacity: 0.8,
           dashArray: '5 4',
-          interactive: false, pane: 'caseContent', }).addTo(map),
+          interactive: false, pane: 'caseContent' }).addTo(map),
         L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, fillColor: '#14201F', fillOpacity: 1, interactive: false, pane: 'caseContent' })
           .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
           .addTo(map),
