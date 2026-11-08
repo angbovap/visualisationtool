@@ -5095,17 +5095,17 @@ function IconRail({
   // suburb profile, it doesn't belong nested under one.
   const order: PanelTab[] = ['layers', 'assets', 'place', 'cases', 'help'];
   return (
-    <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1 bg-[#14201F] py-3">
+    <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1 border-r border-line bg-white py-3">
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-[3px] text-[#A9BDBB] transition-colors hover:bg-white/10 hover:text-white"
+          className="flex h-11 w-[56px] items-center justify-center rounded-[3px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
           aria-label="Home"
         >
           <IconHome size={21} />
         </button>
       </Tip>
-      <div className="my-1.5 h-px w-8 bg-white/15" />
+      <div className="my-1.5 h-px w-8 bg-line" />
       {order.map((t) => {
         const meta = TAB_META[t];
         const Icon = meta.icon;
@@ -5113,12 +5113,12 @@ function IconRail({
         const separator = t === 'help';
         return (
           <React.Fragment key={t}>
-            {separator && <div className="my-1.5 h-px w-8 bg-white/15" />}
+            {separator && <div className="my-1.5 h-px w-8 bg-line" />}
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-[3px] py-1.5 transition-colors ${on ? 'bg-white/12 text-white' : 'text-[#A9BDBB] hover:bg-white/8 hover:text-white'}`}
-                style={on ? { boxShadow: 'inset 3px 0 0 #4FC1CB' } : undefined}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-[3px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
+                style={on ? { boxShadow: `inset 3px 0 0 ${ACCENT}` } : undefined}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -5131,9 +5131,7 @@ function IconRail({
       })}
       <div className="mt-auto">
         <Tip label="Prepared by" body="Value Advisory Partners" side="right">
-          <span className="flex h-10 w-10 items-center justify-center rounded-[3px] bg-white p-1">
-            <img src={vapLogo} alt="Value Advisory Partners" className="h-full w-full object-contain" />
-          </span>
+          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 object-contain" />
         </Tip>
       </div>
     </nav>

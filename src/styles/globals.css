@@ -65,8 +65,12 @@ body {
 /* Numbers always read in the mono face, tabular so columns line up. */
 .num { font-variant-numeric: tabular-nums; }
 
-button { font-family: inherit; color: inherit; }
-input, select { font-family: inherit; }
+/* In the base layer, so a text-* class on a button (e.g. the rail's
+   icon colours) is never overridden by this default. */
+@layer base {
+  button { font-family: inherit; color: inherit; }
+  input, select { font-family: inherit; }
+}
 
 /* Keyboard focus in the app's own accent, not whatever blue the browser
    defaults to. :focus-visible so a mouse click never shows a ring, only
