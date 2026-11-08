@@ -1841,7 +1841,7 @@ function MapView(props: MapViewProps) {
     const added: LeafletLayer[] = [];
     const show = highlight.show ?? new Set<CaseLayer>();
     const area = highlight.area;
-    if (area) {
+    if (area && show.has('focus')) {
       const world: LatLngTuple[] = [
         [-36.5, 136.5],
         [-36.5, 141],
@@ -1857,6 +1857,8 @@ function MapView(props: MapViewProps) {
           pane: 'caseMask',
         }).addTo(map),
       );
+    }
+    if (area) {
       if (show.has('heat')) {
         const def = LAYER_BY_ID['heat-vuln'];
         for (const h of area.heat) {
@@ -4155,7 +4157,7 @@ function clipRing(subject: LatLngTuple[], clip: LatLngTuple[]): LatLngTuple[] {
 }
 
 /** What the case study can draw around the site, each cut to the area. */
-type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'buildings' | 'lines';
+type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'buildings' | 'lines' | 'focus';
 
 interface CaseArea {
   radius: number;
@@ -4488,6 +4490,7 @@ function CaseControls({
     pipes: `${Math.round(r.pipeInSiteM)} m in the grounds`,
     buildings: `${area.buildings.reduce((n, g) => n + g.ids.length, 0)} within ${radius} m`,
     lines: 'To the nearest station, water and heat cell',
+    focus: 'Fades the map outside the area',
   };
   const toggle = (id: CaseLayer) => {
     const next = new Set(show);
@@ -4525,6 +4528,18 @@ function CaseControls({
       </Section>
 
       <Section title="Area shown">
+        <button
+          onClick={() => toggle('focus')}
+          aria-pressed={show.has('focus')}
+          className="mb-2.5 flex w-full items-center gap-2.5 rounded-[4px] border border-line px-3 py-2.5 text-left hover:bg-surface-2"
+        >
+          <IconFocus size={16} className="shrink-0 text-ink-2" />
+          <span className="min-w-0 flex-1">
+            <span className={`block text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
+            <span className="mt-0.5 block text-sm text-ink-3">{detail.focus}</span>
+          </span>
+          <Switch on={show.has('focus')} />
+        </button>
         <div className="flex gap-1.5">
           {TQEH_AREA_OPTIONS.map((m) => (
             <button
@@ -6869,7 +6884,7 @@ export default function App() {
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
-  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['flood100', 'lines']));
+  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['flood100', 'lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
