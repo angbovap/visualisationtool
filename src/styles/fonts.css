@@ -1,5 +1,6 @@
-/* Typeface load for the CoCS Climate Risk Explorer.
-   One family, IBM Plex Sans, for every word and number. Numbers use its
-   tabular figures (see .num in globals.css) so columns still line up
-   without switching to a second typeface. */
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+/* Typeface load for the CoCS Climate Risk Tolerance Tool.
+   Public Sans, the US Web Design System's interface face, drawn from
+   Libre Franklin (the open Franklin Gothic): neutral and institutional.
+   One family for every word and number; numbers use its tabular
+   figures (see .num in globals.css). */
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap');

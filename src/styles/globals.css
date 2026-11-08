@@ -3,7 +3,7 @@
 @import 'leaflet/dist/leaflet.css';
 
 @theme {
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Public Sans', ui-sans-serif, system-ui, sans-serif;
 
   --color-accent: #006E78;
   --color-accent-soft: #E3F1F2;

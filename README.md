@@ -43,7 +43,7 @@ alone with no emit.
   - `tqehSite.json` — The Queen Elizabeth Hospital's grounds, from
     OpenStreetMap (not council data).
 - `src/styles/globals.css` — design tokens; `fonts.css` — the Google Fonts
-  import for IBM Plex Sans (one family for text and numbers).
+  import for Public Sans (one family for text and numbers).
 - `netlify.toml` / `.github/workflows/deploy-pages.yml` — deploy config for
   Netlify and GitHub Pages respectively. Both build with `npm run build`
   and publish `dist`; Pages additionally needs its Source set to
