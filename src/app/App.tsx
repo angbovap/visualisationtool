@@ -1501,7 +1501,12 @@ function MapView(props: MapViewProps) {
         const runs = roadRunsByFlood();
         for (const c of [...PIPE_CLASSES].reverse()) {
           push(L.polyline(runs[c.id], { color: '#fff', weight: 6, opacity: alpha * 0.9, interactive: false }));
-          push(L.polyline(runs[c.id], { color: c.color, weight: 3.6, opacity: alpha, interactive: false }));
+          push(
+            L.polyline(runs[c.id], { color: c.color, weight: 3.6, opacity: alpha }).bindTooltip(
+              `Major road · ${PIPE_CLASS_MEANING[c.id]}`,
+              { sticky: true, direction: 'top', offset: [0, -4] },
+            ),
+          );
         }
       } else {
         // Least important first, so the main roads draw on top.
@@ -1549,8 +1554,7 @@ function MapView(props: MapViewProps) {
             color: c.color,
             weight: c.id === '0' ? 1.1 : 2,
             opacity: vecAlpha('stormwater-pipes') * (c.id === '0' ? 0.75 : 1),
-            interactive: false,
-          }),
+          }).bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] }),
         );
       }
     }
@@ -2048,7 +2052,9 @@ function MapView(props: MapViewProps) {
               color: c.color,
               weight: c.id === '0' ? 1.4 : 2.2,
               opacity: 0.95,
-              interactive: false, pane: 'caseContent' }).addTo(map),
+              pane: 'caseContent' })
+              .bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] })
+              .addTo(map),
           );
         }
       }
@@ -2744,7 +2750,7 @@ function MapLegend({
             if (l.id === 'stormwater-pipes') {
               return (
                 <div key={l.id}>
-                  <div className="text-sm font-medium text-ink">Stormwater pipes, by flood</div>
+                  <div className="text-sm font-medium text-ink">Stormwater pipes: colour shows the flood extent each pipe sits in</div>
                   <LegendScale items={PIPE_CLASSES.map((c) => ({ label: c.label, color: c.color }))} />
                 </div>
               );
@@ -3066,8 +3072,13 @@ function LayersTab({
                   aria-pressed={checked}
                 >
                   <LayerGlyph l={l} />
-                  <span className={`flex-1 truncate text-lg ${checked ? 'font-medium text-ink' : 'text-ink-2'}`}>
-                    {l.name}
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate text-lg ${checked ? 'font-medium text-ink' : 'text-ink-2'}`}>{l.name}</span>
+                    {l.id === 'stormwater-pipes' && (
+                      <span className="mt-1 block">
+                        <PipeKey compact />
+                      </span>
+                    )}
                   </span>
                 </button>
                 <Tip label={l.name} body={l.note} source={l.source} side="left">
@@ -4397,6 +4408,11 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
     const rows = FLOOD_LAYER_IDS.map((id) => ({ id, km: inFlood[FLOOD_RETURN_PERIOD_BY_LAYER[id]] }));
     return (
       <>
+        <Section title="What the colours mean">
+          <PipeKey />
+          <p className="mt-1.5 text-sm text-ink-3">Where a pipe is in more than one extent, it shows the most frequent.</p>
+        </Section>
+        <div className="mt-6" />
         <FigureStrip>
           <Figure label="Network" value={`${Math.round(total)} km`} sub={`${stormwaterPipesData.pipes.toLocaleString('en-AU')} pipe lines`} />
           <Figure label="In 1 in 100 extent" value={`${Math.round(inFlood['1in100'])} km`} sub={`${pct(inFlood['1in100'] / total)} of the network`} />
@@ -6547,6 +6563,31 @@ const PIPE_CLASSES: { id: PipeClass; label: string; color: string }[] = [
   { id: '1', label: 'In the 1 in 100 extent', color: '#EAB308' },
   { id: '0', label: 'Outside every extent', color: '#7DB3E8' },
 ];
+/** What a pipe or road stretch's colour means, said in full. */
+const PIPE_CLASS_MEANING: Record<PipeClass, string> = {
+  '3': 'in the 1 in 5 flood extent',
+  '2': 'in the 1 in 20 flood extent',
+  '1': 'in the 1 in 100 flood extent',
+  '0': 'outside every mapped flood extent',
+};
+
+/** A compact colour key: swatch + label for each flood class. */
+function PipeKey({ compact }: { compact?: boolean }) {
+  return (
+    <div className={compact ? 'flex flex-wrap items-center gap-x-2.5 gap-y-0.5' : 'space-y-1'}>
+      {compact && <span className="text-xs font-medium text-ink-3">Flood extent:</span>}
+      {PIPE_CLASSES.map((c) => (
+        <span key={c.id} className="flex items-center gap-1.5">
+          <span className={`${compact ? 'h-[3px] w-[12px]' : 'h-[4px] w-[18px]'} shrink-0 rounded-full`} style={{ background: c.color }} />
+          <span className={`${compact ? 'text-xs' : 'text-sm'} text-ink-2`}>
+            {compact ? (c.id === '0' ? 'Outside' : c.label.replace('In the ', '').replace(' extent', '')) : `Pipe ${PIPE_CLASS_MEANING[c.id]}`}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Runs of consecutive same-class stretches, optionally only where both
  *  ends pass `keep` (used to cut the network to the TQEH area). */
 function pipeRuns(keep?: (pt: LatLngTuple) => boolean): Record<PipeClass, LatLngTuple[][]> {
