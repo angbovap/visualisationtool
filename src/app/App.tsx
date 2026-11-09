@@ -5188,11 +5188,19 @@ function CaseControls({
 
   return (
     <div className="px-3 py-4">
-      <BackBar onBack={onBack} parent="Case studies" title={name} />
-      <div className="flex justify-end">
-        <button onClick={onGuide} className="text-base font-medium text-accent hover:text-ink">
-          How this works
-        </button>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <BackBar onBack={onBack} parent="Case studies" title={name} />
+        </div>
+        <Tip label="How this works" body="A short guide to this case study." side="left">
+          <button
+            onClick={onGuide}
+            aria-label="How this works"
+            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 hover:bg-surface-2 hover:text-accent"
+          >
+            <IconHelp size={17} />
+          </button>
+        </Tip>
       </div>
 
       <section className="mt-6" data-tour="case-area">
