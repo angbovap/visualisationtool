@@ -999,7 +999,7 @@ function Tip({
           <span
             ref={tipRef}
             role="tooltip"
-            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[3px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[2px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
             style={{ left: xy?.x ?? 0, top: xy?.y ?? 0, visibility: xy ? 'visible' : 'hidden' }}
           >
             <span className="mb-1 block text-base font-semibold text-white">{label}</span>
@@ -1151,7 +1151,7 @@ function Segmented<T extends string | number>({
   dense?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-[2px] rounded-[3px] border border-line bg-surface-2 p-[2px]">
+    <div className="inline-flex items-center gap-[2px] rounded-[2px] border border-line bg-surface-2 p-[2px]">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -1186,14 +1186,14 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
     <div className="mb-3 flex items-center gap-2.5">
       <button
         onClick={onBack}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
         aria-label={`Back to ${parent}`}
       >
         <IconChevron size={14} className="rotate-180" />
       </button>
       <div className="min-w-0">
         <div className="text-xs text-ink-3">{parent}</div>
-        <div className="truncate text-xl font-semibold leading-tight text-ink">{title}</div>
+        <div className="truncate font-serif text-[16px] font-semibold leading-tight text-ink">{title}</div>
       </div>
     </div>
   );
@@ -1218,8 +1218,8 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <span className="flex items-center gap-2 text-xl font-bold text-ink">
-        {color && <span className="h-[14px] w-[3px] shrink-0 rounded-[1px]" style={{ background: color }} />}
+      <span className="flex items-center gap-2 font-serif text-[15.5px] font-semibold text-ink">
+        {color && <span className="h-[7px] w-[7px] shrink-0" style={{ background: color }} />}
         {children}
       </span>
       {right}
@@ -2231,7 +2231,7 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)] hover:bg-surface-2"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[2px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] hover:bg-surface-2"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
@@ -2240,7 +2240,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[2px] bg-white p-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2248,7 +2248,7 @@ function MapView(props: MapViewProps) {
           }}
           aria-label="Minimise map settings"
           title="Minimise"
-          className="flex w-full items-center justify-between rounded-[3px] px-2 py-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
+          className="flex w-full items-center justify-between rounded-[2px] px-2 py-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
         >
           <span className="text-xs font-semibold">Map settings</span>
           <IconChevron size={12} className="-rotate-90" />
@@ -2295,11 +2295,11 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
               >
                 <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] ${open ? 'text-accent' : 'text-ink-2'}`}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] ${open ? 'text-accent' : 'text-ink-2'}`}
                 >
                   <Icon size={16} />
                 </span>
@@ -2310,7 +2310,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[4px] bg-white p-1.5 shadow-[0_2px_6px_rgba(20,32,31,0.22)]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[2px] bg-white p-1.5 border border-[#CFD6D5] shadow-[0_2px_6px_rgba(20,32,31,0.12)]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2323,7 +2323,7 @@ function MapView(props: MapViewProps) {
                           c.onChange(o.value);
                           setOpenControl(null);
                         }}
-                        className={`flex w-full items-center justify-between rounded-[3px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
+                        className={`flex w-full items-center justify-between rounded-[2px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
                       >
                         {o.label}
                         {on && <span className="h-[6px] w-[6px] rounded-full bg-accent" />}
@@ -2338,7 +2338,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
         >
           <span className="flex h-7 w-7 shrink-0 items-center justify-center text-ink-2">
             <IconFocus size={16} />
@@ -2352,7 +2352,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setProbeMode(!probeMode)}
           aria-pressed={probeMode}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
         >
           <span className={`flex h-7 w-7 shrink-0 items-center justify-center ${probeMode ? 'text-accent' : 'text-ink-2'}`}>
             <IconLocate size={16} />
@@ -2372,7 +2372,7 @@ function MapView(props: MapViewProps) {
           speculative scenario row shows here; with neither, no dock. */}
       {(!hideHazards || scenario.scenario !== 'today') && (
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-[4px] bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+        <div className="rounded-[2px] bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
           {!hideHazards && (
           <>
           <div className="flex items-center gap-3 px-3 py-2">
@@ -2420,7 +2420,7 @@ function MapView(props: MapViewProps) {
                         if (o.id !== 'none') setFloodEvent('none');
                       }
                     }}
-                    className={`num flex-1 whitespace-nowrap rounded-[3px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
+                    className={`num flex-1 whitespace-nowrap rounded-[2px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
                     style={on ? (o.id === 'none' ? { background: '#14201F', borderColor: '#14201F' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
                   >
                     {o.label}
@@ -2494,7 +2494,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-[4px] border bg-white px-2.5 py-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]"
+            className="fade-up flex items-center gap-1.5 rounded-[2px] border bg-white px-2.5 py-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: rightPanelAccent }} />
@@ -2506,7 +2506,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[3px] border border-line bg-white/96 p-2 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)] backdrop-blur">
+          <div className="fade-up rounded-[2px] border border-line bg-white/96 p-2 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] backdrop-blur">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2537,16 +2537,16 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-white text-ink-2 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-white text-ink-2 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[4px] bg-white py-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+        <div className="flex w-9 flex-col items-center rounded-[2px] bg-white py-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-7 w-7 items-center justify-center rounded-[3px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
             aria-label="Zoom in"
           >
             <IconPlus size={16} />
@@ -2560,7 +2560,7 @@ function MapView(props: MapViewProps) {
           </div>
           <button
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-7 w-7 items-center justify-center rounded-[3px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
             aria-label="Zoom out"
           >
             <IconMinus size={16} />
@@ -2616,7 +2616,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-[4px] border border-line bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+    <div className="w-[208px] overflow-hidden rounded-[2px] border border-line bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2927,7 +2927,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-[4px] border border-line bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+    <div className="fade-in overflow-hidden rounded-[2px] border border-line bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -3042,9 +3042,9 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-3 overflow-hidden rounded-[4px] border border-dashed border-line">
+          <div className="mx-3 overflow-hidden rounded-[2px] border border-dashed border-line">
             <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <span className="h-[12px] w-[12px] shrink-0 rounded-[3px] bg-[#A7D9C2] opacity-60" />
+              <span className="h-[12px] w-[12px] shrink-0 rounded-[2px] bg-[#A7D9C2] opacity-60" />
               <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
               <span className="text-xs text-ink-3">Not supplied yet</span>
             </div>
@@ -3056,7 +3056,7 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[4px] border border-line">
+        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[2px] border border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
@@ -3135,7 +3135,7 @@ function LayersTab({
                 key={b.id}
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
-                className="group flex w-full items-center gap-3 rounded-[4px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
+                className="group flex w-full items-center gap-3 rounded-[2px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
                 style={on ? { boxShadow: `inset 3px 0 0 ${b.accent}` } : undefined}
               >
                 <span className="shrink-0" style={{ color: b.accent }}>
@@ -3176,7 +3176,7 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className={`group flex flex-col rounded-[4px] border bg-white p-2.5 text-left transition-all hover:border-ink-3 ${pending ? 'border-dashed border-line' : 'border-line'}`}
+                    className={`group flex flex-col rounded-[2px] border bg-white p-2.5 text-left transition-all hover:border-ink-3 ${pending ? 'border-dashed border-line' : 'border-line'}`}
                     style={c.on > 0 ? { borderColor: c.color } : undefined}
                   >
                     <span className="flex items-start justify-between">
@@ -3188,7 +3188,7 @@ function LayersTab({
                       </span>
                       {c.on > 0 && (
                         <span
-                          className="num rounded-[3px] px-1.5 py-[1px] text-2xs font-semibold text-white"
+                          className="num rounded-[2px] px-1.5 py-[1px] text-2xs font-semibold text-white"
                           style={{ background: c.color }}
                         >
                           {c.on} on
@@ -3209,7 +3209,7 @@ function LayersTab({
             <div className="mb-2.5 flex items-center gap-2 px-3">
               <button
                 onClick={() => selectTab(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-[4px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-[2px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
                 aria-label="Back to all layer categories"
               >
                 <IconChevron size={14} className="rotate-180" />
@@ -3247,7 +3247,7 @@ function LayersTab({
                 setDisplayOpen(false);
               }}
               disabled={checkedLayers.size === 0}
-              className="w-full rounded-[4px] border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
+              className="w-full rounded-[2px] border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
             >
               Turn all layers off
             </button>
@@ -3259,7 +3259,7 @@ function LayersTab({
           className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
         >
           <span
-            className={`flex h-7 w-7 items-center justify-center rounded-[4px] ${checkedLayers.size > 0 ? 'bg-accent text-white' : 'bg-surface-2 text-ink-3'}`}
+            className={`flex h-7 w-7 items-center justify-center rounded-[2px] ${checkedLayers.size > 0 ? 'bg-accent text-white' : 'bg-surface-2 text-ink-3'}`}
           >
             <IconLayers size={15} />
           </span>
@@ -3504,7 +3504,7 @@ function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexI
       value={value}
       onChange={(e) => onChange(e.target.value as IndexId)}
       aria-label="Index"
-      className="w-full rounded-[3px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
+      className="w-full rounded-[2px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
     >
       {groups.map((g) => (
         <optgroup key={g} label={g}>
@@ -3618,7 +3618,7 @@ function RoadFindings() {
               key={id}
               onClick={() => set(id)}
               aria-pressed={by === id}
-              className={`flex-1 rounded-[3px] border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+              className={`flex-1 rounded-[2px] border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
             >
               {label}
             </button>
@@ -3844,7 +3844,7 @@ function PlaceTab({
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex min-h-[78px] flex-col justify-between rounded-[4px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
+                className="flex min-h-[78px] flex-col justify-between rounded-[2px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
               >
                 <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
                 <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
@@ -3999,12 +3999,12 @@ function RightPanelShell({
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink-3">{eyebrow}</div>
-          <div className="mt-0.5 text-2xl font-semibold leading-tight text-ink">{title}</div>
+          <div className="mt-0.5 font-serif text-[19px] font-semibold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="-mr-1 mt-[1px] shrink-0 rounded-[3px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+            className="-mr-1 mt-[1px] shrink-0 rounded-[2px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Close"
           >
             <IconClose />
@@ -4117,7 +4117,7 @@ function BlueprintPanel({
             {exposedToFlood && (
               <>
                 <PanelHeading>Buildings inside this flood extent</PanelHeading>
-                <div className="mb-3 rounded-[3px] border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-[2px] border border-line bg-white px-3 py-2.5">
                   <div className="num text-stat font-semibold leading-none text-ink">
                     {exposedToFlood.length} <span className="text-base font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
@@ -4150,7 +4150,7 @@ function BlueprintPanel({
             {heatData && (
               <>
                 <PanelHeading>Buildings by UHI category</PanelHeading>
-                <div className="mb-3 rounded-[3px] border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-[2px] border border-line bg-white px-3 py-2.5">
                   <div className="space-y-1.5">
                     {[...heatData.byCategory.keys()]
                       .sort((a, c) => c - a)
@@ -4159,9 +4159,9 @@ function BlueprintPanel({
                         return (
                           <div key={cat} className="flex items-center gap-2">
                             <span className="w-[80px] shrink-0 text-sm text-ink-2">Category {cat}</span>
-                            <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                            <span className="h-[6px] flex-1 overflow-hidden rounded-[2px] bg-surface-2">
                               <span
-                                className="block h-full rounded-[3px] bg-accent"
+                                className="block h-full rounded-[2px] bg-accent"
                                 style={{ width: `${(list.length / mappedTotal) * 100}%` }}
                               />
                             </span>
@@ -4244,7 +4244,7 @@ function BlueprintPanel({
         )}
 
         <PanelHeading>Layers this turns on</PanelHeading>
-        <div className="divide-y divide-line rounded-[4px] border border-line">
+        <div className="divide-y divide-line rounded-[2px] border border-line">
           {blueprint.layers.map((id) => {
             const l = LAYER_BY_ID[id];
             return (
@@ -4865,7 +4865,7 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
         .join('')
     : '';
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH case study</title>
-<style>body{font:14px/1.5 'Public Sans',system-ui,sans-serif;color:#14201F;max-width:760px;margin:40px auto;padding:0 20px}
+<style>body{font:14px/1.5 'Source Sans 3',system-ui,sans-serif;color:#14201F;max-width:760px;margin:40px auto;padding:0 20px}
 h1{font-size:24px;margin:0}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #E2E7E7;padding-bottom:4px}
 .sub{color:#7E8D8C;margin:4px 0 0}table{width:100%;border-collapse:collapse}
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}
@@ -5025,11 +5025,11 @@ type CaseView = 'hazard' | 'assets' | 'tolerance';
 function StepHeading({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
     <div className="mb-2.5 flex items-start gap-2.5">
-      <span className="num mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] bg-ink text-xs font-semibold text-white">
+      <span className="w-4 shrink-0 font-serif text-[17px] font-semibold leading-tight text-accent">
         {n}
       </span>
       <span className="min-w-0">
-        <span className="block text-xl font-bold leading-tight text-ink">{title}</span>
+        <span className="block font-serif text-[16px] font-semibold leading-tight text-ink">{title}</span>
         {hint && <span className="mt-0.5 block text-sm text-ink-3">{hint}</span>}
       </span>
     </div>
@@ -5052,7 +5052,7 @@ function CaseSwitchRow({
   color?: string;
 }) {
   return (
-    <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2">
+    <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2">
       <CaseGlyph id={id} />
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
@@ -5124,8 +5124,7 @@ function CaseControls({
   const setCount = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
   const group = (ids: CaseLayer[], color?: string) => (
     <div
-      className="divide-y divide-line overflow-hidden rounded-[4px] border border-line"
-      style={color ? { boxShadow: `inset 3px 0 0 ${color}` } : undefined}
+      className="divide-y divide-line border-y border-line"
     >
       {ids.map((id) => (
         <CaseSwitchRow key={id} id={id} label={label(id)} detail={detail[id]} on={show.has(id)} onToggle={() => toggle(id)} color={color} />
@@ -5134,11 +5133,11 @@ function CaseControls({
   );
   const groupLabel = (text: string, color: string, first = false) => (
     <div className={`mb-1 ${first ? '' : 'mt-2.5'} flex items-center gap-1.5 text-sm font-semibold`} style={{ color }}>
-      <span className="h-[8px] w-[8px] rounded-[2px]" style={{ background: color }} />
+      <span className="h-[7px] w-[7px]" style={{ background: color }} />
       {text}
     </div>
   );
-  const linkBtn = 'flex-1 rounded-[3px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
+  const linkBtn = 'flex-1 rounded-[2px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
 
   return (
     <div className="px-3 py-4">
@@ -5152,13 +5151,13 @@ function CaseControls({
 
       <section className="mt-6" data-tour="case-area">
         <StepHeading n={1} title="Set the area" hint="How much of the surroundings to look at" />
-        <div className="flex gap-1.5">
+        <div className="flex divide-x divide-line border border-line">
           {TQEH_AREA_OPTIONS.map((m) => (
             <button
               key={m}
               onClick={() => setRadius(m)}
               aria-pressed={radius === m}
-              className={`num flex-1 rounded-[3px] border px-2 py-1.5 text-base transition-colors ${radius === m ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+              className={`num flex-1 px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-ink font-semibold text-white' : 'text-ink-2 hover:bg-surface-2'}`}
             >
               {m < 1000 ? `${m} m` : `${m / 1000} km`}
             </button>
@@ -5167,7 +5166,7 @@ function CaseControls({
         <button
           onClick={() => toggle('focus')}
           aria-pressed={show.has('focus')}
-          className="mt-2 flex w-full items-center gap-2.5 rounded-[4px] border border-line px-3 py-2 text-left hover:bg-surface-2"
+          className="mt-1 flex w-full items-center gap-2.5 border-b border-line px-1 py-2 text-left hover:bg-surface-2"
         >
           <IconFocus size={16} className="shrink-0 text-ink-2" />
           <span className="min-w-0 flex-1">
@@ -5213,7 +5212,7 @@ function CaseControls({
         <StepHeading n={5} title="Download" hint="Every reading and the tolerance sheet, as one file" />
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="w-full rounded-[3px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#005963]"
+          className="w-full rounded-[2px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#005963]"
         >
           Download report
         </button>
@@ -5258,7 +5257,7 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
     <div
       role="dialog"
       aria-label="Case study guide"
-      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[4px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)]"
+      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[2px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)]"
     >
       <div className="text-base font-semibold text-ink">Would you like a quick guide?</div>
       <p className="mt-0.5 text-sm leading-[1.45] text-ink-2">Six short steps on how this case study works.</p>
@@ -5269,11 +5268,11 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
         <div className="flex gap-1.5">
           <button
             onClick={onNo}
-            className="rounded-[3px] border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
+            className="rounded-[2px] border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
           >
             Not now
           </button>
-          <button onClick={onYes} className="rounded-[3px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#005963]">
+          <button onClick={onYes} className="rounded-[2px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#005963]">
             Show me
           </button>
         </div>
@@ -5349,7 +5348,7 @@ function TqehTab({
       </p>
 
       {/* At a glance: the four readings people ask about first. */}
-      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
+      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
         <Glance
           color={HAZARD_COLOR.flood}
           label="Flood"
@@ -5387,7 +5386,7 @@ function TqehTab({
         <span className="text-sm leading-[1.45] text-ink-3">All readings and the tolerance sheet, as one file.</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-[3px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="shrink-0 rounded-[2px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
         >
           Download report
         </button>
@@ -5398,7 +5397,7 @@ function TqehTab({
 
 function Glance({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
-    <div className="bg-white px-3 py-2.5" style={color ? { boxShadow: `inset 0 3px 0 ${color}` } : undefined}>
+    <div className="bg-white px-1 py-2.5">
       <div className="text-sm font-medium" style={{ color: color ?? '#7E8D8C' }}>
         {label}
       </div>
@@ -5615,13 +5614,13 @@ function TqehTolerance() {
           <button
             onClick={save}
             disabled={!dirty}
-            className="rounded-[3px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+            className="rounded-[2px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
           >
             Save
           </button>
         </div>
       </div>
-      <div className="divide-y divide-line rounded-[4px] border border-line">
+      <div className="divide-y divide-line rounded-[2px] border border-line">
         {CONSEQUENCE_CATEGORIES.map((c) => {
           const isOpen = open === c.name;
           const value = val(draft, c.name, 'tolerance').trim();
@@ -5650,7 +5649,7 @@ function TqehTolerance() {
                         if (e.key === 'Enter' && dirty) save();
                       }}
                       placeholder="Not set"
-                      className="mt-1 block w-full rounded-[3px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
+                      className="mt-1 block w-full rounded-[2px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
                     />
                   </label>
                   <label className="mt-2 block text-sm text-ink-2">
@@ -5659,7 +5658,7 @@ function TqehTolerance() {
                       value={val(draft, c.name, 'notes')}
                       onChange={(e) => update(c.name, 'notes', e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full resize-y rounded-[3px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+                      className="mt-1 block w-full resize-y rounded-[2px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
                     />
                   </label>
                 </div>
@@ -5916,7 +5915,7 @@ function ProbePanel({
         </p>
         {/* Each hazard on an equal footing, then the place, then what's near. */}
         <Section title="Hazards here">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
             <Glance
               color={HAZARD_COLOR.flood}
               label="Flood"
@@ -6229,7 +6228,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-[3px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+          className="flex h-11 w-[56px] items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
           aria-label="Home"
         >
           <IconHome size={21} />
@@ -6248,7 +6247,7 @@ function IconRail({
               <button
                 data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-[3px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-[2px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
                 style={on ? { boxShadow: `inset 3px 0 0 ${ACCENT}` } : undefined}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
@@ -6937,7 +6936,7 @@ function Figure({ label, value, sub }: { label: string; value: React.ReactNode; 
 }
 
 function FigureStrip({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 divide-x divide-line rounded-[4px] border border-line py-3">{children}</div>;
+  return <div className="grid grid-cols-2 divide-x divide-line rounded-[2px] border border-line py-3">{children}</div>;
 }
 
 /** A labelled count with a bar against the largest count in its group. */
@@ -7028,7 +7027,7 @@ function BuildingRow({
 }
 
 function BuildingList({ children }: { children: React.ReactNode }) {
-  return <div className="divide-y divide-line overflow-hidden rounded-[4px] border border-line">{children}</div>;
+  return <div className="divide-y divide-line border-y border-line">{children}</div>;
 }
 
 const READING_VERB: Record<HazardReading['key'], string> = {
@@ -7280,14 +7279,14 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           <button
             onClick={() => setOffTypes(() => new Set())}
             disabled={offTypes.size === 0}
-            className="rounded-[3px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-[2px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Show all
           </button>
           <button
             onClick={() => setOffTypes(() => new Set(ALL_BUILDING_TYPES))}
             disabled={onCount === 0}
-            className="rounded-[3px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-[2px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Hide all
           </button>
@@ -7299,7 +7298,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           const isUnclassified = use.key === UNCLASSIFIED;
           const usedOn = use.types.filter((t) => !offTypes.has(t.key)).length;
           return (
-            <div key={use.key} className="rounded-[4px] border border-line">
+            <div key={use.key} className="rounded-[2px] border border-line">
               {/* Category row: its switch turns the whole group on or off. */}
               <button
                 onClick={() => toggleUse(use)}
@@ -7357,7 +7356,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
-        <div className="fade-up mt-1 rounded-[3px] border border-line bg-surface-2 px-2 py-1.5">
+        <div className="fade-up mt-1 rounded-[2px] border border-line bg-surface-2 px-2 py-1.5">
           <p className="mb-1 text-2xs leading-[1.45] text-ink-3">
             In the same export, not classed as buildings, so kept
             out of the toggle list above rather than folded in.
@@ -7466,7 +7465,7 @@ function RealBuildingsRegister({
                 setListScope(null);
               }}
               aria-label="Ward"
-              className="rounded-[3px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
+              className="rounded-[2px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
             >
               <option value="">Whole LGA ({REAL_BUILDINGS.length})</option>
               {REAL_WARDS.map((w) => (
@@ -7479,7 +7478,7 @@ function RealBuildingsRegister({
         >
           Overview
         </PanelHeading>
-        <div className="grid grid-cols-2 divide-x divide-line rounded-[4px] border border-line py-3">
+        <div className="grid grid-cols-2 divide-x divide-line rounded-[2px] border border-line py-3">
           <div className="px-3">
             <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
@@ -7530,7 +7529,7 @@ function RealBuildingsRegister({
                     icon: IconGauge,
                     // The register's own rating mix, in its own colours.
                     sub: (
-                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[3px] bg-surface-2">
+                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[2px] bg-surface-2">
                         {conditionRows.map((r) => (
                           <span key={r.label} style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }} />
                         ))}
@@ -7551,7 +7550,7 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex flex-col rounded-[4px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
+                    className="flex flex-col rounded-[2px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
                   >
                     <span
                       className="flex h-6 items-center"
@@ -7571,16 +7570,16 @@ function RealBuildingsRegister({
         {view === 'condition' && (
           <div>
             <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
-            <div className="rounded-[4px] border border-line p-3">
+            <div className="rounded-[2px] border border-line p-3">
               <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
               <div className="space-y-2.5">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
                     <span className="h-[8px] w-[8px] shrink-0 rounded-[2px]" style={{ background: r.color }} />
                     <span className="w-[112px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-                    <span className="h-[6px] flex-1 overflow-hidden rounded-[3px] bg-surface-2">
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[2px] bg-surface-2">
                       <span
-                        className="block h-full rounded-[3px]"
+                        className="block h-full rounded-[2px]"
                         style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
                       />
                     </span>
@@ -7600,7 +7599,7 @@ function RealBuildingsRegister({
               fitout or meter.
             </p>
             <PanelHeading>Register dates</PanelHeading>
-            <div className="mb-4 space-y-1 rounded-[4px] border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+            <div className="mb-4 space-y-1 rounded-[2px] border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
               <div>
                 Last modified{' '}
                 <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -7630,7 +7629,7 @@ function RealBuildingsRegister({
             >
               Map coverage
             </PanelHeading>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[4px] border border-line px-3 py-2.5 text-sm text-ink-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[2px] border border-line px-3 py-2.5 text-sm text-ink-3">
               <span className="flex items-center gap-1.5">
                 <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
                 {preciseCount} precise
@@ -7660,7 +7659,7 @@ function RealBuildingsRegister({
                 <div className="space-y-1">
                   <button
                     onClick={() => selectListScope('all')}
-                    className="flex w-full items-center justify-between rounded-[3px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                    className="flex w-full items-center justify-between rounded-[2px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                   >
                     <span className="text-sm font-medium text-ink">
                       All {scoped.length} buildings
@@ -7676,7 +7675,7 @@ function RealBuildingsRegister({
                         <button
                           key={use.key}
                           onClick={() => selectListScope(use.key)}
-                          className="flex items-center gap-1 rounded-[3px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
+                          className="flex items-center gap-1 rounded-[2px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
                         >
                           <span className="text-sm font-medium text-ink">
                             {isUnclassified ? 'Not yet classified' : use.label}
@@ -7877,7 +7876,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
       onClick={onClose}
     >
       <div
-        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[4px] border border-line bg-white shadow-[0_4px_14px_rgba(20,32,31,0.28)]"
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[2px] border border-line bg-white shadow-[0_4px_14px_rgba(20,32,31,0.28)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -7890,7 +7889,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
             placeholder="Search suburbs, layers or buildings"
             className="flex-1 bg-transparent text-lg text-ink outline-none placeholder:text-ink-3"
           />
-          <span className="num rounded-[4px] border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
+          <span className="num rounded-[2px] border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
         </div>
 
         <div className="thin-scroll max-h-[360px] overflow-y-auto py-1">
@@ -7954,7 +7953,7 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         />
         <div className="landing-in mt-6 h-px w-10 bg-line" style={{ animationDelay: '80ms' }} />
         <div
-          className="landing-in mt-6 text-display font-semibold leading-tight text-ink"
+          className="landing-in mt-6 font-serif text-display font-semibold leading-tight text-ink"
           style={{ animationDelay: '140ms' }}
         >
           CoCS Climate Risk Tolerance Tool
@@ -7976,19 +7975,19 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         >
           <button
             onClick={onGuide}
-            className="w-full rounded-[3px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#005963]"
+            className="w-full rounded-[2px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#005963]"
           >
             Take the guide
           </button>
           <button
             onClick={onSkip}
-            className="w-full rounded-[3px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-[2px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View the tool
           </button>
           <button
             onClick={onCases}
-            className="w-full rounded-[3px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-[2px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View case studies
           </button>
@@ -8075,7 +8074,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       <div className="fixed inset-0" onClick={(e) => e.stopPropagation()} />
       {rect && (
         <div
-          className="pointer-events-none fixed rounded-[4px] transition-all duration-200"
+          className="pointer-events-none fixed rounded-[2px] transition-all duration-200"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
@@ -8089,7 +8088,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       )}
       <div
         ref={cardRef}
-        className="fixed rounded-[4px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)] transition-all duration-200"
+        className="fixed rounded-[2px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)] transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
         <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {steps.length}</div>
@@ -8103,14 +8102,14 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
             {step > 0 && (
               <button
                 onClick={() => setStep((v) => v - 1)}
-                className="rounded-[3px] border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
+                className="rounded-[2px] border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
               >
                 Back
               </button>
             )}
             <button
               onClick={() => (step < steps.length - 1 ? setStep((v) => v + 1) : onDone())}
-              className="rounded-[3px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#005963]"
+              className="rounded-[2px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#005963]"
             >
               {step < steps.length - 1 ? 'Next' : 'Done'}
             </button>
@@ -8434,13 +8433,13 @@ export default function App() {
       <section data-tour="left-panel" className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="text-2xl font-semibold leading-tight text-ink">{meta.title}</div>
+            <div className="font-serif text-[20px] font-semibold leading-tight text-ink">{meta.title}</div>
             <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
             aria-label="Take the guide"
             title="Take the guide"
           >
@@ -8451,11 +8450,11 @@ export default function App() {
         <div className="border-b border-line px-2.5 py-2">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2 rounded-[3px] border border-line bg-surface-2 px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent hover:text-ink-2"
+            className="flex w-full items-center gap-2 rounded-[2px] border border-line bg-surface-2 px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent hover:text-ink-2"
           >
             <IconSearch size={14} className="shrink-0" />
             <span className="flex-1">Search suburbs, layers, buildings</span>
-            <span className="num rounded-[4px] border border-line bg-white px-1.5 text-2xs">/</span>
+            <span className="num rounded-[2px] border border-line bg-white px-1.5 text-2xs">/</span>
           </button>
         </div>
 
