@@ -1925,7 +1925,7 @@ function MapView(props: MapViewProps) {
         const loc = BUILDING_LOCATION[b.id];
         push(
           L.circleMarker([loc.lat, loc.lng], { radius: 4.5, color: '#fff', weight: 1.3, fillColor: '#7F1D1D', fillOpacity: 1 })
-            .bindTooltip(`${b.name} · heat category ${heatEvent}`, { direction: 'top', offset: [0, -4] }),
+            .bindTooltip(`${b.name} · UHI category ${heatEvent}`, { direction: 'top', offset: [0, -4] }),
         );
       }
     }
@@ -2443,7 +2443,7 @@ function MapView(props: MapViewProps) {
                 ['Average SVI', v.sviAvg.toFixed(2), 'of these cells'],
                 ['Of heat grid', pct(v.gridKm2 ? v.areaKm2 / v.gridKm2 : 0), 'by area'],
               ];
-              note = `Heat category ${heatEvent} of 2 to 4. The heat grid covers about ${v.gridKm2.toFixed(1)} km² of the council's ${LGA_BOUNDARY.areaSqKm.toFixed(0)} km², so areas outside it read as no data, not as cool.`;
+              note = `UHI category ${heatEvent}. The heat grid covers about ${v.gridKm2.toFixed(1)} km² of the council's ${LGA_BOUNDARY.areaSqKm.toFixed(0)} km², so areas outside it read as no data, not as cool.`;
             }
             if (!cells) return null;
             return (
@@ -2623,7 +2623,7 @@ function MapLegend({
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
           {heatEvent !== 'none' && (
             <div className="space-y-1">
-              <div className="text-sm font-medium text-ink">Heat, category {heatEvent} cells</div>
+              <div className="text-sm font-medium text-ink">Heat, UHI category {heatEvent}</div>
               <div className="flex items-center gap-2">
                 <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
                   <rect
@@ -2636,7 +2636,7 @@ function MapLegend({
                     strokeWidth="0.6"
                   />
                 </svg>
-                <span className="text-sm text-ink-2">Heat cell, category {heatEvent}</span>
+                <span className="text-sm text-ink-2">UHI category {heatEvent} cell</span>
               </div>
               <div className="flex items-center gap-2">
                 <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
@@ -4962,9 +4962,9 @@ const CASE_LAYER_DEFS: { id: CaseLayer; label: string }[] = [
   { id: 'flood100', label: 'Flood 1 in 100 (long-term)' },
   { id: 'flood20', label: 'Flood 1 in 20 (long-term)' },
   { id: 'flood5', label: 'Flood 1 in 5 (long-term)' },
-  { id: 'heat4', label: 'Heat category 4 (hottest)' },
-  { id: 'heat3', label: 'Heat category 3' },
-  { id: 'heat2', label: 'Heat category 2 (coolest in the grid)' },
+  { id: 'heat4', label: 'UHI category 4' },
+  { id: 'heat3', label: 'UHI category 3' },
+  { id: 'heat2', label: 'UHI category 2' },
   { id: 'pipes', label: 'Stormwater pipes' },
   { id: 'roads', label: 'Major roads' },
   { id: 'buildings', label: 'Council buildings' },
@@ -5040,7 +5040,6 @@ function CaseSwitchRow({
       <CaseGlyph id={id} />
       <span className="min-w-0 flex-1">
         <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
-        <span className="num block truncate text-sm text-ink-3">{detail}</span>
       </span>
       <Switch on={on} color={color} />
     </button>
@@ -5157,14 +5156,13 @@ function CaseControls({
           <IconFocus size={16} className="shrink-0 text-ink-2" />
           <span className="min-w-0 flex-1">
             <span className={`block text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
-            <span className="block text-sm text-ink-3">{detail.focus}</span>
           </span>
           <Switch on={show.has('focus')} />
         </button>
       </section>
 
       <section className="mt-6" data-tour="case-layers">
-        <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
+        <StepHeading n={2} title="Choose what's on the map" />
         <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
         {groupLabel('Flood', HAZARD_COLOR.flood, true)}
         {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
@@ -5234,7 +5232,7 @@ const CASE_TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="case-layers"]',
     placement: 'right',
     title: "2. Choose what's on the map",
-    body: 'Hazards first: flood extents and heat cells by category (4 hottest to 2). Then assets and infrastructure (roads, pipes, council buildings), then the distance lines. Each switch shows its figure for the site.',
+    body: 'Hazards first: flood extents and UHI categories 4, 3 and 2. Then assets and infrastructure (roads, pipes, council buildings), then the distance lines.',
   },
   {
     selector: '[data-tour="map"]',
@@ -5702,9 +5700,9 @@ function eventView(e: Exclude<FloodEvent, 'none'>): EventView {
 /* Heat categories as the second hazard scenario: the grid's own classes. */
 type HeatEvent = 'none' | '4' | '3' | '2';
 const HEAT_EVENTS: { id: Exclude<HeatEvent, 'none'>; label: string; cat: number }[] = [
-  { id: '4', label: 'Category 4', cat: 4 },
-  { id: '3', label: 'Category 3', cat: 3 },
-  { id: '2', label: 'Category 2', cat: 2 },
+  { id: '4', label: 'UHI 4', cat: 4 },
+  { id: '3', label: 'UHI 3', cat: 3 },
+  { id: '2', label: 'UHI 2', cat: 2 },
 ];
 function ringAreaM2(ring: LatLngTuple[]): number {
   const kx = M_PER_DEG * Math.cos((ring[0][0] * Math.PI) / 180);
