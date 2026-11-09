@@ -7977,6 +7977,13 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
     };
   }, [step, steps]);
 
+  // Esc skips the guide from any step.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onDone();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onDone]);
+
   const s = steps[step];
   const pad = 6;
   const calloutWidth = 260;
@@ -8020,8 +8027,8 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
         <div className="text-base font-semibold text-ink">{s.title}</div>
         <p className="mt-1 text-sm leading-[1.5] text-ink-2">{s.body}</p>
         <div className="mt-3 flex items-center justify-between">
-          <button onClick={onDone} className="text-xs text-ink-3 transition-colors hover:text-ink">
-            Skip
+          <button onClick={onDone} className="text-sm font-medium text-ink-2 underline decoration-dotted transition-colors hover:text-ink">
+            Skip guide
           </button>
           <div className="flex gap-1.5">
             {step > 0 && (
@@ -8286,6 +8293,8 @@ export default function App() {
     if (id) {
       setFloodEvent('none');
       setHeatEvent('none');
+      // The case guide always opens with the case; Skip closes it.
+      setScreen('caseTour');
     }
     const c = CASE_STUDIES.find((x) => x.id === id);
     if (c) {
