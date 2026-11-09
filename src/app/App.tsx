@@ -2171,6 +2171,7 @@ function MapView(props: MapViewProps) {
           and boundaries open a menu beside their row; Focus is a switch. */}
       {!controlsOpen && (
         <button
+          data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
           className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)] hover:bg-surface-2"
@@ -2182,7 +2183,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
         <div className="flex items-center justify-between px-2 pb-0.5 pt-1">
           <span className="text-xs font-semibold text-ink-3">Map settings</span>
           <button
@@ -2312,7 +2313,7 @@ function MapView(props: MapViewProps) {
 
       {/* Scenario dock: the flood event to show, its reach, and the
           speculative climate scenario when one is on. */}
-      <div className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
+      <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
         <div className="rounded-[4px] bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
           <div className="flex items-center gap-3 px-3 py-2">
             <span className="shrink-0 text-sm font-semibold text-ink">Flood event</span>
@@ -4755,6 +4756,8 @@ function CasesTab({
   setShow,
   radius,
   setRadius,
+  setView,
+  onGuide,
 }: {
   caseId: CaseId | null;
   setCaseId: (id: CaseId | null) => void;
@@ -4762,6 +4765,8 @@ function CasesTab({
   setShow: (v: Set<CaseLayer>) => void;
   radius: TqehRadius;
   setRadius: (v: TqehRadius) => void;
+  setView: (v: CaseView) => void;
+  onGuide: () => void;
 }) {
   const c = CASE_STUDIES.find((x) => x.id === caseId);
   if (!c) {
@@ -4799,6 +4804,8 @@ function CasesTab({
       setShow={setShow}
       radius={radius}
       setRadius={setRadius}
+      setView={setView}
+      onGuide={onGuide}
     />
   );
 }
@@ -4838,8 +4845,51 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   );
 }
 
-/** Left panel for an open case: what to draw around the site, how far
- *  around, and the site's own facts. The report itself sits on the right. */
+type CaseView = 'hazard' | 'assets' | 'tolerance';
+
+/** A numbered step heading, so the case reads top to bottom in the order
+ *  you use it. */
+function StepHeading({ n, title, hint }: { n: number; title: string; hint?: string }) {
+  return (
+    <div className="mb-2.5 flex items-start gap-2.5">
+      <span className="num mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-[3px] bg-ink text-xs font-semibold text-white">
+        {n}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xl font-bold leading-tight text-ink">{title}</span>
+        {hint && <span className="mt-0.5 block text-sm text-ink-3">{hint}</span>}
+      </span>
+    </div>
+  );
+}
+
+function CaseSwitchRow({
+  id,
+  label,
+  detail,
+  on,
+  onToggle,
+}: {
+  id: CaseLayer;
+  label: string;
+  detail: string;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2">
+      <CaseGlyph id={id} />
+      <span className="min-w-0 flex-1">
+        <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
+        <span className="num block truncate text-sm text-ink-3">{detail}</span>
+      </span>
+      <Switch on={on} />
+    </button>
+  );
+}
+
+/** Left panel for an open case, in the order it's used: set the area,
+ *  choose what's drawn, then the report steps on the right. */
 function CaseControls({
   onBack,
   name,
@@ -4847,6 +4897,8 @@ function CaseControls({
   setShow,
   radius,
   setRadius,
+  setView,
+  onGuide,
 }: {
   onBack: () => void;
   name: string;
@@ -4854,9 +4906,12 @@ function CaseControls({
   setShow: (v: Set<CaseLayer>) => void;
   radius: TqehRadius;
   setRadius: (v: TqehRadius) => void;
+  setView: (v: CaseView) => void;
+  onGuide: () => void;
 }) {
   const r = tqehReading();
   const area = tqehArea(radius);
+  const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const share = (id: FloodLayerId) => r.flood.find((f) => f.id === id)!.share;
   const detail: Record<CaseLayer, string> = {
     flood100: `${pct(share('flood-1in100-real'))} of the grounds`,
@@ -4879,48 +4934,31 @@ function CaseControls({
     else next.add(id);
     setShow(next);
   };
+  // The group heading already says long-term, so the rows don't repeat it.
+  const label = (id: CaseLayer) => CASE_LAYER_DEFS.find((d) => d.id === id)!.label.replace(' (long-term)', '');
+  const sheet = typeof window === 'undefined' ? {} : loadTolerance();
+  const setCount = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
+  const group = (ids: CaseLayer[]) => (
+    <div className="divide-y divide-line overflow-hidden rounded-[4px] border border-line">
+      {ids.map((id) => (
+        <CaseSwitchRow key={id} id={id} label={label(id)} detail={detail[id]} on={show.has(id)} onToggle={() => toggle(id)} />
+      ))}
+    </div>
+  );
+  const linkBtn = 'flex-1 rounded-[3px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
 
   return (
     <div className="px-3 py-4">
       <BackBar onBack={onBack} parent="Case studies" title={name} />
-      <p className="text-base leading-[1.55] text-ink-2">The report is on the right. Choose what to draw around the site here.</p>
-
-      <Section title="Show around the site">
-        <div className="divide-y divide-line overflow-hidden rounded-[4px] border border-line">
-          {CASE_LAYER_DEFS.map((d) => {
-            const on = show.has(d.id);
-            return (
-              <button
-                key={d.id}
-                onClick={() => toggle(d.id)}
-                aria-pressed={on}
-                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-surface-2"
-              >
-                <CaseGlyph id={d.id} />
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{d.label}</span>
-                  <span className="num mt-0.5 block truncate text-sm text-ink-3">{detail[d.id]}</span>
-                </span>
-                <Switch on={on} />
-              </button>
-            );
-          })}
-        </div>
-      </Section>
-
-      <Section title="Area shown">
-        <button
-          onClick={() => toggle('focus')}
-          aria-pressed={show.has('focus')}
-          className="mb-2.5 flex w-full items-center gap-2.5 rounded-[4px] border border-line px-3 py-2.5 text-left hover:bg-surface-2"
-        >
-          <IconFocus size={16} className="shrink-0 text-ink-2" />
-          <span className="min-w-0 flex-1">
-            <span className={`block text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
-            <span className="mt-0.5 block text-sm text-ink-3">{detail.focus}</span>
-          </span>
-          <Switch on={show.has('focus')} />
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-base leading-[1.5] text-ink-2">Work down the steps. The report opens on the right.</p>
+        <button onClick={onGuide} className="shrink-0 text-base font-medium text-accent hover:text-ink">
+          How this works
         </button>
+      </div>
+
+      <section className="mt-6" data-tour="case-area">
+        <StepHeading n={1} title="Set the area" hint="How much of the surroundings to look at" />
         <div className="flex gap-1.5">
           {TQEH_AREA_OPTIONS.map((m) => (
             <button
@@ -4933,33 +4971,129 @@ function CaseControls({
             </button>
           ))}
         </div>
-      </Section>
+        <button
+          onClick={() => toggle('focus')}
+          aria-pressed={show.has('focus')}
+          className="mt-2 flex w-full items-center gap-2.5 rounded-[4px] border border-line px-3 py-2 text-left hover:bg-surface-2"
+        >
+          <IconFocus size={16} className="shrink-0 text-ink-2" />
+          <span className="min-w-0 flex-1">
+            <span className={`block text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
+            <span className="block text-sm text-ink-3">{detail.focus}</span>
+          </span>
+          <Switch on={show.has('focus')} />
+        </button>
+      </section>
 
-      <Section title="About the site">
-        <dl className="divide-y divide-line">
+      <section className="mt-6" data-tour="case-layers">
+        <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
+        <div className="mb-1 text-sm font-semibold text-ink-2">Flood extents (long-term)</div>
+        {group(['flood100', 'flood20', 'flood5'])}
+        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Around the site</div>
+        {group(['roads', 'pipes', 'heat', 'buildings', 'lines'])}
+      </section>
+
+      <section className="mt-6" data-tour="case-report-steps">
+        <StepHeading n={3} title="Read the report" hint="Opens that part of the report on the right" />
+        <div className="flex gap-1.5">
+          <button onClick={() => setView('hazard')} className={linkBtn}>
+            Hazard
+          </button>
+          <button onClick={() => setView('assets')} className={linkBtn}>
+            Assets
+          </button>
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <StepHeading n={4} title="Record risk tolerance" hint={`${setCount} of ${CONSEQUENCE_CATEGORIES.length} categories set`} />
+        <button onClick={() => setView('tolerance')} className={`${linkBtn} w-full`}>
+          Open the tolerance sheet
+        </button>
+      </section>
+
+      <section className="mt-6">
+        <StepHeading n={5} title="Download" hint="Every reading and the tolerance sheet, as one file" />
+        <button
+          onClick={() => downloadTqehReport(r, scenarioSel)}
+          className="w-full rounded-[3px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#005963]"
+        >
+          Download report
+        </button>
+      </section>
+
+      <details className="group mt-6 border-t border-line pt-3">
+        <summary className="flex cursor-pointer list-none items-center justify-between text-base font-medium text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
+          About the site
+          <IconChevron size={13} className="transition-transform group-open:rotate-90" />
+        </summary>
+        <dl className="mt-1 divide-y divide-line">
           <FactRow label="Address" value="Woodville Road, Woodville South" />
           {r.suburb && <FactRow label="SA2" value={r.suburb.name} />}
           <FactRow label="Grounds" value={`${siteHectares().toFixed(1)} ha`} />
           <FactRow label="Operator" value="State health service, not a council asset" />
           <FactRow label="Outline" value="OpenStreetMap (amenity=hospital)" />
         </dl>
-      </Section>
+      </details>
     </div>
   );
 }
+
+/** The case study guide: the five steps, pointed out where they are. */
+const CASE_TOUR_STEPS: TourStep[] = [
+  {
+    selector: '[data-tour="case-area"]',
+    placement: 'right',
+    title: '1. Set the area',
+    body: 'Pick how far around the hospital to look: 400 m, 600 m or 1 km. The map fits to it, and Focus fades everything outside.',
+  },
+  {
+    selector: '[data-tour="case-layers"]',
+    placement: 'right',
+    title: "2. Choose what's on the map",
+    body: 'Switch flood extents, roads, pipes, heat cells, council buildings and distance lines on or off. Each switch shows its figure for the site.',
+  },
+  {
+    selector: '[data-tour="map"]',
+    placement: 'top',
+    title: 'The map',
+    body: 'Only the chosen area is drawn. Hover a road or heat cell for its detail, or click a council building to open its profile.',
+  },
+  {
+    selector: '[data-tour="case-glance"]',
+    placement: 'left',
+    title: '3. Read the report',
+    body: 'The headline readings for the site. Below them, the Hazard and Assets tabs hold the detail.',
+  },
+  {
+    selector: '[data-tour="case-tabs"]',
+    placement: 'left',
+    title: '4. Record risk tolerance',
+    body: "The Risk tolerance tab lists council's seven consequence categories. Click one to record the tolerance agreed for this site.",
+  },
+  {
+    selector: '[data-tour="case-download"]',
+    placement: 'left',
+    title: '5. Download',
+    body: 'Saves every reading and the tolerance sheet as one report file you can print or share.',
+  },
+];
 
 function TqehTab({
   showLayers,
   onOpenBuilding,
   onOpenBuildings,
   onOpenSuburb,
+  view,
+  setView,
 }: {
   showLayers: (ids: string[]) => void;
   onOpenBuilding: (id: string) => void;
   onOpenBuildings: (ids: string[]) => void;
   onOpenSuburb: (id: string) => void;
+  view: CaseView;
+  setView: (v: CaseView) => void;
 }) {
-  const [view, setView] = useState<'hazard' | 'assets' | 'tolerance'>('hazard');
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
   const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
@@ -4972,7 +5106,7 @@ function TqehTab({
       </p>
 
       {/* At a glance: the four readings people ask about first. */}
-      <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
+      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
         <Glance
           label="Flood"
           value={inside ? `${pct(inside.share)} of grounds` : 'Outside'}
@@ -4987,7 +5121,7 @@ function TqehTab({
         <Glance label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6" data-tour="case-tabs">
         <TabStrip
           value={view}
           onChange={setView}
@@ -5004,7 +5138,7 @@ function TqehTab({
       )}
       {view === 'tolerance' && <TqehTolerance />}
 
-      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
+      <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-sm leading-[1.45] text-ink-3">All readings and the tolerance sheet, as one file.</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
@@ -5781,6 +5915,7 @@ function IconRail({
             {separator && <div className="my-1.5 h-px w-8 bg-line" />}
             <Tip label={meta.title} body={meta.subtitle}>
               <button
+                data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
                 className={`flex w-[56px] flex-col items-center gap-1 rounded-[3px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
                 style={on ? { boxShadow: `inset 3px 0 0 ${ACCENT}` } : undefined}
@@ -7233,30 +7368,55 @@ function RealBuildingsRegister({
  *  this order. Not a modal describing the tool, an actual spotlight over
  *  the real rail, panel, map and info button as the person lands on them,
  *  so "how do I use this" gets answered by the interface itself. */
-const TOUR_STEPS: { selector: string; placement: 'right' | 'top' | 'left'; title: string; body: string }[] = [
+interface TourStep {
+  selector: string;
+  placement: 'right' | 'top' | 'left';
+  title: string;
+  body: string;
+}
+
+const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="rail"]',
     placement: 'right',
-    title: 'Switch tabs here',
-    body: 'Layers, Assets, Place, Case studies and Help. The map and the right panel both respond to whichever one is active.',
+    title: 'Five tabs',
+    body: 'Layers to put data on the map, Assets for the council buildings register, Place to compare suburbs, Cases for site reports, and Help.',
   },
   {
     selector: '[data-tour="left-panel"]',
     placement: 'right',
-    title: 'Turn on a layer',
-    body: 'Apply a Blueprint for a ready-made set, or browse by category and switch layers on one at a time.',
+    title: 'Turn on layers',
+    body: 'Apply a Blueprint for a ready-made set, or open a category and switch layers on one at a time. Each layer opens its findings on the right.',
   },
   {
     selector: '[data-tour="map"]',
     placement: 'top',
-    title: 'Click into the map',
-    body: 'Click a suburb for the buildings inside it, or a building dot for its register detail.',
+    title: 'Explore the map',
+    body: 'Click a suburb for its buildings, or a building dot for its profile. The legend in the bottom left explains whatever is on.',
+  },
+  {
+    selector: '[data-tour="flood-dock"]',
+    placement: 'top',
+    title: 'Try a flood event',
+    body: 'Pick 1 in 100, 1 in 20 or 1 in 5 to see that flood and what it reaches: council buildings, roads, pipes and the share of the council area.',
+  },
+  {
+    selector: '[data-tour="map-settings"]',
+    placement: 'left',
+    title: 'Map settings',
+    body: 'Basemap, boundaries and the speculative climate scenario. Inspect a point lets you click anywhere and read that spot from every layer. Minimise this card when it is in the way.',
+  },
+  {
+    selector: '[data-tour="rail-cases"]',
+    placement: 'right',
+    title: 'Case studies',
+    body: 'Worked site reports, starting with The Queen Elizabeth Hospital. Each one has its own short guide.',
   },
   {
     selector: '[data-tour="info"]',
     placement: 'left',
     title: 'Come back anytime',
-    body: 'This button restarts this same guide whenever you need it.',
+    body: 'This button restarts the guide whenever you need it.',
   },
 ];
 
@@ -7477,25 +7637,29 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
  *  except the live DOM element each step points at, recomputing its
  *  position on every step and on resize so the highlight always sits on
  *  the actual rail, panel, map or button, not a guess at where it is. */
-function GuideTour({ onDone }: { onDone: () => void }) {
+function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?: TourStep[] }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const measure = () => {
-      const el = document.querySelector(TOUR_STEPS[step].selector);
+      const el = document.querySelector(steps[step].selector);
       setRect(el ? el.getBoundingClientRect() : null);
     };
     measure();
+    const t = window.setTimeout(measure, 250);
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [step]);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('resize', measure);
+    };
+  }, [step, steps]);
 
-  const s = TOUR_STEPS[step];
+  const s = steps[step];
   const pad = 6;
   const calloutWidth = 260;
 
-  let calloutStyle: React.CSSProperties = { top: 16, left: 16 };
+  let calloutStyle: React.CSSProperties = { top: '40%', left: 'calc(50% - 130px)' };
   if (rect) {
     if (s.placement === 'right') {
       calloutStyle = { top: rect.top, left: rect.right + 16 };
@@ -7530,7 +7694,7 @@ function GuideTour({ onDone }: { onDone: () => void }) {
         className="fixed rounded-[4px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)] transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
-        <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {TOUR_STEPS.length}</div>
+        <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {steps.length}</div>
         <div className="text-base font-semibold text-ink">{s.title}</div>
         <p className="mt-1 text-sm leading-[1.5] text-ink-2">{s.body}</p>
         <div className="mt-3 flex items-center justify-between">
@@ -7547,10 +7711,10 @@ function GuideTour({ onDone }: { onDone: () => void }) {
               </button>
             )}
             <button
-              onClick={() => (step < TOUR_STEPS.length - 1 ? setStep((v) => v + 1) : onDone())}
+              onClick={() => (step < steps.length - 1 ? setStep((v) => v + 1) : onDone())}
               className="rounded-[3px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#005963]"
             >
-              {step < TOUR_STEPS.length - 1 ? 'Next' : 'Done'}
+              {step < steps.length - 1 ? 'Next' : 'Done'}
             </button>
           </div>
         </div>
@@ -7585,6 +7749,7 @@ export default function App() {
   const [caseId, setCaseId] = useState<CaseId | null>(null);
   const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['flood100', 'lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
+  const [caseView, setCaseView] = useState<CaseView>('hazard');
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
   );
@@ -7597,7 +7762,7 @@ export default function App() {
   // auto-triggered popup gated on remembering a past visit: 'landing'
   // shows first and always, so the orientation is never skipped just
   // because some earlier visit set a flag.
-  const [screen, setScreen] = useState<'landing' | 'tour' | null>('landing');
+  const [screen, setScreen] = useState<'landing' | 'tour' | 'caseTour' | null>('landing');
   const [searchOpen, setSearchOpen] = useState(false);
   // A building picked from search, labelled on its own once Place opens
   // its suburb, rather than every building in that suburb.
@@ -7929,6 +8094,8 @@ export default function App() {
               setShow={setCaseShow}
               radius={caseRadius}
               setRadius={setCaseRadius}
+              setView={setCaseView}
+              onGuide={() => setScreen('caseTour')}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -7949,6 +8116,7 @@ export default function App() {
           />
         )}
         {screen === 'tour' && <GuideTour onDone={() => setScreen(null)} />}
+        {screen === 'caseTour' && <GuideTour steps={CASE_TOUR_STEPS} onDone={() => setScreen(null)} />}
         {searchOpen && <SearchPalette onPick={handleSearchPick} onClose={() => setSearchOpen(false)} />}
       </section>
 
@@ -8017,6 +8185,8 @@ export default function App() {
               onOpenBuilding={openBuilding}
               onOpenBuildings={openBuildings}
               onOpenSuburb={handleSelectSuburb}
+              view={caseView}
+              setView={setCaseView}
             />
           </div>
         </RightPanelShell>
