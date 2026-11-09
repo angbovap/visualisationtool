@@ -1272,6 +1272,8 @@ interface MapViewProps {
   setProbeMode: (v: boolean) => void;
   onProbe: (lat: number, lng: number) => void;
   probePoint: { lat: number; lng: number } | null;
+  /** Hide the dock's hazard picker (a case study has its own). */
+  hideHazards: boolean;
 }
 
 interface SuburbShade {
@@ -1315,6 +1317,7 @@ function MapView(props: MapViewProps) {
     setProbeMode,
     onProbe,
     probePoint,
+    hideHazards,
   } = props;
   // Read from inside the map's own click handler, set up once.
   const probeRef = useRef({ probeMode, onProbe });
@@ -2343,8 +2346,13 @@ function MapView(props: MapViewProps) {
 
       {/* Scenario dock: a flood or heat scenario to play out, what it
           reaches, and the speculative climate scenario when one is on. */}
+      {/* In a case study the left panel picks the hazards, so only the
+          speculative scenario row shows here; with neither, no dock. */}
+      {(!hideHazards || scenario.scenario !== 'today') && (
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
         <div className="rounded-[4px] bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+          {!hideHazards && (
+          <>
           <div className="flex items-center gap-3 px-3 py-2">
             {/* Which hazard to play out. */}
             <div className="flex shrink-0 gap-3 border-r border-line pr-3" role="tablist" aria-label="Hazard">
@@ -2435,6 +2443,8 @@ function MapView(props: MapViewProps) {
               </>
             );
           })()}
+          </>
+          )}
           {scenario.scenario !== 'today' && (
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
@@ -2455,6 +2465,7 @@ function MapView(props: MapViewProps) {
           )}
         </div>
       </div>
+      )}
 
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
@@ -5126,7 +5137,10 @@ function CaseControls({
       <section className="mt-6" data-tour="case-layers">
         <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
         <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
-        {group(['flood100', 'flood20', 'flood5', 'heat4', 'heat3', 'heat2'])}
+        <div className="mb-1 text-sm text-ink-3">Flood</div>
+        {group(['flood100', 'flood20', 'flood5'])}
+        <div className="mb-1 mt-2 text-sm text-ink-3">Heat</div>
+        {group(['heat4', 'heat3', 'heat2'])}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
         {group(['roads', 'pipes', 'buildings'])}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
@@ -8185,6 +8199,10 @@ export default function App() {
   const caseAddedRef = useRef<string[]>([]);
   const openCase = useCallback((id: CaseId | null) => {
     setCaseId(id);
+    if (id) {
+      setFloodEvent('none');
+      setHeatEvent('none');
+    }
     const c = CASE_STUDIES.find((x) => x.id === id);
     if (c) {
       setActiveBlueprint(null);
@@ -8382,6 +8400,7 @@ export default function App() {
             }}
             onProbe={(lat, lng) => setProbePoint({ lat, lng })}
             probePoint={probePoint}
+            hideHazards={panelTab === 'cases' && !!caseId}
           />
         </div>
 
