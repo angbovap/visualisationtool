@@ -1274,6 +1274,8 @@ interface MapViewProps {
      *  which of them are switched on. */
     area?: CaseArea;
     show?: Set<CaseLayer>;
+    /** Opacity per case layer, 0 to 1 (1 when not set). */
+    opacity?: Partial<Record<CaseLayer, number>>;
   } | null;
   /** Clicking the always-on TQEH marker opens its case study. */
   onOpenCase: () => void;
@@ -1984,6 +1986,7 @@ function MapView(props: MapViewProps) {
     }
     const added: LeafletLayer[] = [];
     const show = highlight.show ?? new Set<CaseLayer>();
+    const op = (k: CaseLayer) => highlight.opacity?.[k] ?? 1;
     const area = highlight.area;
     if (area && show.has('focus')) {
       const world: LatLngTuple[] = [
@@ -2006,6 +2009,7 @@ function MapView(props: MapViewProps) {
       const heatOn = new Set(
         (Object.entries(HEAT_CASE_KEYS) as [CaseLayer, number][]).filter(([k]) => show.has(k)).map(([, cat]) => cat),
       );
+      const heatKey = (cat: number) => (`heat${cat}` as CaseLayer);
       if (heatOn.size) {
         const def = LAYER_BY_ID['heat-vuln'];
         for (const h of area.heat.filter((x) => heatOn.has(x.cat))) {
@@ -2013,7 +2017,7 @@ function MapView(props: MapViewProps) {
             L.polygon(h.ring, {
               stroke: false,
               fillColor: lerpHex(def.lo!, def.hi!, (h.cat - 2) / 2),
-              fillOpacity: 0.6,
+              fillOpacity: 0.6 * op(heatKey(h.cat)),
               interactive: true, pane: 'caseContent' })
               .bindTooltip(`UHI category ${h.cat} · SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
               .addTo(map),
@@ -2029,7 +2033,7 @@ function MapView(props: MapViewProps) {
         const fc = LAYER_BY_ID[id].hi!;
         for (const r of area.flood[id]) {
           added.push(
-            L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7, fillColor: fc, fillOpacity: 0.3, interactive: false, pane: 'caseContent' }).addTo(map),
+            L.polygon(r, { color: fc, weight: 0.6, opacity: 0.7 * op(key), fillColor: fc, fillOpacity: 0.3 * op(key), interactive: false, pane: 'caseContent' }).addTo(map),
           );
         }
       }
@@ -2037,8 +2041,8 @@ function MapView(props: MapViewProps) {
         for (const style of [...ROAD_ROLES].reverse()) {
           for (const rd of area.roads.filter((x) => x.role === style.role)) {
             added.push(
-              L.polyline(rd.line, { color: '#fff', weight: style.weight + 2.4, opacity: 0.95, interactive: false, pane: 'caseContent' }).addTo(map),
-              L.polyline(rd.line, { color: style.color, weight: style.weight, opacity: 1, pane: 'caseContent' })
+              L.polyline(rd.line, { color: '#fff', weight: style.weight + 2.4, opacity: 0.95 * op('roads'), interactive: false, pane: 'caseContent' }).addTo(map),
+              L.polyline(rd.line, { color: style.color, weight: style.weight, opacity: op('roads'), pane: 'caseContent' })
                 .bindTooltip(`${roadName(rd.name)} · ${roadRoles(rd.name).join(', ') || style.label}`, { sticky: true, direction: 'top', offset: [0, -4] })
                 .addTo(map),
             );
@@ -2051,7 +2055,7 @@ function MapView(props: MapViewProps) {
             L.polyline(area.pipes[c.id], {
               color: c.color,
               weight: c.id === '0' ? 1.4 : 2.2,
-              opacity: 0.95,
+              opacity: 0.95 * op('pipes'),
               pane: 'caseContent' })
               .bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] })
               .addTo(map),
@@ -2061,7 +2065,7 @@ function MapView(props: MapViewProps) {
       if (show.has('buildings')) {
         for (const g of area.buildings) {
           added.push(
-            L.circleMarker([g.lat, g.lng], { radius: 5, color: '#fff', weight: 1.4, fillColor: ACCENT, fillOpacity: 1, pane: 'caseContent' })
+            L.circleMarker([g.lat, g.lng], { radius: 5, color: '#fff', weight: 1.4, opacity: op('buildings'), fillColor: ACCENT, fillOpacity: op('buildings'), pane: 'caseContent' })
               .bindTooltip(g.ids.length > 1 ? `${g.names[0]} and ${g.ids.length - 1} more` : g.names[0], {
                 direction: 'top',
                 offset: [0, -4],
@@ -2088,10 +2092,10 @@ function MapView(props: MapViewProps) {
         L.polyline([[highlight.lat, highlight.lng], link.to], {
           color: '#14201F',
           weight: 1.6,
-          opacity: 0.8,
+          opacity: 0.8 * op('lines'),
           dashArray: '5 4',
           interactive: false, pane: 'caseContent' }).addTo(map),
-        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, fillColor: '#14201F', fillOpacity: 1, interactive: false, pane: 'caseContent' })
+        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, opacity: op('lines'), fillColor: '#14201F', fillOpacity: op('lines'), interactive: false, pane: 'caseContent' })
           .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
           .addTo(map),
       );
@@ -4922,6 +4926,8 @@ function CasesTab({
   setRadius,
   setView,
   onGuide,
+  opacity,
+  setOpacity,
 }: {
   caseId: CaseId | null;
   setCaseId: (id: CaseId | null) => void;
@@ -4931,6 +4937,8 @@ function CasesTab({
   setRadius: (v: TqehRadius) => void;
   setView: (v: CaseView) => void;
   onGuide: () => void;
+  opacity: Partial<Record<CaseLayer, number>>;
+  setOpacity: (v: Partial<Record<CaseLayer, number>>) => void;
 }) {
   const c = CASE_STUDIES.find((x) => x.id === caseId);
   if (!c) {
@@ -4970,6 +4978,8 @@ function CasesTab({
       setRadius={setRadius}
       setView={setView}
       onGuide={onGuide}
+      opacity={opacity}
+      setOpacity={setOpacity}
     />
   );
 }
@@ -5043,6 +5053,8 @@ function CaseSwitchRow({
   on,
   onToggle,
   color,
+  opacity,
+  onOpacity,
 }: {
   id: CaseLayer;
   label: string;
@@ -5050,15 +5062,36 @@ function CaseSwitchRow({
   on: boolean;
   onToggle: () => void;
   color?: string;
+  opacity: number;
+  onOpacity: (v: number) => void;
 }) {
   return (
-    <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2">
-      <CaseGlyph id={id} />
-      <span className="min-w-0 flex-1">
-        <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
-      </span>
-      <Switch on={on} color={color} />
-    </button>
+    <div>
+      <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2">
+        <CaseGlyph id={id} />
+        <span className="min-w-0 flex-1">
+          <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
+        </span>
+        <Switch on={on} color={color} />
+      </button>
+      {on && (
+        <label className="flex items-center gap-2.5 px-1 pb-2">
+          <span className="w-[18px] shrink-0" />
+          <span className="text-xs text-ink-3">Opacity</span>
+          <input
+            type="range"
+            min={10}
+            max={100}
+            step={5}
+            value={Math.round(opacity * 100)}
+            onChange={(e) => onOpacity(Number(e.target.value) / 100)}
+            aria-label={`${label} opacity`}
+            className="min-w-0 flex-1"
+          />
+          <span className="num w-9 shrink-0 text-right text-xs text-ink-3">{Math.round(opacity * 100)}%</span>
+        </label>
+      )}
+    </div>
   );
 }
 
@@ -5073,6 +5106,8 @@ function CaseControls({
   setRadius,
   setView,
   onGuide,
+  opacity,
+  setOpacity,
 }: {
   onBack: () => void;
   name: string;
@@ -5082,6 +5117,8 @@ function CaseControls({
   setRadius: (v: TqehRadius) => void;
   setView: (v: CaseView) => void;
   onGuide: () => void;
+  opacity: Partial<Record<CaseLayer, number>>;
+  setOpacity: (v: Partial<Record<CaseLayer, number>>) => void;
 }) {
   const r = tqehReading();
   const area = tqehArea(radius);
@@ -5127,7 +5164,17 @@ function CaseControls({
       className="divide-y divide-line border-y border-line"
     >
       {ids.map((id) => (
-        <CaseSwitchRow key={id} id={id} label={label(id)} detail={detail[id]} on={show.has(id)} onToggle={() => toggle(id)} color={color} />
+        <CaseSwitchRow
+          key={id}
+          id={id}
+          label={label(id)}
+          detail={detail[id]}
+          on={show.has(id)}
+          onToggle={() => toggle(id)}
+          color={color}
+          opacity={opacity[id] ?? 1}
+          onOpacity={(v) => setOpacity({ ...opacity, [id]: v })}
+        />
       ))}
     </div>
   );
@@ -8148,6 +8195,7 @@ export default function App() {
   const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [caseView, setCaseView] = useState<CaseView>('hazard');
+  const [caseOpacity, setCaseOpacity] = useState<Partial<Record<CaseLayer, number>>>({});
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
   );
@@ -8389,8 +8437,10 @@ export default function App() {
   }, []);
   const highlight = useMemo(() => {
     const c = CASE_STUDIES.find((x) => x.id === caseId);
-    return panelTab === 'cases' && c ? { ...c.point, links: tqehLinks(), area: tqehArea(caseRadius), show: caseShow } : null;
-  }, [panelTab, caseId, caseRadius, caseShow]);
+    return panelTab === 'cases' && c
+      ? { ...c.point, links: tqehLinks(), area: tqehArea(caseRadius), show: caseShow, opacity: caseOpacity }
+      : null;
+  }, [panelTab, caseId, caseRadius, caseShow, caseOpacity]);
 
   // Place's suburb comparison shades the map while it's showing.
   const suburbShade = useMemo<SuburbShade | null>(() => {
@@ -8506,6 +8556,8 @@ export default function App() {
                 setCaseOffer(false);
                 setScreen('caseTour');
               }}
+              opacity={caseOpacity}
+              setOpacity={setCaseOpacity}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
