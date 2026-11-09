@@ -65,7 +65,7 @@ import stormwaterPipesData from '@/data/stormwaterPipes.json';
 import majorRoadsData from '@/data/majorRoads.json';
 
 // UrbanHeatSocialVulnDay2022.shp + .dbf: a fine-grained grid, individual
-// cells well under a hectare, each carrying a real Urban Heat Island
+// cells of a few hectares each, carrying a real Urban Heat Island
 // category (2 to 4) and Social Vulnerability Index from council's GIS
 // export. Reprojected from GDA2020 MGA Zone 54 and clipped to the LGA.
 import heatVulnerabilityData from '@/data/heatVulnerability.json';
@@ -263,7 +263,7 @@ const LAYERS: LayerDef[] = [
     lo: '#FFFBEB',
     hi: '#EF4444',
     unit: 'UHI category 2 (lowest) to 4 (highest)',
-    note: 'Daytime Urban Heat Island category per grid cell, each cell under a hectare, with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series.',
+    note: 'Daytime Urban Heat Island category per grid cell (about 3 ha each on average), with a Social Vulnerability Index attached (hover a cell). A fixed 2022 snapshot, not a time series. The grid covers about 22 km² of the council area; elsewhere there is no heat data.',
     source: 'Council GIS export, "UrbanHeatSocialVulnDay2022.shp/.dbf", reprojected from GDA2020 MGA Zone 54 and clipped to the LGA',
     vintage: 2022,
   },
@@ -1264,6 +1264,9 @@ interface MapViewProps {
   /** The flood event scenario shown on the map ('none' = off). */
   floodEvent: FloodEvent;
   setFloodEvent: (e: FloodEvent) => void;
+  /** The heat category scenario shown on the map ('none' = off). */
+  heatEvent: HeatEvent;
+  setHeatEvent: (e: HeatEvent) => void;
   /** Inspect-a-point: when on, a click reads that spot; the last point read. */
   probeMode: boolean;
   setProbeMode: (v: boolean) => void;
@@ -1306,6 +1309,8 @@ function MapView(props: MapViewProps) {
     onOpenCase,
     floodEvent,
     setFloodEvent,
+    heatEvent,
+    setHeatEvent,
     probeMode,
     setProbeMode,
     onProbe,
@@ -1327,6 +1332,8 @@ function MapView(props: MapViewProps) {
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
   // The map controls card can fold down to one button when it's in the way.
   const [controlsOpen, setControlsOpen] = useState(true);
+  // Which hazard the scenario dock is set to.
+  const [dockHazard, setDockHazard] = useState<'flood' | 'heat'>('flood');
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
   const { by: roadBy } = React.useContext(RoadColourContext);
@@ -1883,6 +1890,27 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    if (heatEvent !== 'none') {
+      const def = LAYER_BY_ID['heat-vuln'];
+      const view = heatView(heatEvent);
+      const fill = lerpHex(def.lo!, def.hi!, (Number(heatEvent) - 2) / 2);
+      for (const c of view.cells) {
+        push(
+          L.polygon(c.rings, { color: '#7F1D1D', weight: 0.4, opacity: 0.5, fillColor: fill, fillOpacity: 0.75 }).bindTooltip(
+            `UHI category ${c.uhiCat} · SVI ${c.svi.toFixed(2)}`,
+            { direction: 'top', offset: [0, -3] },
+          ),
+        );
+      }
+      for (const b of view.buildings) {
+        const loc = BUILDING_LOCATION[b.id];
+        push(
+          L.circleMarker([loc.lat, loc.lng], { radius: 4.5, color: '#fff', weight: 1.3, fillColor: '#7F1D1D', fillOpacity: 1 })
+            .bindTooltip(`${b.name} · heat category ${heatEvent}`, { direction: 'top', offset: [0, -4] }),
+        );
+      }
+    }
+
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -1893,6 +1921,7 @@ function MapView(props: MapViewProps) {
   }, [
     ready,
     floodEvent,
+    heatEvent,
     priorityW,
     roadBy,
     suburbShade,
@@ -2184,20 +2213,18 @@ function MapView(props: MapViewProps) {
       )}
       {controlsOpen && (
       <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
-        <div className="flex items-center justify-between px-2 pb-0.5 pt-1">
-          <span className="text-xs font-semibold text-ink-3">Map settings</span>
-          <button
-            onClick={() => {
-              setControlsOpen(false);
-              setOpenControl(null);
-            }}
-            aria-label="Minimise map settings"
-            title="Minimise"
-            className="flex h-6 w-6 items-center justify-center rounded-[3px] text-ink-3 hover:bg-surface-2 hover:text-ink"
-          >
-            <IconChevron size={12} className="-rotate-90" />
-          </button>
-        </div>
+        <button
+          onClick={() => {
+            setControlsOpen(false);
+            setOpenControl(null);
+          }}
+          aria-label="Minimise map settings"
+          title="Minimise"
+          className="flex w-full items-center justify-between rounded-[3px] px-2 py-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
+        >
+          <span className="text-xs font-semibold">Map settings</span>
+          <IconChevron size={12} className="-rotate-90" />
+        </button>
         {(
           [
             {
@@ -2311,22 +2338,55 @@ function MapView(props: MapViewProps) {
       </div>
       )}
 
-      {/* Scenario dock: the flood event to show, its reach, and the
-          speculative climate scenario when one is on. */}
+      {/* Scenario dock: a flood or heat scenario to play out, what it
+          reaches, and the speculative climate scenario when one is on. */}
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
         <div className="rounded-[4px] bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
           <div className="flex items-center gap-3 px-3 py-2">
-            <span className="shrink-0 text-sm font-semibold text-ink">Flood event</span>
-            <div className="flex flex-1 gap-1" role="radiogroup" aria-label="Flood event">
-              {([{ id: 'none', label: 'Off' }, ...FLOOD_EVENTS] as { id: FloodEvent; label: string }[]).map((o) => {
-                const on = floodEvent === o.id;
+            {/* Which hazard to play out. */}
+            <div className="flex shrink-0 gap-3 border-r border-line pr-3" role="tablist" aria-label="Hazard">
+              {(
+                [
+                  ['flood', 'Flood'],
+                  ['heat', 'Heat'],
+                ] as const
+              ).map(([id, label]) => {
+                const on = dockHazard === id;
+                return (
+                  <button
+                    key={id}
+                    role="tab"
+                    aria-selected={on}
+                    onClick={() => setDockHazard(id)}
+                    className={`-mb-px border-b-2 pb-0.5 text-sm transition-colors ${on ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink-3 hover:text-ink'}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-1 gap-1" role="radiogroup" aria-label={dockHazard === 'flood' ? 'Flood event' : 'Heat category'}>
+              {(dockHazard === 'flood'
+                ? ([{ id: 'none', label: 'Off' }, ...FLOOD_EVENTS] as { id: string; label: string }[])
+                : ([{ id: 'none', label: 'Off' }, ...HEAT_EVENTS] as { id: string; label: string }[])
+              ).map((o) => {
+                const on = dockHazard === 'flood' ? floodEvent === o.id : heatEvent === o.id;
                 return (
                   <button
                     key={o.id}
                     role="radio"
                     aria-checked={on}
-                    onClick={() => setFloodEvent(o.id)}
-                    className={`num flex-1 rounded-[3px] border px-2 py-1 text-sm transition-colors ${on ? 'border-ink bg-ink font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
+                    onClick={() => {
+                      // One hazard scenario on the map at a time.
+                      if (dockHazard === 'flood') {
+                        setFloodEvent(o.id as FloodEvent);
+                        if (o.id !== 'none') setHeatEvent('none');
+                      } else {
+                        setHeatEvent(o.id as HeatEvent);
+                        if (o.id !== 'none') setFloodEvent('none');
+                      }
+                    }}
+                    className={`num flex-1 whitespace-nowrap rounded-[3px] border px-1.5 py-1 text-sm transition-colors ${on ? 'border-ink bg-ink font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
                   >
                     {o.label}
                   </button>
@@ -2334,18 +2394,32 @@ function MapView(props: MapViewProps) {
               })}
             </div>
           </div>
-          {floodEvent !== 'none' &&
-            (() => {
+          {(() => {
+            let cells: [string, string, string][] | null = null;
+            let note = '';
+            if (floodEvent !== 'none') {
               const v = eventView(floodEvent);
-              const cells: [string, string, string][] = [
+              cells = [
                 ['Buildings', String(v.buildings.length), formatMoney(v.insured)],
                 ['Major roads', `${v.roadKm.toFixed(1)} km`, 'inside'],
                 ['Pipes', `${Math.round(v.pipeKm)} km`, 'inside'],
                 ['Council area', pct(v.areaShare), 'covered'],
               ];
-              return (
-                <>
-                  <div className="grid grid-cols-4 divide-x divide-line border-t border-line">
+              note = `Flood ${FLOOD_EVENTS.find((x) => x.id === floodEvent)!.label}. ${EVENT_COVERAGE[floodEvent]}`;
+            } else if (heatEvent !== 'none') {
+              const v = heatView(heatEvent);
+              cells = [
+                ['Buildings', String(v.buildings.length), formatMoney(v.insured)],
+                ['Area', `${v.areaKm2.toFixed(2)} km²`, `${v.cells.length} cells`],
+                ['Average SVI', v.sviAvg.toFixed(2), 'of these cells'],
+                ['Of heat grid', pct(v.gridKm2 ? v.areaKm2 / v.gridKm2 : 0), 'by area'],
+              ];
+              note = `Heat category ${heatEvent} of 2 to 4. The heat grid covers about ${v.gridKm2.toFixed(1)} km² of the council's ${LGA_BOUNDARY.areaSqKm.toFixed(0)} km², so areas outside it read as no data, not as cool.`;
+            }
+            if (!cells) return null;
+            return (
+              <>
+                <div className="grid grid-cols-4 divide-x divide-line border-t border-line">
                   {cells.map(([k, val, sub]) => (
                     <div key={k} className="px-3 py-1.5">
                       <div className="text-xs text-ink-3">{k}</div>
@@ -2353,11 +2427,11 @@ function MapView(props: MapViewProps) {
                       <div className="num text-xs text-ink-3">{sub}</div>
                     </div>
                   ))}
-                  </div>
-                  <div className="border-t border-line px-3 py-1 text-xs text-ink-3">{EVENT_COVERAGE[floodEvent]}</div>
-                </>
-              );
-            })()}
+                </div>
+                <div className="border-t border-line px-3 py-1 text-xs leading-[1.45] text-ink-3">{note}</div>
+              </>
+            );
+          })()}
           {scenario.scenario !== 'today' && (
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
@@ -2415,6 +2489,7 @@ function MapView(props: MapViewProps) {
           caseShow={highlight?.area ? highlight.show : undefined}
           caseRadius={highlight?.area?.radius}
           floodEvent={floodEvent}
+          heatEvent={heatEvent}
         />
       </div>
 
@@ -2490,6 +2565,7 @@ function MapLegend({
   caseShow,
   caseRadius,
   floodEvent = 'none',
+  heatEvent = 'none',
 }: {
   checkedLayers: Set<string>;
   showBuildings: boolean;
@@ -2497,6 +2573,7 @@ function MapLegend({
   caseShow?: Set<CaseLayer>;
   caseRadius?: number;
   floodEvent?: FloodEvent;
+  heatEvent?: HeatEvent;
 }) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
@@ -2512,6 +2589,31 @@ function MapLegend({
       </button>
       {open && (
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
+          {heatEvent !== 'none' && (
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-ink">Heat, category {heatEvent} cells</div>
+              <div className="flex items-center gap-2">
+                <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                  <rect
+                    x="1.5"
+                    y="2"
+                    width="15"
+                    height="8"
+                    fill={lerpHex(LAYER_BY_ID['heat-vuln'].lo!, LAYER_BY_ID['heat-vuln'].hi!, (Number(heatEvent) - 2) / 2)}
+                    stroke="#7F1D1D"
+                    strokeWidth="0.6"
+                  />
+                </svg>
+                <span className="text-sm text-ink-2">Heat cell, category {heatEvent}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                  <circle cx="9" cy="6" r="4" fill="#7F1D1D" stroke="#fff" strokeWidth="1.2" />
+                </svg>
+                <span className="text-sm text-ink-2">Council building in one</span>
+              </div>
+            </div>
+          )}
           {floodEvent !== 'none' &&
             (() => {
               const ev = FLOOD_EVENTS.find((x) => x.id === floodEvent)!;
@@ -5492,6 +5594,58 @@ function eventView(e: Exclude<FloodEvent, 'none'>): EventView {
   return out;
 }
 
+/* Heat categories as the second hazard scenario: the grid's own classes. */
+type HeatEvent = 'none' | '4' | '3' | '2';
+const HEAT_EVENTS: { id: Exclude<HeatEvent, 'none'>; label: string; cat: number }[] = [
+  { id: '4', label: 'Category 4', cat: 4 },
+  { id: '3', label: 'Category 3', cat: 3 },
+  { id: '2', label: 'Category 2', cat: 2 },
+];
+function ringAreaM2(ring: LatLngTuple[]): number {
+  const kx = M_PER_DEG * Math.cos((ring[0][0] * Math.PI) / 180);
+  let a = 0;
+  for (let i = 0; i < ring.length; i++) {
+    const p = ring[i];
+    const q = ring[(i + 1) % ring.length];
+    a += p[1] * kx * (q[0] * M_PER_DEG) - q[1] * kx * (p[0] * M_PER_DEG);
+  }
+  return Math.abs(a) / 2;
+}
+interface HeatView {
+  cells: HeatVulnCell[];
+  buildings: RealAsset[];
+  insured: number;
+  areaKm2: number;
+  sviAvg: number;
+  gridKm2: number;
+}
+const heatViewCache = new Map<string, HeatView>();
+/** Heat cells of one category inside the LGA, and the council buildings in them. */
+function heatView(e: Exclude<HeatEvent, 'none'>): HeatView {
+  const hit = heatViewCache.get(e);
+  if (hit) return hit;
+  const cat = Number(e);
+  const centreIn = (c: HeatVulnCell) => {
+    const b = bboxOf(c.rings[0]);
+    return pointInRing((b.latLo + b.latHi) / 2, (b.lngLo + b.lngHi) / 2, LGA_BOUNDARY.ring);
+  };
+  const inLga = HEAT_VULNERABILITY.filter(centreIn);
+  const cells = inLga.filter((c) => c.uhiCat === cat);
+  const profiles = hazardProfiles();
+  const buildings = MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.heat?.uhiCat === cat);
+  const area = (cs: HeatVulnCell[]) => cs.reduce((n, c) => n + c.rings.reduce((m, r) => m + ringAreaM2(r), 0), 0) / 1e6;
+  const out: HeatView = {
+    cells,
+    buildings,
+    insured: buildings.reduce((n, b) => n + b.insuredValue, 0),
+    areaKm2: area(cells),
+    sviAvg: cells.length ? cells.reduce((n, c) => n + c.svi, 0) / cells.length : 0,
+    gridKm2: area(inLga),
+  };
+  heatViewCache.set(e, out);
+  return out;
+}
+
 /* ------------------------------------------------------------------ *
  * Inspect a point
  *
@@ -5595,33 +5749,42 @@ function ProbePanel({
           {r.lat.toFixed(5)}, {r.lng.toFixed(5)}
           {r.sa1 ? ` · SA1 ${r.sa1}` : ''}
         </p>
-        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
-          <Glance
-            label="Flood"
-            value={mostFrequent ? FLOOD_SHORT[mostFrequent] : 'Outside'}
-            sub={mostFrequent ? 'most frequent extent here' : `${formatMetres(r.nearestFloodM)} to the 1 in 100`}
-          />
-          <Glance
-            label="Urban heat"
-            value={r.heat ? `Category ${r.heat.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
-            sub={r.heat ? `SVI ${r.heat.svi.toFixed(2)}` : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.m)}` : 'no heat data'}
-          />
-        </div>
+        {/* Each hazard on an equal footing, then the place, then what's near. */}
+        <Section title="Hazards here">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
+            <Glance
+              label="Flood"
+              value={mostFrequent ? FLOOD_SHORT[mostFrequent] : 'Outside'}
+              sub={mostFrequent ? `in: ${r.floods.map((f) => FLOOD_SHORT[f]).join(', ')}` : `${formatMetres(r.nearestFloodM)} to the 1 in 100`}
+            />
+            <Glance
+              label="Urban heat"
+              value={r.heat ? `Category ${r.heat.uhiCat}` : 'No cell here'}
+              sub={r.heat ? 'of 2 to 4' : r.nearestHeat ? `nearest: cat. ${r.nearestHeat.uhiCat}, ${formatMetres(r.nearestHeat.m)}` : 'no heat data'}
+            />
+            <Glance
+              label="Social vulnerability"
+              value={r.heat ? `SVI ${r.heat.svi.toFixed(2)}` : 'No cell here'}
+              sub={r.heat ? 'of this heat cell' : 'SVI comes with the heat grid'}
+            />
+            <Glance label="Water" value={formatMetres(r.waterM)} sub="to a watercourse or waterbody" />
+          </div>
+          <p className="mt-1.5 text-sm text-ink-3">Flood extents are long-term runs.</p>
+        </Section>
 
-        <Section title="Here">
+        <Section title="The place">
           <dl className="divide-y divide-line">
-            <FactRow label="Flood extents" value={r.floods.length ? r.floods.map((f) => FLOOD_SHORT[f]).join(', ') : 'None'} />
+            <FactRow label="Suburb (SA2)" value={r.suburb ? r.suburb.name : 'None'} />
             <FactRow label="Dwelling density" value={r.density ? `${r.density.category} (Density 21: ${r.density.value})` : 'No value'} />
           </dl>
         </Section>
 
-        <Section title="Nearest">
+        <Section title="Nearest assets">
           <dl className="divide-y divide-line">
             {r.road && (
               <FactRow label="Major road" value={`${r.road.name}, ${formatMetres(r.road.m)}${r.road.roles.length ? ` (${r.road.roles[0].toLowerCase()})` : ''}`} />
             )}
             <FactRow label="Stormwater pipe" value={formatMetres(r.pipeM)} />
-            <FactRow label="Water" value={formatMetres(r.waterM)} />
             <FactRow label="Train station" value={formatMetres(r.stationM)} />
             {r.building && (
               <FactRow
@@ -7739,6 +7902,7 @@ export default function App() {
   const [roadBy, setRoadBy] = useState<RoadColour>('role');
   // Flood event scenario shown on the map, and the inspect-a-point tool.
   const [floodEvent, setFloodEvent] = useState<FloodEvent>('none');
+  const [heatEvent, setHeatEvent] = useState<HeatEvent>('none');
   const [probeMode, setProbeMode] = useState(false);
   const [probePoint, setProbePoint] = useState<{ lat: number; lng: number } | null>(null);
   const probeModeRef = useRef(false);
@@ -8148,6 +8312,8 @@ export default function App() {
             }}
             floodEvent={floodEvent}
             setFloodEvent={setFloodEvent}
+            heatEvent={heatEvent}
+            setHeatEvent={setHeatEvent}
             probeMode={probeMode}
             setProbeMode={(v) => {
               setProbeMode(v);
