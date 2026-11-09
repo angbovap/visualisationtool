@@ -8029,7 +8029,7 @@ export default function App() {
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
-  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['flood100', 'lines', 'focus']));
+  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [caseView, setCaseView] = useState<CaseView>('hazard');
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
