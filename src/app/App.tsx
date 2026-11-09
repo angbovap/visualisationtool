@@ -2647,7 +2647,7 @@ function MapLegend({
             })()}
           {caseShow && (
             <div className="space-y-1">
-              <div className="text-sm font-medium text-ink">Around TQEH</div>
+              <div className="text-sm font-medium text-ink">Case study: The Queen Elizabeth Hospital</div>
               {CASE_LAYER_DEFS.filter((d) => caseShow.has(d.id)).map((d) => (
                 <div key={d.id} className="flex items-center gap-2">
                   <CaseGlyph id={d.id} />
@@ -5017,9 +5017,9 @@ function CaseControls({
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const share = (id: FloodLayerId) => r.flood.find((f) => f.id === id)!.share;
   const detail: Record<CaseLayer, string> = {
-    flood100: `${pct(share('flood-1in100-real'))} of the grounds`,
-    flood20: `${pct(share('flood-1in20-real'))} of the grounds`,
-    flood5: `${pct(share('flood-1in5-real'))} of the grounds`,
+    flood100: `${pct(share('flood-1in100-real'))} of the grounds · long-term run`,
+    flood20: `${pct(share('flood-1in20-real'))} of the grounds · long-term run`,
+    flood5: `${pct(share('flood-1in5-real'))} of the grounds · long-term run`,
     heat: r.heatHere
       ? `Category ${r.heatHere.uhiCat} at the site`
       : r.nearestHeat
