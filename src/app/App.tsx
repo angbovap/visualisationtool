@@ -1980,9 +1980,12 @@ function MapView(props: MapViewProps) {
       );
     }
     if (area) {
-      if (show.has('heat')) {
+      const heatOn = new Set(
+        (Object.entries(HEAT_CASE_KEYS) as [CaseLayer, number][]).filter(([k]) => show.has(k)).map(([, cat]) => cat),
+      );
+      if (heatOn.size) {
         const def = LAYER_BY_ID['heat-vuln'];
-        for (const h of area.heat) {
+        for (const h of area.heat.filter((x) => heatOn.has(x.cat))) {
           added.push(
             L.polygon(h.ring, {
               stroke: false,
@@ -4614,7 +4617,20 @@ function clipRing(subject: LatLngTuple[], clip: LatLngTuple[]): LatLngTuple[] {
 }
 
 /** What the case study can draw around the site, each cut to the area. */
-type CaseLayer = 'flood100' | 'flood20' | 'flood5' | 'heat' | 'pipes' | 'roads' | 'buildings' | 'lines' | 'focus';
+type CaseLayer =
+  | 'flood100'
+  | 'flood20'
+  | 'flood5'
+  | 'heat4'
+  | 'heat3'
+  | 'heat2'
+  | 'pipes'
+  | 'roads'
+  | 'buildings'
+  | 'lines'
+  | 'focus';
+/** The heat grid's own categories, 2 (coolest in the grid) to 4 (hottest). */
+const HEAT_CASE_KEYS = { heat4: 4, heat3: 3, heat2: 2 } as const;
 
 interface CaseArea {
   radius: number;
@@ -4917,7 +4933,9 @@ const CASE_LAYER_DEFS: { id: CaseLayer; label: string }[] = [
   { id: 'flood100', label: 'Flood 1 in 100 (long-term)' },
   { id: 'flood20', label: 'Flood 1 in 20 (long-term)' },
   { id: 'flood5', label: 'Flood 1 in 5 (long-term)' },
-  { id: 'heat', label: 'Urban heat cells' },
+  { id: 'heat4', label: 'Heat category 4 (hottest)' },
+  { id: 'heat3', label: 'Heat category 3' },
+  { id: 'heat2', label: 'Heat category 2 (coolest in the grid)' },
   { id: 'pipes', label: 'Stormwater pipes' },
   { id: 'roads', label: 'Major roads' },
   { id: 'buildings', label: 'Council buildings' },
@@ -4930,7 +4948,14 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
     const l = LAYER_BY_ID[{ flood100: 'flood-1in100-real', flood20: 'flood-1in20-real', flood5: 'flood-1in5-real' }[id]];
     return <LayerGlyph l={l} />;
   }
-  if (id === 'heat') return <LayerGlyph l={LAYER_BY_ID['heat-vuln']} />;
+  if (id === 'heat4' || id === 'heat3' || id === 'heat2') {
+    const def = LAYER_BY_ID['heat-vuln'];
+    return (
+      <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
+        <rect x="1.5" y="2" width="15" height="8" fill={lerpHex(def.lo!, def.hi!, (HEAT_CASE_KEYS[id] - 2) / 2)} stroke="#7F1D1D" strokeWidth="0.5" />
+      </svg>
+    );
+  }
   if (id === 'pipes') return <LayerGlyph l={LAYER_BY_ID['stormwater-pipes']} />;
   if (id === 'roads') return <LayerGlyph l={LAYER_BY_ID['major-roads']} />;
   if (id === 'buildings') {
@@ -5016,15 +5041,18 @@ function CaseControls({
   const area = tqehArea(radius);
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const share = (id: FloodLayerId) => r.flood.find((f) => f.id === id)!.share;
+  const heatDetail = (cat: number) => {
+    const n = area.heat.filter((h) => h.cat === cat).length;
+    const nearest = r.nearestHeat && r.nearestHeat.uhiCat === cat && !r.heatHere ? `, nearest ${formatMetres(r.nearestHeat.metres)}` : '';
+    return n ? `${n} cells within ${radius} m${nearest}` : `None within ${radius} m`;
+  };
   const detail: Record<CaseLayer, string> = {
     flood100: `${pct(share('flood-1in100-real'))} of the grounds · long-term run`,
     flood20: `${pct(share('flood-1in20-real'))} of the grounds · long-term run`,
     flood5: `${pct(share('flood-1in5-real'))} of the grounds · long-term run`,
-    heat: r.heatHere
-      ? `Category ${r.heatHere.uhiCat} at the site`
-      : r.nearestHeat
-        ? `Nearest cell ${formatMetres(r.nearestHeat.metres)}, category ${r.nearestHeat.uhiCat}`
-        : 'No cells nearby',
+    heat4: heatDetail(4),
+    heat3: heatDetail(3),
+    heat2: heatDetail(2),
     pipes: `${Math.round(r.pipeInSiteM)} m in the grounds`,
     roads: r.road ? `${r.road.name}, ${formatMetres(r.road.m)}` : 'None nearby',
     buildings: `${area.buildings.reduce((n, g) => n + g.ids.length, 0)} within ${radius} m`,
@@ -5098,7 +5126,7 @@ function CaseControls({
       <section className="mt-6" data-tour="case-layers">
         <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
         <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
-        {group(['flood100', 'flood20', 'flood5', 'heat'])}
+        {group(['flood100', 'flood20', 'flood5', 'heat4', 'heat3', 'heat2'])}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
         {group(['roads', 'pipes', 'buildings'])}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
@@ -5163,7 +5191,7 @@ const CASE_TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="case-layers"]',
     placement: 'right',
     title: "2. Choose what's on the map",
-    body: 'Hazards first (flood extents and heat cells), then assets and infrastructure (roads, pipes, council buildings), then the distance lines. Each switch shows its figure for the site.',
+    body: 'Hazards first: flood extents and heat cells by category (4 hottest to 2). Then assets and infrastructure (roads, pipes, council buildings), then the distance lines. Each switch shows its figure for the site.',
   },
   {
     selector: '[data-tour="map"]',
