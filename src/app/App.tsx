@@ -5038,21 +5038,6 @@ function CaseControls({
     setShow(next);
   };
   // The group heading already says long-term, so the rows don't repeat it.
-  // One hazard on the map at a time: picking one brings its layers up and
-  // clears the other's.
-  const FLOOD_KEYS: CaseLayer[] = ['flood100', 'flood20', 'flood5'];
-  const hazard: 'flood' | 'heat' = show.has('heat') && !FLOOD_KEYS.some((k) => show.has(k)) ? 'heat' : 'flood';
-  const pickHazard = (h: 'flood' | 'heat') => {
-    const next = new Set(show);
-    if (h === 'heat') {
-      for (const k of FLOOD_KEYS) next.delete(k);
-      next.add('heat');
-    } else {
-      next.delete('heat');
-      if (!FLOOD_KEYS.some((k) => next.has(k))) next.add('flood100');
-    }
-    setShow(next);
-  };
   const label = (id: CaseLayer) => CASE_LAYER_DEFS.find((d) => d.id === id)!.label.replace(' (long-term)', '');
   // Re-read the saved sheet whenever the report's Save is pressed.
   const [, bump] = useState(0);
@@ -5112,28 +5097,12 @@ function CaseControls({
 
       <section className="mt-6" data-tour="case-layers">
         <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
-        <div className="mb-1 text-sm font-semibold text-ink-2">Hazard</div>
-        <div className="mb-2 flex gap-1.5" role="tablist" aria-label="Hazard">
-          {(
-            [
-              ['flood', 'Flood'],
-              ['heat', 'Heat'],
-            ] as const
-          ).map(([id, text]) => (
-            <button
-              key={id}
-              role="tab"
-              aria-selected={hazard === id}
-              onClick={() => pickHazard(id)}
-              className={`flex-1 rounded-[3px] border px-2 py-1.5 text-base transition-colors ${hazard === id ? 'border-ink bg-ink font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
-            >
-              {text}
-            </button>
-          ))}
-        </div>
-        {hazard === 'flood' ? group(['flood100', 'flood20', 'flood5']) : group(['heat'])}
-        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Around the site</div>
-        {group(['roads', 'pipes', 'buildings', 'lines'])}
+        <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
+        {group(['flood100', 'flood20', 'flood5', 'heat'])}
+        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
+        {group(['roads', 'pipes', 'buildings'])}
+        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
+        {group(['lines'])}
       </section>
 
       <section className="mt-6" data-tour="case-report-steps">
@@ -5194,7 +5163,7 @@ const CASE_TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="case-layers"]',
     placement: 'right',
     title: "2. Choose what's on the map",
-    body: 'Pick the hazard first, Flood or Heat, then its layers. Below that, switch on roads, pipes, council buildings and distance lines. Each switch shows its figure for the site.',
+    body: 'Hazards first (flood extents and heat cells), then assets and infrastructure (roads, pipes, council buildings), then the distance lines. Each switch shows its figure for the site.',
   },
   {
     selector: '[data-tour="map"]',
