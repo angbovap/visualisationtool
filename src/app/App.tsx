@@ -148,6 +148,16 @@ interface LayerDef {
 
 const ACCENT = '#006E78';
 
+/** One colour per hazard, used wherever that hazard appears in the UI. */
+const HAZARD_COLOR = {
+  flood: '#1D4ED8',
+  heat: '#DC2626',
+  water: '#0284C7',
+  people: '#B45309',
+  assets: '#374151',
+} as const;
+type HazardKey = keyof typeof HAZARD_COLOR;
+
 
 
 
@@ -1047,11 +1057,11 @@ function Accordion({
 /** An on/off switch, for anything that is literally on or off on the map,
  *  so the state reads at a glance from the knob's side and colour rather
  *  than from a small tick. */
-function Switch({ on }: { on: boolean }) {
+function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
       className="relative inline-flex h-[18px] w-[32px] shrink-0 items-center rounded-full transition-colors duration-200"
-      style={{ background: on ? ACCENT : '#D5DDDC' }}
+      style={{ background: on ? color : '#D5DDDC' }}
     >
       <span
         className="absolute h-[14px] w-[14px] rounded-full bg-white shadow-[0_1px_2px_rgba(20,32,31,0.3)] transition-transform duration-200"
@@ -1199,13 +1209,19 @@ const ASSET_VIEW_TITLE = {
 function PanelHeading({
   children,
   right,
+  color,
 }: {
   children: React.ReactNode;
   right?: React.ReactNode;
+  /** A hazard colour: a solid bar before the heading. */
+  color?: string;
 }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <span className="text-xl font-bold text-ink">{children}</span>
+      <span className="flex items-center gap-2 text-xl font-bold text-ink">
+        {color && <span className="h-[14px] w-[3px] shrink-0 rounded-[1px]" style={{ background: color }} />}
+        {children}
+      </span>
       {right}
     </div>
   );
@@ -2369,7 +2385,8 @@ function MapView(props: MapViewProps) {
                     role="tab"
                     aria-selected={on}
                     onClick={() => setDockHazard(id)}
-                    className={`-mb-px border-b-2 pb-0.5 text-sm transition-colors ${on ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink-3 hover:text-ink'}`}
+                    className={`-mb-px border-b-2 pb-0.5 text-sm transition-colors ${on ? 'font-semibold' : 'border-transparent text-ink-3 hover:text-ink'}`}
+                    style={on ? { borderColor: HAZARD_COLOR[id], color: HAZARD_COLOR[id] } : undefined}
                   >
                     {label}
                   </button>
@@ -2397,7 +2414,8 @@ function MapView(props: MapViewProps) {
                         if (o.id !== 'none') setFloodEvent('none');
                       }
                     }}
-                    className={`num flex-1 whitespace-nowrap rounded-[3px] border px-1.5 py-1 text-sm transition-colors ${on ? 'border-ink bg-ink font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
+                    className={`num flex-1 whitespace-nowrap rounded-[3px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
+                    style={on ? (o.id === 'none' ? { background: '#14201F', borderColor: '#14201F' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
                   >
                     {o.label}
                   </button>
@@ -5008,12 +5026,14 @@ function CaseSwitchRow({
   detail,
   on,
   onToggle,
+  color,
 }: {
   id: CaseLayer;
   label: string;
   detail: string;
   on: boolean;
   onToggle: () => void;
+  color?: string;
 }) {
   return (
     <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-surface-2">
@@ -5022,7 +5042,7 @@ function CaseSwitchRow({
         <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
         <span className="num block truncate text-sm text-ink-3">{detail}</span>
       </span>
-      <Switch on={on} />
+      <Switch on={on} color={color} />
     </button>
   );
 }
@@ -5087,11 +5107,20 @@ function CaseControls({
   }, []);
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
   const setCount = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
-  const group = (ids: CaseLayer[]) => (
-    <div className="divide-y divide-line overflow-hidden rounded-[4px] border border-line">
+  const group = (ids: CaseLayer[], color?: string) => (
+    <div
+      className="divide-y divide-line overflow-hidden rounded-[4px] border border-line"
+      style={color ? { boxShadow: `inset 3px 0 0 ${color}` } : undefined}
+    >
       {ids.map((id) => (
-        <CaseSwitchRow key={id} id={id} label={label(id)} detail={detail[id]} on={show.has(id)} onToggle={() => toggle(id)} />
+        <CaseSwitchRow key={id} id={id} label={label(id)} detail={detail[id]} on={show.has(id)} onToggle={() => toggle(id)} color={color} />
       ))}
+    </div>
+  );
+  const groupLabel = (text: string, color: string, first = false) => (
+    <div className={`mb-1 ${first ? '' : 'mt-2.5'} flex items-center gap-1.5 text-sm font-semibold`} style={{ color }}>
+      <span className="h-[8px] w-[8px] rounded-[2px]" style={{ background: color }} />
+      {text}
     </div>
   );
   const linkBtn = 'flex-1 rounded-[3px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
@@ -5137,12 +5166,12 @@ function CaseControls({
       <section className="mt-6" data-tour="case-layers">
         <StepHeading n={2} title="Choose what's on the map" hint="Each switch shows its key figure for the site" />
         <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
-        <div className="mb-1 text-sm text-ink-3">Flood</div>
-        {group(['flood100', 'flood20', 'flood5'])}
-        <div className="mb-1 mt-2 text-sm text-ink-3">Heat</div>
-        {group(['heat4', 'heat3', 'heat2'])}
+        {groupLabel('Flood', HAZARD_COLOR.flood, true)}
+        {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
+        {groupLabel('Heat', HAZARD_COLOR.heat)}
+        {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
-        {group(['roads', 'pipes', 'buildings'])}
+        {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
         <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
         {group(['lines'])}
       </section>
@@ -5262,17 +5291,19 @@ function TqehTab({
       {/* At a glance: the four readings people ask about first. */}
       <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
         <Glance
+          color={HAZARD_COLOR.flood}
           label="Flood"
           value={inside ? `${pct(inside.share)} of grounds` : 'Outside'}
           sub={inside ? `in the ${FLOOD_SHORT[inside.id]} extent` : 'every mapped extent'}
         />
         <Glance
+          color={HAZARD_COLOR.heat}
           label="Urban heat"
           value={r.heatHere ? `Category ${r.heatHere.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
           sub={r.heatHere ? 'at the site' : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.metres)}` : 'no heat data'}
         />
-        <Glance label="Nearest water" value={formatMetres(r.waterM)} sub={`to a ${r.waterKind}`} />
-        <Glance label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
+        <Glance color={HAZARD_COLOR.water} label="Nearest water" value={formatMetres(r.waterM)} sub={`to a ${r.waterKind}`} />
+        <Glance color={HAZARD_COLOR.assets} label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
       </div>
 
       <div className="mt-6" data-tour="case-tabs">
@@ -5305,10 +5336,12 @@ function TqehTab({
   );
 }
 
-function Glance({ label, value, sub }: { label: string; value: string; sub: string }) {
+function Glance({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
-    <div className="bg-white px-3 py-2.5">
-      <div className="text-sm text-ink-3">{label}</div>
+    <div className="bg-white px-3 py-2.5" style={color ? { boxShadow: `inset 0 3px 0 ${color}` } : undefined}>
+      <div className="text-sm font-medium" style={{ color: color ?? '#7E8D8C' }}>
+        {label}
+      </div>
       <div className="num mt-0.5 text-xl font-semibold leading-tight text-ink">{value}</div>
       <div className="mt-0.5 text-sm text-ink-3">{sub}</div>
     </div>
@@ -5327,7 +5360,7 @@ function TqehHazard({
   const { sel: scenario } = React.useContext(ScenarioContext);
   return (
     <>
-      <Section title="Flood">
+      <Section title="Flood" color={HAZARD_COLOR.flood}>
         <dl className="divide-y divide-line">
           {r.flood.map((f) => (
             <div key={f.id} className="flex items-baseline justify-between gap-3 py-1.5">
@@ -5344,7 +5377,7 @@ function TqehHazard({
         </p>
       </Section>
 
-      <Section title="Heat">
+      <Section title="Heat" color={HAZARD_COLOR.heat}>
         <dl className="divide-y divide-line">
           {r.heatHere ? (
             <>
@@ -5364,7 +5397,7 @@ function TqehHazard({
         </dl>
       </Section>
 
-      <Section title="Water">
+      <Section title="Water" color={HAZARD_COLOR.water}>
         <dl className="divide-y divide-line">
           <FactRow label="Nearest" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
         </dl>
@@ -5428,10 +5461,7 @@ function TqehAssets({
   const dist = (m: number) => <span className="num shrink-0 pt-[1px] text-base font-medium text-ink">{formatMetres(m)}</span>;
   return (
     <>
-      <Section
-        title="Access"
-       
-      >
+      <Section title="Access" color={HAZARD_COLOR.assets}>
         <dl className="divide-y divide-line">
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
           <FactRow label="Railway" value={formatMetres(r.railM)} />
@@ -5445,7 +5475,7 @@ function TqehAssets({
         </dl>
       </Section>
 
-      <Section title="Stormwater">
+      <Section title="Stormwater" color={HAZARD_COLOR.assets}>
         <dl className="divide-y divide-line">
           <FactRow label="In the grounds" value={`${Math.round(r.pipeInSiteM)} m of pipe`} />
           <FactRow label="In flood extent" value={`${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`} />
@@ -5463,7 +5493,7 @@ function TqehAssets({
         </dl>
       </Section>
 
-      <Section title="Nearest council buildings">
+      <Section title="Nearest council buildings" color={HAZARD_COLOR.assets}>
         <BuildingList>
           {shown.map((g) =>
             g.items.length === 1 ? (
@@ -5828,21 +5858,24 @@ function ProbePanel({
         <Section title="Hazards here">
           <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
             <Glance
+              color={HAZARD_COLOR.flood}
               label="Flood"
               value={mostFrequent ? FLOOD_SHORT[mostFrequent] : 'Outside'}
               sub={mostFrequent ? `in: ${r.floods.map((f) => FLOOD_SHORT[f]).join(', ')}` : `${formatMetres(r.nearestFloodM)} to the 1 in 100`}
             />
             <Glance
+              color={HAZARD_COLOR.heat}
               label="Urban heat"
               value={r.heat ? `Category ${r.heat.uhiCat}` : 'No cell here'}
               sub={r.heat ? 'of 2 to 4' : r.nearestHeat ? `nearest: cat. ${r.nearestHeat.uhiCat}, ${formatMetres(r.nearestHeat.m)}` : 'no heat data'}
             />
             <Glance
+              color={HAZARD_COLOR.people}
               label="Social vulnerability"
               value={r.heat ? `SVI ${r.heat.svi.toFixed(2)}` : 'No cell here'}
               sub={r.heat ? 'of this heat cell' : 'SVI comes with the heat grid'}
             />
-            <Glance label="Water" value={formatMetres(r.waterM)} sub="to a watercourse or waterbody" />
+            <Glance color={HAZARD_COLOR.water} label="Water" value={formatMetres(r.waterM)} sub="to a watercourse or waterbody" />
           </div>
           <p className="mt-1.5 text-sm text-ink-3">Flood extents are long-term runs.</p>
         </Section>
@@ -5854,7 +5887,7 @@ function ProbePanel({
           </dl>
         </Section>
 
-        <Section title="Nearest assets">
+        <Section title="Nearest assets" color={HAZARD_COLOR.assets}>
           <dl className="divide-y divide-line">
             {r.road && (
               <FactRow label="Major road" value={`${r.road.name}, ${formatMetres(r.road.m)}${r.road.roles.length ? ` (${r.road.roles[0].toLowerCase()})` : ''}`} />
@@ -6741,7 +6774,7 @@ function hazardReadings(id: string): HazardReading[] | null {
     label: 'Flood',
     value: fs === 0 ? 'Outside every mapped extent' : `Inside the ${['', '1 in 100', '1 in 20', '1 in 5'][fs]} extent`,
     share: share(floodScore)!,
-    color: LAYER_BY_ID['flood-1in20-real'].hi!,
+    color: HAZARD_COLOR.flood,
   });
   if (p.heat) {
     out.push({
@@ -6749,14 +6782,14 @@ function hazardReadings(id: string): HazardReading[] | null {
       label: 'Urban heat',
       value: `UHI category ${p.heat.uhiCat} of 4`,
       share: share((x) => x.heat?.uhiCat ?? null)!,
-      color: LAYER_BY_ID['heat-vuln'].hi!,
+      color: HAZARD_COLOR.heat,
     });
     out.push({
       key: 'svi',
       label: 'Social vulnerability',
       value: `SVI ${p.heat.svi.toFixed(2)}`,
       share: share((x) => x.heat?.svi ?? null)!,
-      color: '#B45309',
+      color: HAZARD_COLOR.people,
     });
   }
   out.push({
@@ -6764,7 +6797,7 @@ function hazardReadings(id: string): HazardReading[] | null {
     label: 'Nearest water',
     value: `${formatMetres(p.waterM)} to a ${p.waterKind}`,
     share: share((x) => -x.waterM)!,
-    color: LAYER_BY_ID['watercourses'].hi!,
+    color: HAZARD_COLOR.water,
   });
   return out;
 }
@@ -6842,10 +6875,22 @@ function BarRow({ label, n, max, color, onClick }: { label: string; n: number; m
   );
 }
 
-function Section({ title, right, children }: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+function Section({
+  title,
+  right,
+  children,
+  color,
+}: {
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+  color?: string;
+}) {
   return (
     <section className="mt-6 first:mt-0">
-      <PanelHeading right={right}>{title}</PanelHeading>
+      <PanelHeading right={right} color={color}>
+        {title}
+      </PanelHeading>
       {children}
     </section>
   );
