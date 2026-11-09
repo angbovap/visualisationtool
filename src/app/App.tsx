@@ -1261,6 +1261,14 @@ interface MapViewProps {
   } | null;
   /** Clicking the always-on TQEH marker opens its case study. */
   onOpenCase: () => void;
+  /** The flood event scenario shown on the map ('none' = off). */
+  floodEvent: FloodEvent;
+  setFloodEvent: (e: FloodEvent) => void;
+  /** Inspect-a-point: when on, a click reads that spot; the last point read. */
+  probeMode: boolean;
+  setProbeMode: (v: boolean) => void;
+  onProbe: (lat: number, lng: number) => void;
+  probePoint: { lat: number; lng: number } | null;
 }
 
 interface SuburbShade {
@@ -1296,7 +1304,16 @@ function MapView(props: MapViewProps) {
     suburbShade,
     highlight,
     onOpenCase,
+    floodEvent,
+    setFloodEvent,
+    probeMode,
+    setProbeMode,
+    onProbe,
+    probePoint,
   } = props;
+  // Read from inside the map's own click handler, set up once.
+  const probeRef = useRef({ probeMode, onProbe });
+  probeRef.current = { probeMode, onProbe };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -1336,6 +1353,9 @@ function MapView(props: MapViewProps) {
       });
       map.on('zoomend', () => {
         setZoomLevel(map.getZoom());
+      });
+      map.on('click', (e) => {
+        if (probeRef.current.probeMode) probeRef.current.onProbe(e.latlng.lat, e.latlng.lng);
       });
       mapRef.current = map;
       setReady(true);
@@ -1839,6 +1859,28 @@ function MapView(props: MapViewProps) {
       }
     }
 
+    if (floodEvent !== 'none') {
+      const ev = FLOOD_EVENTS.find((x) => x.id === floodEvent)!;
+      const view = eventView(floodEvent);
+      const fc = LAYER_BY_ID[ev.layer].hi!;
+      for (const ring of floodRingsFor(ev.layer)) {
+        push(L.polygon(ring.ring, { stroke: false, fillColor: fc, fillOpacity: 0.32, interactive: false }));
+      }
+      // Muted context first, then what the event reaches.
+      push(L.polyline(view.pipes.outside, { color: '#9AA8A7', weight: 0.8, opacity: 0.45, interactive: false }));
+      push(L.polyline(view.roads.outside, { color: '#9AA8A7', weight: 2, opacity: 0.7, interactive: false }));
+      push(L.polyline(view.pipes.inside, { color: EVENT_COLOR, weight: 1.6, opacity: 0.9, interactive: false }));
+      push(L.polyline(view.roads.inside, { color: '#fff', weight: 6, opacity: 0.95, interactive: false }));
+      push(L.polyline(view.roads.inside, { color: '#7F1D1D', weight: 3.6, opacity: 1, interactive: false }));
+      for (const b of view.buildings) {
+        const loc = BUILDING_LOCATION[b.id];
+        push(
+          L.circleMarker([loc.lat, loc.lng], { radius: 4.5, color: '#fff', weight: 1.3, fillColor: '#7F1D1D', fillOpacity: 1 })
+            .bindTooltip(`${b.name} · inside the ${ev.label} extent`, { direction: 'top', offset: [0, -4] }),
+        );
+      }
+    }
+
     builtRef.current = added;
     return () => {
       for (const l of added) {
@@ -1848,6 +1890,7 @@ function MapView(props: MapViewProps) {
     };
   }, [
     ready,
+    floodEvent,
     priorityW,
     roadBy,
     suburbShade,
@@ -2010,6 +2053,32 @@ function MapView(props: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, caseRadius, highlight?.lat, highlight?.lng]);
 
+  /* -- The point being inspected. -------------------------------- */
+  useEffect(() => {
+    const L = LRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map || !probePoint || !probeMode) return;
+    const ring = L.circleMarker([probePoint.lat, probePoint.lng], {
+      radius: 10,
+      color: '#14201F',
+      weight: 2,
+      fill: false,
+      interactive: false,
+    }).addTo(map);
+    const dot = L.circleMarker([probePoint.lat, probePoint.lng], {
+      radius: 3,
+      color: '#fff',
+      weight: 1,
+      fillColor: '#14201F',
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(map);
+    return () => {
+      ring.remove();
+      dot.remove();
+    };
+  }, [ready, probePoint, probeMode]);
+
   /* -- The Queen Elizabeth Hospital, marked at all times. ---------- */
   const onOpenCaseRef = useRef(onOpenCase);
   onOpenCaseRef.current = onOpenCase;
@@ -2084,7 +2153,7 @@ function MapView(props: MapViewProps) {
 
   return (
     <div className="relative h-full w-full">
-      <div ref={containerRef} className="absolute inset-0" />
+      <div ref={containerRef} className={`absolute inset-0 ${probeMode ? 'probe-mode' : ''}`} />
 
       {/* Map controls: one card, each row naming what it changes and its
           current setting, so nothing depends on guessing an icon. Basemap
@@ -2186,28 +2255,89 @@ function MapView(props: MapViewProps) {
           </span>
           <Switch on={dimOutside} />
         </button>
+        <button
+          onClick={() => setProbeMode(!probeMode)}
+          aria-pressed={probeMode}
+          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+        >
+          <span className={`flex h-7 w-7 shrink-0 items-center justify-center ${probeMode ? 'text-accent' : 'text-ink-2'}`}>
+            <IconLocate size={16} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-ink">Inspect a point</span>
+            <span className="block text-xs text-ink-3">{probeMode ? 'Click the map to read it' : 'Read any spot from every layer'}</span>
+          </span>
+          <Switch on={probeMode} />
+        </button>
       </div>
 
-      {scenario.scenario !== 'today' && (
-        <div className="absolute bottom-4 left-1/2 z-[999] w-[min(460px,calc(100%-480px))] min-w-[300px] -translate-x-1/2">
-          <div className="fade-up rounded-[3px] border-l-4 border-[#B45309] bg-white px-3 py-2 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-sm font-semibold text-[#92400E]">Speculative scenario · {scenarioName(scenario)}</span>
-              <button onClick={() => setScenario(TODAY)} className="text-sm font-medium text-[#92400E] underline hover:text-[#78350F]">
-                Back to today
-              </button>
+      {/* Scenario dock: the flood event to show, its reach, and the
+          speculative climate scenario when one is on. */}
+      <div className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
+        <div className="rounded-[4px] bg-white shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <span className="shrink-0 text-sm font-semibold text-ink">Flood event</span>
+            <div className="flex flex-1 gap-1" role="radiogroup" aria-label="Flood event">
+              {([{ id: 'none', label: 'Off' }, ...FLOOD_EVENTS] as { id: FloodEvent; label: string }[]).map((o) => {
+                const on = floodEvent === o.id;
+                return (
+                  <button
+                    key={o.id}
+                    role="radio"
+                    aria-checked={on}
+                    onClick={() => setFloodEvent(o.id)}
+                    className={`num flex-1 rounded-[3px] border px-2 py-1 text-sm transition-colors ${on ? 'border-ink bg-ink font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
             </div>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-              {SPECULATIVE_OUTLOOK[scenario.scenario][scenario.year].map(([k, v]) => (
-                <span key={k} className="text-sm text-[#92400E]">
-                  {k} <span className="num font-semibold text-[#78350F]">{v}</span>
-                </span>
-              ))}
-            </div>
-            <div className="mt-0.5 text-xs text-[#92400E]">{SCENARIO_NOTE[scenario.scenario]} Placeholder figures, not modelled projections.</div>
           </div>
+          {floodEvent !== 'none' &&
+            (() => {
+              const v = eventView(floodEvent);
+              const cells: [string, string, string][] = [
+                ['Buildings', String(v.buildings.length), formatMoney(v.insured)],
+                ['Major roads', `${v.roadKm.toFixed(1)} km`, 'inside'],
+                ['Pipes', `${Math.round(v.pipeKm)} km`, 'inside'],
+                ['Council area', pct(v.areaShare), 'covered'],
+              ];
+              return (
+                <>
+                  <div className="grid grid-cols-4 divide-x divide-line border-t border-line">
+                  {cells.map(([k, val, sub]) => (
+                    <div key={k} className="px-3 py-1.5">
+                      <div className="text-xs text-ink-3">{k}</div>
+                      <div className="num text-lg font-semibold leading-tight text-ink">{val}</div>
+                      <div className="num text-xs text-ink-3">{sub}</div>
+                    </div>
+                  ))}
+                  </div>
+                  <div className="border-t border-line px-3 py-1 text-xs text-ink-3">{EVENT_COVERAGE[floodEvent]}</div>
+                </>
+              );
+            })()}
+          {scenario.scenario !== 'today' && (
+            <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-semibold text-[#92400E]">Speculative scenario · {scenarioName(scenario)}</span>
+                <button onClick={() => setScenario(TODAY)} className="text-sm font-medium text-[#92400E] underline hover:text-[#78350F]">
+                  Back to today
+                </button>
+              </div>
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
+                {SPECULATIVE_OUTLOOK[scenario.scenario][scenario.year].map(([k, v]) => (
+                  <span key={k} className="text-sm text-[#92400E]">
+                    {k} <span className="num font-semibold text-[#78350F]">{v}</span>
+                  </span>
+                ))}
+              </div>
+              <div className="mt-0.5 text-xs text-[#92400E]">{SCENARIO_NOTE[scenario.scenario]} Placeholder figures, not modelled projections.</div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
@@ -2244,6 +2374,7 @@ function MapView(props: MapViewProps) {
           shade={suburbShade}
           caseShow={highlight?.area ? highlight.show : undefined}
           caseRadius={highlight?.area?.radius}
+          floodEvent={floodEvent}
         />
       </div>
 
@@ -2318,12 +2449,14 @@ function MapLegend({
   shade,
   caseShow,
   caseRadius,
+  floodEvent = 'none',
 }: {
   checkedLayers: Set<string>;
   showBuildings: boolean;
   shade: SuburbShade | null;
   caseShow?: Set<CaseLayer>;
   caseRadius?: number;
+  floodEvent?: FloodEvent;
 }) {
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
@@ -2339,6 +2472,37 @@ function MapLegend({
       </button>
       {open && (
         <div className="thin-scroll max-h-[280px] space-y-3 overflow-y-auto border-t border-line px-3 py-2.5">
+          {floodEvent !== 'none' &&
+            (() => {
+              const ev = FLOOD_EVENTS.find((x) => x.id === floodEvent)!;
+              return (
+                <div className="space-y-1">
+                  <div className="text-sm font-medium text-ink">Flood event, {ev.label} (long-term)</div>
+                  {(
+                    [
+                      ['area', LAYER_BY_ID[ev.layer].hi!, 'Extent'],
+                      ['road', '#7F1D1D', 'Major road inside'],
+                      ['pipe', EVENT_COLOR, 'Pipe inside'],
+                      ['dot', '#7F1D1D', 'Council building inside'],
+                      ['muted', '#9AA8A7', 'Roads and pipes outside'],
+                    ] as const
+                  ).map(([kind, c, label]) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
+                        {kind === 'area' ? (
+                          <rect x="1.5" y="2" width="15" height="8" fill={c} fillOpacity="0.35" />
+                        ) : kind === 'dot' ? (
+                          <circle cx="9" cy="6" r="4" fill={c} stroke="#fff" strokeWidth="1.2" />
+                        ) : (
+                          <path d="M1.5 6 H16.5" stroke={c} strokeWidth={kind === 'road' ? 3.4 : 1.8} />
+                        )}
+                      </svg>
+                      <span className="text-sm text-ink-2">{label}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           {caseShow && (
             <div className="space-y-1">
               <div className="text-sm font-medium text-ink">Around TQEH</div>
@@ -5069,6 +5233,242 @@ function TqehTolerance() {
 }
 
 /* ------------------------------------------------------------------ *
+ * Flood event scenarios
+ *
+ * The three return periods are real, mapped flood scenarios. Picking one
+ * shows only that event's extent and what sits inside it: council
+ * buildings, classified roads, stormwater pipes and the share of the
+ * council area, each counted exactly for that extent (segMask records
+ * every extent a road or pipe stretch is in).
+ * ------------------------------------------------------------------ */
+
+type FloodEvent = 'none' | '1in100' | '1in20' | '1in5';
+const FLOOD_EVENTS: { id: Exclude<FloodEvent, 'none'>; label: string; layer: FloodLayerId; bit: number }[] = [
+  { id: '1in100', label: '1 in 100', layer: 'flood-1in100-real', bit: 1 },
+  { id: '1in20', label: '1 in 20', layer: 'flood-1in20-real', bit: 2 },
+  { id: '1in5', label: '1 in 5', layer: 'flood-1in5-real', bit: 4 },
+];
+const EVENT_COLOR = '#C2410C';
+/** What each event's supplied files cover, so counts aren't misread. */
+const EVENT_COVERAGE: Record<Exclude<FloodEvent, 'none'>, string> = {
+  '1in100': 'Long-term run. Every catchment supplied.',
+  '1in20': 'Long-term run. Only River Torrens, TRDA and Trimmer supplied, so smaller than the full picture.',
+  '1in5': 'Long-term run. Trimmer not supplied.',
+};
+
+/** Stretches of each line inside / outside the event, from its segMask. */
+function splitByMask(lines: LatLngTuple[][], masks: string[], bit: number) {
+  const inside: LatLngTuple[][] = [];
+  const outside: LatLngTuple[][] = [];
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    const mask = masks[li] ?? '';
+    let run: LatLngTuple[] = [];
+    let runIn: boolean | null = null;
+    const flush = () => {
+      if (runIn !== null && run.length >= 2) (runIn ? inside : outside).push(run);
+      run = [];
+      runIn = null;
+    };
+    for (let i = 0; i < line.length - 1; i++) {
+      const isIn = (Number(mask[i] ?? 0) & bit) !== 0;
+      if (isIn !== runIn) {
+        flush();
+        runIn = isIn;
+        run = [line[i]];
+      }
+      run.push(line[i + 1]);
+    }
+    flush();
+  }
+  return { inside, outside };
+}
+
+interface EventView {
+  roads: { inside: LatLngTuple[][]; outside: LatLngTuple[][] };
+  pipes: { inside: LatLngTuple[][]; outside: LatLngTuple[][] };
+  buildings: RealAsset[];
+  insured: number;
+  roadKm: number;
+  pipeKm: number;
+  areaShare: number;
+}
+const eventCache = new Map<FloodEvent, EventView>();
+function eventView(e: Exclude<FloodEvent, 'none'>): EventView {
+  const hit = eventCache.get(e);
+  if (hit) return hit;
+  const ev = FLOOD_EVENTS.find((x) => x.id === e)!;
+  const profiles = hazardProfiles();
+  const buildings = MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.flood.includes(ev.layer));
+  const areaTotal = SA2_BOUNDARIES.reduce((n, s) => n + s.areaSqKm, 0);
+  const areaIn = SA2_BOUNDARIES.reduce((n, s) => n + (SA2_IND[s.code]?.floodShare[e] ?? 0) * s.areaSqKm, 0);
+  const out: EventView = {
+    roads: splitByMask(
+      ROADS.map((r) => r.line),
+      ROADS.map((r) => r.segMask),
+      ev.bit,
+    ),
+    pipes: splitByMask(stormwaterPipesData.lines as LatLngTuple[][], (stormwaterPipesData as { segMask?: string[] }).segMask ?? [], ev.bit),
+    buildings,
+    insured: buildings.reduce((n, b) => n + b.insuredValue, 0),
+    roadKm: (majorRoadsData.kmInFlood as Record<string, number>)[e] ?? 0,
+    pipeKm: (stormwaterPipesData.kmInFlood as Record<string, number>)[e] ?? 0,
+    areaShare: areaTotal ? areaIn / areaTotal : 0,
+  };
+  eventCache.set(e, out);
+  return out;
+}
+
+/* ------------------------------------------------------------------ *
+ * Inspect a point
+ *
+ * Click anywhere and read that spot from every dataset: which flood
+ * extents it's in, its heat cell, its SA2 and SA1, and the nearest
+ * road, pipe, water, station and council building. Lookups only.
+ * ------------------------------------------------------------------ */
+
+interface ProbeReading {
+  lat: number;
+  lng: number;
+  inLga: boolean;
+  suburb: Suburb | null;
+  sa1: string | null;
+  density: { category: string; value: number } | null;
+  floods: FloodLayerId[];
+  nearestFloodM: number;
+  heat: { uhiCat: number; svi: number } | null;
+  nearestHeat: { uhiCat: number; m: number } | null;
+  road: { name: string; roles: string[]; m: number } | null;
+  pipeM: number;
+  waterM: number;
+  stationM: number;
+  building: { b: RealAsset; m: number } | null;
+}
+
+function probeAt(lat: number, lng: number): ProbeReading {
+  const inLga = pointInRing(lat, lng, LGA_BOUNDARY.ring);
+  const sa2 = SA2_BOUNDARIES.find((s) => pointInRing(lat, lng, s.ring));
+  const sa1 = SA1S_WITH_BBOX.find(({ a, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, a.path));
+  const floods = FLOOD_LAYER_IDS.filter((id) =>
+    floodRingsFor(id).some(({ ring, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, ring)),
+  );
+  const nearestFloodM = floods.length ? 0 : nearestMetres(lat, lng, floodShapes('flood-1in100-real'));
+  let heat: ProbeReading['heat'] = null;
+  let nearestHeat: ProbeReading['nearestHeat'] = null;
+  for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+    if (rings.some(({ ring, bbox }) => inBBox(lat, lng, bbox) && pointInRing(lat, lng, ring))) {
+      heat = { uhiCat: cell.uhiCat, svi: cell.svi };
+      break;
+    }
+  }
+  if (!heat) {
+    for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
+      const m = nearestMetres(lat, lng, rings.map(({ ring }) => toShape(ring, true)));
+      if (!nearestHeat || m < nearestHeat.m) nearestHeat = { uhiCat: cell.uhiCat, m };
+    }
+  }
+  let road: ProbeReading['road'] = null;
+  for (const rd of ROADS) {
+    const m = nearestMetres(lat, lng, [toShape(rd.line)]);
+    if (!road || m < road.m) road = { name: roadName(rd.name), roles: roadRoles(rd.name), m };
+  }
+  let building: ProbeReading['building'] = null;
+  for (const b of MAPPED_BUILDINGS) {
+    const loc = BUILDING_LOCATION[b.id];
+    const m = nearestMetres(lat, lng, [toShape([[loc.lat, loc.lng]])]);
+    if (!building || m < building.m) building = { b, m };
+  }
+  const near = (id: string) => nearestMetres(lat, lng, PROXIMITY_SHAPES[id]());
+  const d = sa1 ? DWELLING_BY_SA1[sa1.a.id] : undefined;
+  return {
+    lat,
+    lng,
+    inLga,
+    suburb: sa2 ? SUBURB_BY_ID[SA2_CODE_TO_SUBURB_ID[sa2.code]] ?? null : null,
+    sa1: sa1?.a.id ?? null,
+    density: d ? { category: d.category, value: d.value } : null,
+    floods,
+    nearestFloodM,
+    heat,
+    nearestHeat,
+    road,
+    pipeM: near('stormwater-pipes'),
+    waterM: Math.min(near('watercourses'), near('waterbodies')),
+    stationM: near('train-stations'),
+    building,
+  };
+}
+
+function ProbePanel({
+  point,
+  onClose,
+  onOpenBuilding,
+}: {
+  point: { lat: number; lng: number };
+  onClose: () => void;
+  onOpenBuilding: (id: string) => void;
+}) {
+  const r = useMemo(() => probeAt(point.lat, point.lng), [point.lat, point.lng]);
+  const mostFrequent = r.floods.length ? r.floods[0] : null;
+  return (
+    <RightPanelShell
+      accent="#14201F"
+      eyebrow="Inspect a point"
+      title={r.suburb ? r.suburb.name : r.inLga ? 'Inside the council area' : 'Outside the council area'}
+      onClose={onClose}
+    >
+      <div className="px-4 py-4">
+        <p className="num text-sm text-ink-3">
+          {r.lat.toFixed(5)}, {r.lng.toFixed(5)}
+          {r.sa1 ? ` · SA1 ${r.sa1}` : ''}
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-line bg-line">
+          <Glance
+            label="Flood"
+            value={mostFrequent ? FLOOD_SHORT[mostFrequent] : 'Outside'}
+            sub={mostFrequent ? 'most frequent extent here' : `${formatMetres(r.nearestFloodM)} to the 1 in 100`}
+          />
+          <Glance
+            label="Urban heat"
+            value={r.heat ? `Category ${r.heat.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
+            sub={r.heat ? `SVI ${r.heat.svi.toFixed(2)}` : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.m)}` : 'no heat data'}
+          />
+        </div>
+
+        <Section title="Here">
+          <dl className="divide-y divide-line">
+            <FactRow label="Flood extents" value={r.floods.length ? r.floods.map((f) => FLOOD_SHORT[f]).join(', ') : 'None'} />
+            <FactRow label="Dwelling density" value={r.density ? `${r.density.category} (Density 21: ${r.density.value})` : 'No value'} />
+          </dl>
+        </Section>
+
+        <Section title="Nearest">
+          <dl className="divide-y divide-line">
+            {r.road && (
+              <FactRow label="Major road" value={`${r.road.name}, ${formatMetres(r.road.m)}${r.road.roles.length ? ` (${r.road.roles[0].toLowerCase()})` : ''}`} />
+            )}
+            <FactRow label="Stormwater pipe" value={formatMetres(r.pipeM)} />
+            <FactRow label="Water" value={formatMetres(r.waterM)} />
+            <FactRow label="Train station" value={formatMetres(r.stationM)} />
+            {r.building && (
+              <FactRow
+                label="Council building"
+                value={
+                  <button onClick={() => onOpenBuilding(r.building!.b.id)} className="text-left text-accent hover:text-ink">
+                    {r.building.b.name}, {formatMetres(r.building.m)}
+                  </button>
+                }
+              />
+            )}
+          </dl>
+        </Section>
+        <p className="mt-4 text-sm text-ink-3">Click anywhere else on the map to inspect another point.</p>
+      </div>
+    </RightPanelShell>
+  );
+}
+
+/* ------------------------------------------------------------------ *
  * Tab. Help
  * ------------------------------------------------------------------ */
 
@@ -5745,8 +6145,10 @@ interface RoadPiece {
   role: string;
   line: LatLngTuple[];
   segClass: string;
+  /** Every extent each stretch is in: 1 = 1 in 100, 2 = 1 in 20, 4 = 1 in 5, summed. */
+  segMask: string;
 }
-const ROADS = majorRoadsData.roads as RoadPiece[];
+const ROADS = majorRoadsData.roads as unknown as RoadPiece[];
 const ROAD_ROLES: { role: string; label: string; color: string; weight: number }[] = [
   { role: 'Priority Network', label: 'Priority Network', color: '#111827', weight: 4.2 },
   { role: 'Strategic Routes', label: 'Strategic route', color: '#4B5563', weight: 3.4 },
@@ -7132,6 +7534,12 @@ export default function App() {
   const [priorityW, setPriorityW] = useState<PriorityWeights>(EQUAL_WEIGHTS);
   const priorityCtx = useMemo(() => ({ w: priorityW, setW: setPriorityW }), [priorityW]);
   const [roadBy, setRoadBy] = useState<RoadColour>('role');
+  // Flood event scenario shown on the map, and the inspect-a-point tool.
+  const [floodEvent, setFloodEvent] = useState<FloodEvent>('none');
+  const [probeMode, setProbeMode] = useState(false);
+  const [probePoint, setProbePoint] = useState<{ lat: number; lng: number } | null>(null);
+  const probeModeRef = useRef(false);
+  probeModeRef.current = probeMode;
   const roadCtx = useMemo(() => ({ by: roadBy, set: setRoadBy }), [roadBy]);
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
@@ -7208,7 +7616,9 @@ export default function App() {
   // panel; closing it goes back to whichever was open underneath.
   // An open case study shows its report on the right; a building opened
   // from that report sits on top of it.
-  const rightPanelMode: 'blueprint' | 'building' | 'layer' | 'case' | null = selectedBuildingKey
+  const rightPanelMode: 'probe' | 'blueprint' | 'building' | 'layer' | 'case' | null = probeMode && probePoint
+    ? 'probe'
+    : selectedBuildingKey
     ? 'building'
     : panelTab === 'cases' && caseId
       ? 'case'
@@ -7292,6 +7702,8 @@ export default function App() {
 
   // Clicking a suburb opens its Place profile, the same as picking it there.
   const handleSelectSuburb = useCallback((id: string) => {
+    // While inspecting, a click reads the point instead of opening a suburb.
+    if (probeModeRef.current) return;
     setSelectedId(id);
     setPanelTab('place');
   }, []);
@@ -7527,12 +7939,32 @@ export default function App() {
               setPanelTab('cases');
               openCase('tqeh');
             }}
+            floodEvent={floodEvent}
+            setFloodEvent={setFloodEvent}
+            probeMode={probeMode}
+            setProbeMode={(v) => {
+              setProbeMode(v);
+              if (!v) setProbePoint(null);
+            }}
+            onProbe={(lat, lng) => setProbePoint({ lat, lng })}
+            probePoint={probePoint}
           />
         </div>
 
         <SourceYears snapshot={snapshot} />
       </main>
 
+      {rightPanelMode === 'probe' && probePoint && (
+        <ProbePanel
+          point={probePoint}
+          onClose={() => setProbePoint(null)}
+          onOpenBuilding={(id) => {
+            setProbeMode(false);
+            setProbePoint(null);
+            openBuilding(id);
+          }}
+        />
+      )}
       {rightPanelMode === 'case' && caseId && (
         <RightPanelShell
           accent="#C8102E"

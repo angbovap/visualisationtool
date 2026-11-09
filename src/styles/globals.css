@@ -168,3 +168,7 @@ input[type='range']::-moz-range-thumb {
 @media (prefers-reduced-motion: reduce) {
   .tqeh-pin__pulse { animation: none; opacity: 0.35; }
 }
+
+/* Inspect-a-point: a crosshair over the whole map while the tool is on. */
+.probe-mode.leaflet-container,
+.probe-mode .leaflet-interactive { cursor: crosshair !important; }

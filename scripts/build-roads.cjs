@@ -134,6 +134,7 @@ const kmIn100ByRoad = {};
 let total = 0;
 for (const r of roads) {
   let digits = '';
+  let mask = '';
   for (let i = 0; i < r.line.length - 1; i++) {
     const a = r.line[i];
     const c = r.line[i + 1];
@@ -146,6 +147,7 @@ for (const r of roads) {
     const e20 = inExt('1in20', ma, mn);
     const e100 = inExt('1in100', ma, mn);
     digits += e5 ? '3' : e20 ? '2' : e100 ? '1' : '0';
+    mask += String((e100 ? 1 : 0) + (e20 ? 2 : 0) + (e5 ? 4 : 0));
     if (e5) kmInFlood['1in5'] += L;
     if (e20) kmInFlood['1in20'] += L;
     if (e100) {
@@ -154,6 +156,8 @@ for (const r of roads) {
     }
   }
   r.segClass = digits;
+  // Every extent each stretch is in: 1 = 1 in 100, 2 = 1 in 20, 4 = 1 in 5, summed.
+  r.segMask = mask;
 }
 
 const km = (v) => Number((v / 1000).toFixed(2));

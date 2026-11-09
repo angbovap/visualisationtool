@@ -90,14 +90,22 @@ const insideLen = { '1in5': 0, '1in20': 0, '1in100': 0 };
 // flood extent its midpoint sits in (3 = 1 in 5, 2 = 1 in 20,
 // 1 = 1 in 100, 0 = outside every mapped extent).
 const segClass = [];
+// Also every extent each stretch is in, as one digit per stretch:
+// 1 = 1 in 100, 2 = 1 in 20, 4 = 1 in 5, added together (0 to 7).
+const segMask = [];
 const inExt = (k, la, ln) => extents[k].some(({ ring, box }) => inBox(la, ln, box) && inRing(la, ln, ring));
 for (const line of lines) {
   let digits = '';
+  let mask = '';
   for (let i = 0; i < line.length - 1; i++) {
     {
       const ma = (line[i][0] + line[i + 1][0]) / 2;
       const mn = (line[i][1] + line[i + 1][1]) / 2;
-      digits += inExt('1in5', ma, mn) ? '3' : inExt('1in20', ma, mn) ? '2' : inExt('1in100', ma, mn) ? '1' : '0';
+      const e5 = inExt('1in5', ma, mn);
+      const e20 = inExt('1in20', ma, mn);
+      const e100 = inExt('1in100', ma, mn);
+      digits += e5 ? '3' : e20 ? '2' : e100 ? '1' : '0';
+      mask += String((e100 ? 1 : 0) + (e20 ? 2 : 0) + (e5 ? 4 : 0));
     }
     const a = line[i];
     const c = line[i + 1];
@@ -114,6 +122,7 @@ for (const line of lines) {
     }
   }
   segClass.push(digits);
+  segMask.push(mask);
 }
 
 const result = {
@@ -124,6 +133,7 @@ const result = {
   kmInFlood: Object.fromEntries(Object.entries(insideLen).map(([k, v]) => [k, Number((v / 1000).toFixed(1))])),
   lines,
   segClass,
+  segMask,
 };
 fs.writeFileSync(out, JSON.stringify(result) + '\n');
 console.log(
