@@ -8008,20 +8008,34 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
 function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?: TourStep[] }) {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [cardH, setCardH] = useState(170);
 
   useEffect(() => {
     const measure = () => {
       const el = document.querySelector(steps[step].selector);
       setRect(el ? el.getBoundingClientRect() : null);
     };
+    // Bring the step's target into view first: one inside a scrolling
+    // panel (the report's Download at the bottom) would otherwise be
+    // highlighted off screen, taking the step card with it.
+    const el = document.querySelector(steps[step].selector);
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     measure();
-    const t = window.setTimeout(measure, 250);
+    const timers = [120, 300, 600].map((ms) => window.setTimeout(measure, ms));
     window.addEventListener('resize', measure);
+    // Any panel scrolling moves the target; follow it.
+    document.addEventListener('scroll', measure, true);
     return () => {
-      window.clearTimeout(t);
+      timers.forEach((t) => window.clearTimeout(t));
       window.removeEventListener('resize', measure);
+      document.removeEventListener('scroll', measure, true);
     };
   }, [step, steps]);
+
+  useLayoutEffect(() => {
+    if (cardRef.current) setCardH(cardRef.current.offsetHeight);
+  });
 
   // Esc skips the guide from any step.
   useEffect(() => {
@@ -8036,16 +8050,24 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
 
   let calloutStyle: React.CSSProperties = { top: '40%', left: 'calc(50% - 130px)' };
   if (rect) {
+    let top: number;
+    let left: number;
     if (s.placement === 'right') {
-      calloutStyle = { top: rect.top, left: rect.right + 16 };
+      top = rect.top;
+      left = rect.right + 16;
     } else if (s.placement === 'left') {
-      calloutStyle = { top: rect.top, left: Math.max(16, rect.left - calloutWidth - 16) };
+      top = rect.top;
+      left = rect.left - calloutWidth - 16;
     } else {
-      calloutStyle = {
-        top: Math.max(16, rect.top - 150),
-        left: Math.min(Math.max(16, rect.left), window.innerWidth - calloutWidth - 16),
-      };
+      top = rect.top - cardH - 16;
+      left = rect.left;
     }
+    // Always fully on screen, so Next and Skip can be reached.
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    top = Math.min(Math.max(16, top), vh - cardH - 16);
+    left = Math.min(Math.max(16, left), vw - calloutWidth - 16);
+    calloutStyle = { top, left };
   }
 
   return (
@@ -8066,6 +8088,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
         />
       )}
       <div
+        ref={cardRef}
         className="fixed rounded-[4px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)] transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
