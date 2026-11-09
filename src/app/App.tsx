@@ -1325,6 +1325,8 @@ function MapView(props: MapViewProps) {
   const [basemap, setBasemap] = useState(BASEMAPS[0].id);
   const [dimOutside, setDimOutside] = useState(true);
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
+  // The map controls card can fold down to one button when it's in the way.
+  const [controlsOpen, setControlsOpen] = useState(true);
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
   const { by: roadBy } = React.useContext(RoadColourContext);
@@ -2053,6 +2055,15 @@ function MapView(props: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, caseRadius, highlight?.lat, highlight?.lng]);
 
+  /* -- Crosshair while inspecting. Toggled on the element directly:
+     React must never rewrite this container's className, or it strips
+     the classes Leaflet put there (including the one that clips it). */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.classList.toggle('probe-mode', probeMode);
+  }, [probeMode, ready]);
+
   /* -- The point being inspected. -------------------------------- */
   useEffect(() => {
     const L = LRef.current;
@@ -2153,12 +2164,39 @@ function MapView(props: MapViewProps) {
 
   return (
     <div className="relative h-full w-full">
-      <div ref={containerRef} className={`absolute inset-0 ${probeMode ? 'probe-mode' : ''}`} />
+      <div ref={containerRef} className="absolute inset-0" />
 
       {/* Map controls: one card, each row naming what it changes and its
           current setting, so nothing depends on guessing an icon. Basemap
           and boundaries open a menu beside their row; Focus is a switch. */}
+      {!controlsOpen && (
+        <button
+          onClick={() => setControlsOpen(true)}
+          aria-expanded={false}
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)] hover:bg-surface-2"
+        >
+          <IconMap size={15} className="text-ink-2" />
+          Map settings
+          {(probeMode || scenario.scenario !== 'today') && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="Some settings are on" />}
+          <IconChevron size={12} className="rotate-90 text-ink-3" />
+        </button>
+      )}
+      {controlsOpen && (
       <div className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 shadow-[0_1px_2px_rgba(20,32,31,0.22),0_0_0_1px_rgba(20,32,31,0.06)]">
+        <div className="flex items-center justify-between px-2 pb-0.5 pt-1">
+          <span className="text-xs font-semibold text-ink-3">Map settings</span>
+          <button
+            onClick={() => {
+              setControlsOpen(false);
+              setOpenControl(null);
+            }}
+            aria-label="Minimise map settings"
+            title="Minimise"
+            className="flex h-6 w-6 items-center justify-center rounded-[3px] text-ink-3 hover:bg-surface-2 hover:text-ink"
+          >
+            <IconChevron size={12} className="-rotate-90" />
+          </button>
+        </div>
         {(
           [
             {
@@ -2270,6 +2308,7 @@ function MapView(props: MapViewProps) {
           <Switch on={probeMode} />
         </button>
       </div>
+      )}
 
       {/* Scenario dock: the flood event to show, its reach, and the
           speculative climate scenario when one is on. */}
