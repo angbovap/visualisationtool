@@ -5236,6 +5236,52 @@ function CaseControls({
   );
 }
 
+const CASE_OFFER_KEY = 'cocs-case-guide-offer-muted';
+function caseOfferMuted(): boolean {
+  try {
+    return localStorage.getItem(CASE_OFFER_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function muteCaseOffer() {
+  try {
+    localStorage.setItem(CASE_OFFER_KEY, '1');
+  } catch {
+    // Storage blocked: it just asks again next time.
+  }
+}
+
+/** A small, non-blocking card asking whether to walk through the case. */
+function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () => void; onNever: () => void }) {
+  return (
+    <div
+      role="dialog"
+      aria-label="Case study guide"
+      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[4px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)]"
+    >
+      <div className="text-base font-semibold text-ink">Would you like a quick guide?</div>
+      <p className="mt-0.5 text-sm leading-[1.45] text-ink-2">Six short steps on how this case study works.</p>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <button onClick={onNever} className="text-xs text-ink-3 underline decoration-dotted hover:text-ink">
+          Don't ask again
+        </button>
+        <div className="flex gap-1.5">
+          <button
+            onClick={onNo}
+            className="rounded-[3px] border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
+          >
+            Not now
+          </button>
+          <button onClick={onYes} className="rounded-[3px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#005963]">
+            Show me
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** The case study guide: the five steps, pointed out where they are. */
 const CASE_TOUR_STEPS: TourStep[] = [
   {
@@ -8093,6 +8139,8 @@ export default function App() {
   // shows first and always, so the orientation is never skipped just
   // because some earlier visit set a flag.
   const [screen, setScreen] = useState<'landing' | 'tour' | 'caseTour' | null>('landing');
+  // "Would you like a guide?" card shown when a case study opens.
+  const [caseOffer, setCaseOffer] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   // A building picked from search, labelled on its own once Place opens
   // its suburb, rather than every building in that suburb.
@@ -8293,8 +8341,9 @@ export default function App() {
     if (id) {
       setFloodEvent('none');
       setHeatEvent('none');
-      // The case guide always opens with the case; Skip closes it.
-      setScreen('caseTour');
+      // Offer the case guide rather than starting it, unless the person
+      // has asked not to be asked again.
+      setCaseOffer(!caseOfferMuted());
     }
     const c = CASE_STUDIES.find((x) => x.id === id);
     if (c) {
@@ -8431,7 +8480,10 @@ export default function App() {
               radius={caseRadius}
               setRadius={setCaseRadius}
               setView={setCaseView}
-              onGuide={() => setScreen('caseTour')}
+              onGuide={() => {
+                setCaseOffer(false);
+                setScreen('caseTour');
+              }}
             />
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -8453,6 +8505,19 @@ export default function App() {
         )}
         {screen === 'tour' && <GuideTour onDone={() => setScreen(null)} />}
         {screen === 'caseTour' && <GuideTour steps={CASE_TOUR_STEPS} onDone={() => setScreen(null)} />}
+        {caseOffer && panelTab === 'cases' && caseId && screen === null && (
+          <CaseGuideOffer
+            onYes={() => {
+              setCaseOffer(false);
+              setScreen('caseTour');
+            }}
+            onNo={() => setCaseOffer(false)}
+            onNever={() => {
+              muteCaseOffer();
+              setCaseOffer(false);
+            }}
+          />
+        )}
         {searchOpen && <SearchPalette onPick={handleSearchPick} onClose={() => setSearchOpen(false)} />}
       </section>
 
