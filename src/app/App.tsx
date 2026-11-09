@@ -5189,15 +5189,14 @@ function CaseControls({
   return (
     <div className="px-3 py-4">
       <BackBar onBack={onBack} parent="Case studies" title={name} />
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-base leading-[1.5] text-ink-2">Work down the steps. The report opens on the right.</p>
-        <button onClick={onGuide} className="shrink-0 text-base font-medium text-accent hover:text-ink">
+      <div className="flex justify-end">
+        <button onClick={onGuide} className="text-base font-medium text-accent hover:text-ink">
           How this works
         </button>
       </div>
 
       <section className="mt-6" data-tour="case-area">
-        <StepHeading n={1} title="Set the area" hint="How much of the surroundings to look at" />
+        <StepHeading n={1} title="Set the area" />
         <div className="flex divide-x divide-line border border-line">
           {TQEH_AREA_OPTIONS.map((m) => (
             <button
@@ -5237,7 +5236,7 @@ function CaseControls({
       </section>
 
       <section className="mt-6" data-tour="case-report-steps">
-        <StepHeading n={3} title="Read the report" hint="Opens that part of the report on the right" />
+        <StepHeading n={3} title="Read the report" />
         <div className="flex gap-1.5">
           <button onClick={() => setView('hazard')} className={linkBtn}>
             Hazard
@@ -5256,7 +5255,7 @@ function CaseControls({
       </section>
 
       <section className="mt-6">
-        <StepHeading n={5} title="Download" hint="Every reading and the tolerance sheet, as one file" />
+        <StepHeading n={5} title="Download" />
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
           className="w-full rounded-[2px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#005963]"
@@ -5389,9 +5388,8 @@ function TqehTab({
 
   return (
     <div>
-      <p className="text-base leading-[1.55] text-ink-2">
-        Woodville South{r.suburb ? `, ${r.suburb.name} SA2` : ''}. A state hospital, not a council asset. Readings are
-        measured at the centre of its grounds (outlined on the map).
+      <p className="text-base text-ink-2">
+        Woodville South{r.suburb ? ` · ${r.suburb.name} SA2` : ''} · State hospital (non-council asset)
       </p>
 
       {/* At a glance: the four readings people ask about first. */}
@@ -5430,7 +5428,7 @@ function TqehTab({
       {view === 'tolerance' && <TqehTolerance />}
 
       <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="text-sm leading-[1.45] text-ink-3">All readings and the tolerance sheet, as one file.</span>
+        <span className="text-sm text-ink-3">Readings and tolerance sheet</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
           className="shrink-0 rounded-[2px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
@@ -5478,8 +5476,7 @@ function TqehHazard({
           ))}
         </dl>
         <p className="mt-1.5 text-sm leading-[1.5] text-ink-3">
-          Long-term runs (River Torrens to 2050), not current conditions. 1 in 20 covers three catchments; 1 in 5 has
-          no Trimmer data yet.
+          Modelled long-term extents. 1 in 20: three catchments only. 1 in 5: excludes Trimmer.
         </p>
       </Section>
 
@@ -5519,7 +5516,7 @@ function TqehHazard({
           }
         >
           <p className="-mt-1 mb-1 text-sm text-ink-3">
-            The hospital's suburb, ranked against the other seven.
+            Rank among the eight suburbs.
             {scenario.scenario !== 'today' && (
               <span className="font-medium text-[#92400E]"> Showing {scenarioName(scenario)}, speculative.</span>
             )}
@@ -5587,11 +5584,10 @@ function TqehAssets({
           <FactRow label="In flood extent" value={`${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`} />
           <FactRow label="Nearest pipe" value={`${formatMetres(r.pipeM)} from the centre`} />
         </dl>
-        <p className="mt-1.5 text-sm leading-[1.5] text-ink-3">Pipe size and capacity weren't in the export.</p>
+        <p className="mt-1.5 text-sm text-ink-3">Pipe diameter and capacity not supplied.</p>
       </Section>
 
       <Section title="Waiting on council">
-        <p className="-mt-1 mb-1 text-sm text-ink-3">Shown here once council supplies the files.</p>
         <dl className="divide-y divide-line">
           <FactRow label="Local streets" value={<span className="text-ink-2">Council's full road register</span>} />
           <FactRow label="Stormwater" value={<span className="text-ink-2">Pipe sizes, pits and hydraulics</span>} />
@@ -7142,8 +7138,8 @@ function BuildingProfile({ b }: { b: RealAsset }) {
             />
           </dl>
           <p className="mt-3 text-sm leading-[1.5] text-ink-3">
-            Flood extents are long-term runs (River Torrens to 2050), not current conditions. Data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data yet.
-            {loc?.precision === 'street' && ' This building is placed at street level, so readings are for a point on its street.'}
+            Modelled long-term flood extents. 1 in 20: three catchments only. 1 in 5: excludes Trimmer.
+            {loc?.precision === 'street' && ' Location approximate (street level).'}
           </p>
         </Section>
       ) : (
