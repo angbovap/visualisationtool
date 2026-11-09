@@ -4744,6 +4744,7 @@ function tqehReading(): TqehReading {
 }
 
 const TOLERANCE_KEY = 'cocs-tqeh-tolerance-v1';
+const TOLERANCE_SAVED_EVENT = 'cocs-tolerance-saved';
 type ToleranceSheet = Record<string, { tolerance: string; notes: string }>;
 function loadTolerance(): ToleranceSheet {
   try {
@@ -5038,6 +5039,13 @@ function CaseControls({
   };
   // The group heading already says long-term, so the rows don't repeat it.
   const label = (id: CaseLayer) => CASE_LAYER_DEFS.find((d) => d.id === id)!.label.replace(' (long-term)', '');
+  // Re-read the saved sheet whenever the report's Save is pressed.
+  const [, bump] = useState(0);
+  useEffect(() => {
+    const on = () => bump((n) => n + 1);
+    window.addEventListener(TOLERANCE_SAVED_EVENT, on);
+    return () => window.removeEventListener(TOLERANCE_SAVED_EVENT, on);
+  }, []);
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
   const setCount = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
   const group = (ids: CaseLayer[]) => (
@@ -5432,33 +5440,57 @@ function TqehAssets({
 }
 
 function TqehTolerance() {
-  const [sheet, setSheet] = useState<ToleranceSheet>(() => (typeof window === 'undefined' ? {} : loadTolerance()));
+  // What's saved, and the edits in progress; Save makes them one.
+  const [saved, setSaved] = useState<ToleranceSheet>(() => (typeof window === 'undefined' ? {} : loadTolerance()));
+  const [draft, setDraft] = useState<ToleranceSheet>(saved);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const val = (sh: ToleranceSheet, name: string, field: 'tolerance' | 'notes') => sh[name]?.[field] ?? '';
+  const dirty = CONSEQUENCE_CATEGORIES.some(
+    (c) => val(draft, c.name, 'tolerance') !== val(saved, c.name, 'tolerance') || val(draft, c.name, 'notes') !== val(saved, c.name, 'notes'),
+  );
   const update = (name: string, field: 'tolerance' | 'notes', v: string) => {
-    setSheet((prev) => {
-      const next = { ...prev, [name]: { ...(prev[name] ?? { tolerance: '', notes: '' }), [field]: v } };
-      try {
-        localStorage.setItem(TOLERANCE_KEY, JSON.stringify(next));
-      } catch {
-        // Storage blocked: the sheet still works for this session.
-      }
-      return next;
-    });
+    setDraft((prev) => ({ ...prev, [name]: { ...(prev[name] ?? { tolerance: '', notes: '' }), [field]: v } }));
+    setSavedAt(null);
   };
-  const filled = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
+  const save = () => {
+    try {
+      localStorage.setItem(TOLERANCE_KEY, JSON.stringify(draft));
+    } catch {
+      // Storage blocked: kept for this session only.
+    }
+    setSaved(draft);
+    setSavedAt(new Date());
+    window.dispatchEvent(new Event(TOLERANCE_SAVED_EVENT));
+  };
+  const filled = CONSEQUENCE_CATEGORIES.filter((c) => val(saved, c.name, 'tolerance').trim()).length;
 
   return (
     <>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <p className="text-base leading-[1.55] text-ink-2">The tolerance agreed for TQEH under each of council's consequence categories.</p>
-        <span className="num shrink-0 text-sm text-ink-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="num text-sm text-ink-3">
           {filled} of {CONSEQUENCE_CATEGORIES.length} set
+          {dirty ? ' · unsaved changes' : savedAt ? ` · saved ${savedAt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ''}
         </span>
+        <div className="flex items-center gap-2">
+          {dirty && (
+            <button onClick={() => setDraft(saved)} className="text-sm text-ink-3 hover:text-ink">
+              Discard
+            </button>
+          )}
+          <button
+            onClick={save}
+            disabled={!dirty}
+            className="rounded-[3px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+          >
+            Save
+          </button>
+        </div>
       </div>
       <div className="divide-y divide-line rounded-[4px] border border-line">
         {CONSEQUENCE_CATEGORIES.map((c) => {
           const isOpen = open === c.name;
-          const value = sheet[c.name]?.tolerance.trim();
+          const value = val(draft, c.name, 'tolerance').trim();
           return (
             <div key={c.name}>
               <button
@@ -5468,21 +5500,21 @@ function TqehTolerance() {
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-base font-medium text-ink">{c.name}</span>
-                  <span className={`mt-0.5 block truncate text-sm ${value ? 'text-ink-2' : 'text-ink-3'}`}>
-                    {value || 'Not set'}
-                  </span>
+                  <span className={`mt-0.5 block truncate text-sm ${value ? 'text-ink-2' : 'text-ink-3'}`}>{value || 'Not set'}</span>
                 </span>
                 <IconChevron size={12} className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
               </button>
               {isOpen && (
                 <div className="px-3 pb-3">
-                  <p className="text-sm leading-[1.45] text-ink-3">Measured by: {c.indicators}</p>
-                  <label className="mt-2.5 block text-sm text-ink-2">
+                  <label className="block text-sm text-ink-2">
                     Tolerance
                     <input
                       autoFocus
-                      value={sheet[c.name]?.tolerance ?? ''}
+                      value={val(draft, c.name, 'tolerance')}
                       onChange={(e) => update(c.name, 'tolerance', e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && dirty) save();
+                      }}
                       placeholder="Not set"
                       className="mt-1 block w-full rounded-[3px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
                     />
@@ -5490,7 +5522,7 @@ function TqehTolerance() {
                   <label className="mt-2 block text-sm text-ink-2">
                     Notes
                     <textarea
-                      value={sheet[c.name]?.notes ?? ''}
+                      value={val(draft, c.name, 'notes')}
                       onChange={(e) => update(c.name, 'notes', e.target.value)}
                       rows={2}
                       className="mt-1 block w-full resize-y rounded-[3px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
@@ -5502,7 +5534,6 @@ function TqehTolerance() {
           );
         })}
       </div>
-      <p className="mt-2 text-sm text-ink-3">Saved in this browser. The report download includes it.</p>
     </>
   );
 }
