@@ -1196,7 +1196,7 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
       </button>
       <div className="min-w-0">
         <div className="text-xs text-ink-3">{parent}</div>
-        <div className="truncate font-serif text-[16px] font-semibold leading-tight text-ink">{title}</div>
+        <div className="truncate text-[16px] font-semibold leading-tight text-ink">{title}</div>
       </div>
     </div>
   );
@@ -1221,7 +1221,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-center justify-between">
-      <span className="flex items-center gap-2 font-serif text-[15.5px] font-semibold text-ink">
+      <span className="flex items-center gap-2 text-[15.5px] font-semibold text-ink">
         {color && <span className="h-[7px] w-[7px] shrink-0" style={{ background: color }} />}
         {children}
       </span>
@@ -2078,7 +2078,7 @@ function MapView(props: MapViewProps) {
           pane: 'caseContent',
           icon: L.divIcon({
             className: '',
-            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Source Sans 3',sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
+            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
             iconSize: [24, 16],
             iconAnchor: [12, 8],
           }),
@@ -4035,7 +4035,7 @@ function RightPanelShell({
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink-3">{eyebrow}</div>
-          <div className="mt-0.5 font-serif text-[19px] font-semibold leading-tight text-ink">{title}</div>
+          <div className="mt-0.5 text-[19px] font-semibold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
@@ -4887,8 +4887,8 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]}–${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Source Sans 3',system-ui,sans-serif;color:#14201F;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Source Serif 4',Georgia,serif;margin:0}h2{font:600 17px/1.3 'Source Serif 4',Georgia,serif;margin:28px 0 8px;border-bottom:1px solid #DDE3E2;padding-bottom:4px}
+<style>body{font:13px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;color:#14201F;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DDE3E2;padding-bottom:4px}
 .sub{color:#5B6B6A;margin:6px 0 0}.note{color:#7E8D8C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}th{font-weight:600;color:#3B4A49;border-bottom:1px solid #CFD6D5}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
@@ -5077,11 +5077,11 @@ type WorkedView = 'area' | 'costs' | 'wider' | 'tolerance';
 function StepHeading({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
     <div className="mb-2.5 flex items-start gap-2.5">
-      <span className="w-4 shrink-0 font-serif text-[17px] font-semibold leading-tight text-accent">
+      <span className="w-4 shrink-0 text-[17px] font-semibold leading-tight text-accent">
         {n}
       </span>
       <span className="min-w-0">
-        <span className="block font-serif text-[16px] font-semibold leading-tight text-ink">{title}</span>
+        <span className="block text-[16px] font-semibold leading-tight text-ink">{title}</span>
         {hint && <span className="mt-0.5 block text-sm text-ink-3">{hint}</span>}
       </span>
     </div>
@@ -5700,7 +5700,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
       {/* A dark title band: this tab reads differently from Cases. */}
       <div className="tol-rise -mx-3 -mt-4 bg-ink px-4 pb-4 pt-4 text-white">
         <div className="text-xs font-semibold text-[#9FD8DC]">Risk tolerance · worked example</div>
-        <div className="mt-1 font-serif text-[20px] font-semibold leading-tight">The Queen Elizabeth Hospital, Woodville</div>
+        <div className="mt-1 text-[20px] font-semibold leading-tight">The Queen Elizabeth Hospital, Woodville</div>
         <div className="mt-1 text-sm text-[#C9D6D5]">
           {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
         </div>
@@ -5713,7 +5713,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
             ] as const
           ).map(([label, n, col], i) => (
             <div key={label} className="tol-rise" style={{ animationDelay: `${120 + i * 80}ms` }}>
-              <div className="num font-serif text-[24px] font-semibold leading-none" style={{ color: col }}>
+              <div className="num text-[24px] font-semibold leading-none" style={{ color: col }}>
                 {n}
               </div>
               <div className="mt-1 text-xs text-[#C9D6D5]">{label}</div>
@@ -5922,7 +5922,7 @@ function TqehTab({
         className="mt-4 flex w-full items-center justify-between gap-3 border border-line px-3 py-2.5 text-left hover:border-ink-3"
       >
         <span className="min-w-0">
-          <span className="block font-serif text-[15px] font-semibold text-ink">Worked example and risk tolerance</span>
+          <span className="block text-[15px] font-semibold text-ink">Worked example and risk tolerance</span>
           <span className="block text-sm text-ink-3">Framework report, Section 4</span>
         </span>
         <IconChevron size={13} className="shrink-0 text-ink-3" />
@@ -8502,7 +8502,7 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         />
         <div className="landing-in mt-6 h-px w-10 bg-line" style={{ animationDelay: '80ms' }} />
         <div
-          className="landing-in mt-6 font-serif text-display font-semibold leading-tight text-ink"
+          className="landing-in mt-6 text-display font-semibold leading-tight text-ink"
           style={{ animationDelay: '140ms' }}
         >
           CoCS Climate Risk Tolerance Tool
@@ -8992,7 +8992,7 @@ export default function App() {
       >
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="font-serif text-[20px] font-semibold leading-tight text-ink">{meta.title}</div>
+            <div className="text-[20px] font-semibold leading-tight text-ink">{meta.title}</div>
             <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button
