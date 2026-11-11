@@ -3503,7 +3503,7 @@ function RoadFindings() {
             <span className="w-[120px] shrink-0 truncate text-base text-ink-2" title={roadName(name)}>
               {roadName(name)}
             </span>
-            <span className="h-[4px] flex-1 rounded-full bg-line">
+            <span className="h-[8px] flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
               <span className="block h-full rounded-full" style={{ width: `${(kmv / worst[0][1]) * 100}%`, background: '#EAB308' }} />
             </span>
             <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{kmv.toFixed(1)} km</span>
@@ -3516,7 +3516,7 @@ function RoadFindings() {
         {ROAD_ROLES.filter((r) => byRole[r.role]).map((r) => (
           <div key={r.role} className="flex items-center gap-3 py-1">
             <span className="w-[120px] shrink-0 truncate text-base text-ink-2">{r.label}</span>
-            <span className="h-[4px] flex-1 rounded-full bg-line">
+            <span className="h-[8px] flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
               <span className="block h-full rounded-full" style={{ width: `${(byRole[r.role] / total) * 100}%`, background: r.color }} />
             </span>
             <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{byRole[r.role].toFixed(1)} km</span>
@@ -3692,7 +3692,7 @@ function PlaceTab({
               >
                 <span className="num w-4 shrink-0 text-sm text-ink-3">{r.rank ?? '–'}</span>
                 <span className="w-[104px] shrink-0 truncate text-base text-ink-2">{r.s.name}</span>
-                <span className="h-[4px] flex-1 rounded-full bg-line">
+                <span className="h-[8px] flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
                   <span
                     className="block h-full rounded-full"
                     style={{ width: `${max && r.v ? (r.v / max) * 100 : 0}%`, background: def.color }}
@@ -4271,7 +4271,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
           {rows.map((r) => (
             <div key={r.id} className="flex items-center gap-3 py-1">
               <span className="w-[108px] shrink-0 text-base text-ink-2">{FLOOD_SHORT[r.id]}</span>
-              <span className="h-[4px] flex-1 rounded-full bg-line">
+              <span className="h-[8px] flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
                 <span className="block h-full rounded-full" style={{ width: `${(r.km / total) * 100}%`, background: PIPE_CLASSES.find((c) => c.label.includes(FLOOD_SHORT[r.id]))!.color }} />
               </span>
               <span className="num w-14 shrink-0 text-right text-base font-medium text-ink">{r.km.toFixed(1)} km</span>
@@ -5340,9 +5340,9 @@ function DamageBars({ rows }: { rows: { id: string; name: string; damage: string
             </span>
             <span className="num shrink-0 text-base font-semibold text-ink">{r.damage}</span>
           </div>
-          <div className="mt-1 h-[6px] bg-surface-2">
+          <div className="mt-1.5 h-[10px] overflow-hidden rounded-full bg-[#EEF0F2]">
             <div
-              className="tol-bar h-full"
+              className="tol-bar h-full rounded-full"
               style={{ width: `${max ? (damageHi(r.damage) / max) * 100 : 0}%`, background: HAZARD_COLOR.flood, animationDelay: `${150 + i * 50}ms` }}
             />
           </div>
@@ -5369,11 +5369,11 @@ function ToleranceChart({
 }) {
   const cats = WORKED.categories;
   const n = cats.length;
-  const W = 360;
-  const H = 286;
+  const W = 376;
+  const H = 310;
   const cx = W / 2;
   const cy = H / 2 + 2;
-  const R = 96;
+  const R = 108;
   const ang = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
   const pt = (i: number, level: number): [number, number] => [cx + (Math.cos(ang(i)) * R * level) / 4, cy + (Math.sin(ang(i)) * R * level) / 4];
   const path = (vals: number[]) =>
@@ -5411,13 +5411,13 @@ function ToleranceChart({
         return <circle key={`t${i}`} cx={x} cy={y} r={active === i ? 4 : 2.8} fill="#0E7C76" stroke="#fff" strokeWidth={1.2} className="tol-pop" style={{ animationDelay: `${1100 + i * 50}ms`, transformOrigin: `${x}px ${y}px`, transformBox: 'view-box', transition: 'r 160ms' }} />;
       })}
       {SHORT_CAT.map((label, i) => {
-        const [x, y] = pt(i, 4.5);
+        const [x, y] = pt(i, 4.4);
         const on = active === i;
         const anchor = Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end';
         return (
           <g key={label} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)} onClick={() => onSelect(i)} className="cursor-pointer">
             <circle cx={x} cy={y} r={22} fill="transparent" />
-            <text x={x} y={y} fontSize="11" fontWeight={on ? 700 : 500} textAnchor={anchor} dominantBaseline="middle" fill={on ? '#16191D' : '#3E454B'}>
+            <text x={x} y={y} fontSize="10.5" fontWeight={on ? 700 : 500} textAnchor={anchor} dominantBaseline="middle" fill={on ? '#16191D' : '#3E454B'}>
               {label}
             </text>
           </g>
@@ -5448,14 +5448,25 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
     <div>
       <div>
         <Section title="Summary" meta={`${n} categories`}>
-          <div className="grid grid-cols-3 gap-2">
-            {summary.map(([v, l, c]) => (
-              <div key={l} className="rounded-[10px] bg-[#F6F7F9] px-3 py-2.5">
-                <div className="num text-[22px] font-bold leading-none" style={{ color: c }}>
+          <div className="flex h-[18px] gap-[3px]">
+            {summary.map(([v, l, c], k) =>
+              v ? (
+                <span
+                  key={l}
+                  className="tol-bar flex items-center justify-center rounded-[5px] text-xs font-bold text-white"
+                  style={{ width: `${(v / n) * 100}%`, background: c, animationDelay: `${k * 120}ms` }}
+                >
                   {v}
-                </div>
-                <div className="mt-1.5 text-xs font-medium text-ink-2">{l}</div>
-              </div>
+                </span>
+              ) : null,
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {summary.map(([v, l, c]) => (
+              <span key={l} className="flex items-center gap-1.5 text-xs text-ink-2">
+                <span className="h-[8px] w-[8px] rounded-full" style={{ background: c }} />
+                {l} <span className="num font-semibold text-ink">{v}</span>
+              </span>
             ))}
           </div>
         </Section>
@@ -5507,7 +5518,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
                   className={`${cols} -mx-2 w-[calc(100%+16px)] rounded-[8px] px-2 py-2 text-left transition-colors ${on ? 'bg-[#EEF6F5]' : active === i ? 'bg-surface-2' : ''}`}
                 >
                   <span className={`truncate text-base text-ink ${on ? 'font-semibold' : ''}`}>{SHORT_CAT[i]}</span>
-                  <span className="relative block h-[10px]" aria-label={`Assessed ${c.assessed[0]} to ${c.assessed[1]}, target ${c.target}`}>
+                  <span className="relative block h-[14px]" aria-label={`Assessed ${c.assessed[0]} to ${c.assessed[1]}, target ${c.target}`}>
                     <span className="absolute inset-0 overflow-hidden rounded-full bg-[#EEF0F2]" />
                     <span
                       className="tol-bar absolute inset-y-0 flex overflow-hidden rounded-full"
@@ -7324,7 +7335,7 @@ function BarRow({ label, n, max, color, onClick }: { label: string; n: number; m
   const inner = (
     <>
       <span className="w-[108px] shrink-0 truncate text-left text-base text-ink-2">{label}</span>
-      <span className="h-[4px] flex-1 rounded-full bg-line">
+      <span className="h-[8px] flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
         <span className="block h-full rounded-full" style={{ width: `${max ? (n / max) * 100 : 0}%`, background: color }} />
       </span>
       <span className="num w-8 shrink-0 text-right text-base font-medium text-ink">{n}</span>
@@ -7371,8 +7382,8 @@ function Section({
         <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="group flex min-w-0 flex-1 items-center gap-2 py-0.5 text-left">
           <IconChevron size={11} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
           {icon}
-          <span className="truncate text-[13.5px] font-bold text-ink group-hover:text-accent">{title}</span>
-          {meta !== undefined && <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-xs font-medium text-ink-2">{meta}</span>}
+          <span className="truncate text-[13px] font-bold text-ink group-hover:text-accent">{title}</span>
+          {meta !== undefined && <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-2xs font-medium text-ink-3">{meta}</span>}
         </button>
         {right}
       </div>
@@ -7956,7 +7967,7 @@ function RealBuildingsRegister({
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
                       <Icon size={16} />
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-lg text-ink">{t.title}</span>
+                    <span className="min-w-0 flex-1 truncate text-base text-ink">{t.title}</span>
                     <span className={t.id === 'condition' ? 'w-[64px] shrink-0' : 'shrink-0 rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-sm text-ink-2'}>{t.sub}</span>
                     <IconChevron size={12} className="shrink-0 text-ink-2" />
                   </button>
@@ -8837,7 +8848,7 @@ export default function App() {
 
       <section
         data-tour="left-panel"
-        className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[400px]' : 'w-80'}`}
+        className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[440px]' : 'w-80'}`}
       >
         <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
           <h1 className="min-w-0 truncate text-[18px] font-bold leading-tight text-ink">{meta.title}</h1>
