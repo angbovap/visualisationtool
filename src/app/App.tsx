@@ -3621,12 +3621,11 @@ function BuildingGroupRow({
     <button
       onClick={() => onOpen(items.map((b) => b.id))}
       aria-current={active || undefined}
-      className={`flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left transition-colors ${active ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
-      style={active ? { boxShadow: `inset 2px 0 0 ${ACCENT}` } : undefined}
+      className={`flex w-full items-start justify-between gap-3 rounded-[8px] px-2 py-1.5 text-left transition-colors ${active ? 'bg-[#EEF6F5]' : 'hover:bg-surface-2'}`}
     >
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-lg font-medium text-ink">{name}</span>
-        <span className="num mt-0.5 block truncate text-sm text-ink-3">
+        <span className={`block truncate text-base text-ink ${active ? 'font-semibold' : 'font-medium'}`}>{name}</span>
+        <span className="num block truncate text-xs text-ink-3">
           {items.length} buildings, {types.length === 1 ? types[0] : `${types.length} types`}
         </span>
       </span>
@@ -7427,12 +7426,11 @@ function BuildingRow({
     <button
       onClick={() => onOpen(b.id)}
       aria-current={active || undefined}
-      className={`flex w-full items-start justify-between gap-3 px-3 py-2.5 text-left transition-colors ${active ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
-      style={active ? { boxShadow: `inset 2px 0 0 ${ACCENT}` } : undefined}
+      className={`flex w-full items-start justify-between gap-3 rounded-[8px] px-2 py-1.5 text-left transition-colors ${active ? 'bg-[#EEF6F5]' : 'hover:bg-surface-2'}`}
     >
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-lg font-medium text-ink">{b.name}</span>
-        <span className="num mt-0.5 block truncate text-sm text-ink-3">
+        <span className={`block truncate text-base text-ink ${active ? 'font-semibold' : 'font-medium'}`}>{b.name}</span>
+        <span className="num block truncate text-xs text-ink-3">
           {[b.buildingType ?? 'Not yet classified', !hideSuburb && b.suburb, ...tags, !p && 'not mapped']
             .filter(Boolean)
             .join(', ')}
@@ -7446,7 +7444,7 @@ function BuildingRow({
 }
 
 function BuildingList({ children }: { children: React.ReactNode }) {
-  return <div className="divide-y divide-line border-y border-line">{children}</div>;
+  return <div className="-mx-2 space-y-px">{children}</div>;
 }
 
 const READING_VERB: Record<HazardReading['key'], string> = {
@@ -8070,7 +8068,9 @@ function RealBuildingsRegister({
 
         {view === 'list' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            {listScope === null && (
+              <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            )}
 
             <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
               {listScope === null && (
@@ -8118,23 +8118,14 @@ function RealBuildingsRegister({
                 const insured = buildings.reduce((n, b) => n + b.insuredValue, 0);
                 return (
                   <div>
-                    <button
-                      onClick={() => selectListScope(null)}
-                      className="mb-1.5 flex items-center gap-[3px] text-xs text-ink-3 transition-colors hover:text-accent"
-                    >
-                      <IconChevron size={12} className="rotate-180" />
-                      All categories
-                    </button>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <span className="text-sm font-medium text-ink">
-                        {label}, {buildings.length}
-                      </span>
-                      <span className="num text-2xs text-ink-3">
-                        ${(insured / 1e6).toFixed(1)}M
-                      </span>
+                    <BackBar onBack={() => selectListScope(null)} parent="Browse buildings" title={label} />
+                    <div className="-mt-1 mb-2 flex items-center gap-1.5">
+                      <span className="num rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-2xs font-medium text-ink-3">{buildings.length} buildings</span>
+                      <span className="num rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-2xs font-medium text-ink-3">${(insured / 1e6).toFixed(1)}M insured</span>
+                      <span className="text-2xs text-ink-3">highest value first</span>
                     </div>
                     <BuildingList>
-                      {buildings.map((b) => (
+                      {[...buildings].sort((a, z) => z.insuredValue - a.insuredValue).map((b) => (
                         <BuildingRow key={b.id} b={b} onOpen={onOpenBuilding} active={activeBuildingId === b.id} />
                       ))}
                     </BuildingList>
