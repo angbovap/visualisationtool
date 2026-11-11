@@ -149,7 +149,7 @@ interface LayerDef {
  * Constants
  * ------------------------------------------------------------------ */
 
-const ACCENT = '#0E7C76';
+const ACCENT = '#0E6E6A';
 
 /** One colour per hazard, used wherever that hazard appears in the UI. */
 const HAZARD_COLOR = {
@@ -1066,7 +1066,7 @@ function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
       className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[2px] border transition-colors"
-      style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8A9796' }}
+      style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8C887F' }}
       aria-hidden
     >
       {on && (
@@ -1170,7 +1170,7 @@ function Segmented<T extends string | number>({
             style={
               on
                 ? { background: accent, color: '#fff' }
-                : { background: 'transparent', color: '#5B6B6A' }
+                : { background: 'transparent', color: '#5E5A53' }
             }
           >
             {o.label}
@@ -1200,7 +1200,7 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
       </button>
       <div className="min-w-0">
         <div className="text-xs text-ink-3">{parent}</div>
-        <div className="truncate text-[16px] font-semibold leading-tight text-ink">{title}</div>
+        <div className="truncate text-[16px] font-bold leading-tight text-ink">{title}</div>
       </div>
     </div>
   );
@@ -1224,9 +1224,9 @@ function PanelHeading({
   color?: string;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between border-b border-[#D5DBDA] bg-[#F1F3F3] px-2 py-[5px]">
-      <span className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: '#17506B' }}>
-        {color && <span className="h-[7px] w-[7px] shrink-0" style={{ background: color }} />}
+    <div className="mb-2 flex items-end justify-between border-t-2 border-ink pt-1.5">
+      <span className="flex items-center gap-2 text-[13.5px] font-bold text-ink">
+        {color && <span className="h-[8px] w-[8px] shrink-0" style={{ background: color }} />}
         {children}
       </span>
       {right}
@@ -1715,7 +1715,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon([outer, LGA_BOUNDARY.ring], {
           stroke: false,
-          fillColor: darkBase ? '#0B1211' : '#F6F8F8',
+          fillColor: darkBase ? '#0B1211' : '#F6F4EF',
           fillOpacity: darkBase ? 0.6 : 0.72,
           interactive: false,
         }),
@@ -1734,7 +1734,7 @@ function MapView(props: MapViewProps) {
             fill: !!shade,
             fillColor: shade,
             fillOpacity: 0.62,
-            color: darkBase ? '#F2F7F6' : '#2B3C3A',
+            color: darkBase ? '#F6F4EF' : '#2B3C3A',
             weight: shade ? 1 : 0.7,
             opacity: darkBase ? 0.55 : shade ? 0.6 : 0.4,
             interactive: true,
@@ -1749,7 +1749,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon(LGA_BOUNDARY.ring, {
           fill: false,
-          color: darkBase ? '#F2F7F6' : '#14201F',
+          color: darkBase ? '#F6F4EF' : '#1C1B19',
           weight: 1.8,
           opacity: darkBase ? 0.9 : 0.8,
           interactive: false,
@@ -1762,7 +1762,7 @@ function MapView(props: MapViewProps) {
         push(
           L.polygon(a.path, {
             fill: false,
-            color: darkBase ? '#F2F7F6' : '#2B3C3A',
+            color: darkBase ? '#F6F4EF' : '#2B3C3A',
             weight: 1.1,
             opacity: darkBase ? 0.75 : 0.65,
             interactive: true,
@@ -1774,7 +1774,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon(LGA_BOUNDARY.ring, {
           fill: false,
-          color: darkBase ? '#F2F7F6' : '#14201F',
+          color: darkBase ? '#F6F4EF' : '#1C1B19',
           weight: 1.8,
           opacity: darkBase ? 0.9 : 0.8,
           interactive: false,
@@ -1915,8 +1915,8 @@ function MapView(props: MapViewProps) {
         push(L.polygon(ring.ring, { stroke: false, fillColor: fc, fillOpacity: 0.32, interactive: false }));
       }
       // Muted context first, then what the event reaches.
-      push(L.polyline(view.pipes.outside, { color: '#9AA8A7', weight: 0.8, opacity: 0.45, interactive: false }));
-      push(L.polyline(view.roads.outside, { color: '#9AA8A7', weight: 2, opacity: 0.7, interactive: false }));
+      push(L.polyline(view.pipes.outside, { color: '#A29D93', weight: 0.8, opacity: 0.45, interactive: false }));
+      push(L.polyline(view.roads.outside, { color: '#A29D93', weight: 2, opacity: 0.7, interactive: false }));
       push(L.polyline(view.pipes.inside, { color: EVENT_COLOR, weight: 1.6, opacity: 0.9, interactive: false }));
       push(L.polyline(view.roads.inside, { color: '#fff', weight: 6, opacity: 0.95, interactive: false }));
       push(L.polyline(view.roads.inside, { color: '#7F1D1D', weight: 3.6, opacity: 1, interactive: false }));
@@ -2012,7 +2012,7 @@ function MapView(props: MapViewProps) {
       added.push(
         L.polygon([world, area.ring], {
           stroke: false,
-          fillColor: darkBase ? '#0B1211' : '#F6F8F8',
+          fillColor: darkBase ? '#0B1211' : '#F6F4EF',
           fillOpacity: darkBase ? 0.72 : 0.82,
           interactive: false,
           pane: 'caseMask',
@@ -2082,7 +2082,7 @@ function MapView(props: MapViewProps) {
           pane: 'caseContent',
           icon: L.divIcon({
             className: '',
-            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
+            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
             iconSize: [24, 16],
             iconAnchor: [12, 8],
           }),
@@ -2112,13 +2112,13 @@ function MapView(props: MapViewProps) {
         }
       }
       added.push(
-        L.polygon(area.ring, { color: '#4A5A59', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false, pane: 'caseContent' }).addTo(map),
+        L.polygon(area.ring, { color: '#4E4B45', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false, pane: 'caseContent' }).addTo(map),
       );
     }
     added.push(
       L.circleMarker([highlight.lat, highlight.lng], {
         radius: 17,
-        color: '#14201F',
+        color: '#1C1B19',
         weight: 2,
         fill: false,
         interactive: false, pane: 'caseContent' }).addTo(map),
@@ -2126,12 +2126,12 @@ function MapView(props: MapViewProps) {
     for (const link of show.has('lines') ? highlight.links ?? [] : []) {
       added.push(
         L.polyline([[highlight.lat, highlight.lng], link.to], {
-          color: '#14201F',
+          color: '#1C1B19',
           weight: 1.6,
           opacity: 0.8 * op('lines'),
           dashArray: '5 4',
           interactive: false, pane: 'caseContent' }).addTo(map),
-        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, opacity: op('lines'), fillColor: '#14201F', fillOpacity: op('lines'), interactive: false, pane: 'caseContent' })
+        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, opacity: op('lines'), fillColor: '#1C1B19', fillOpacity: op('lines'), interactive: false, pane: 'caseContent' })
           .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
           .addTo(map),
       );
@@ -2168,7 +2168,7 @@ function MapView(props: MapViewProps) {
     if (!ready || !L || !map || !probePoint || !probeMode) return;
     const ring = L.circleMarker([probePoint.lat, probePoint.lng], {
       radius: 10,
-      color: '#14201F',
+      color: '#1C1B19',
       weight: 2,
       fill: false,
       interactive: false,
@@ -2177,7 +2177,7 @@ function MapView(props: MapViewProps) {
       radius: 3,
       color: '#fff',
       weight: 1,
-      fillColor: '#14201F',
+      fillColor: '#1C1B19',
       fillOpacity: 1,
       interactive: false,
     }).addTo(map);
@@ -2271,7 +2271,7 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[2px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] hover:bg-surface-2"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[2px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] hover:bg-surface-2"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
@@ -2280,7 +2280,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[2px] bg-white p-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[2px] bg-white p-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2350,7 +2350,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[2px] bg-white p-1.5 border border-[#CFD6D5] shadow-[0_2px_6px_rgba(20,32,31,0.12)]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[2px] bg-white p-1.5 border border-[#C9C4B9] shadow-[0_2px_6px_rgba(28,27,25,0.1)]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2412,7 +2412,7 @@ function MapView(props: MapViewProps) {
           speculative scenario row shows here; with neither, no dock. */}
       {(!hideHazards || scenario.scenario !== 'today') && (
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-[2px] bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
+        <div className="rounded-[2px] bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
           {!hideHazards && (
           <>
           <div className="flex items-center gap-3 px-3 py-2">
@@ -2461,7 +2461,7 @@ function MapView(props: MapViewProps) {
                       }
                     }}
                     className={`num flex-1 whitespace-nowrap rounded-[2px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
-                    style={on ? (o.id === 'none' ? { background: '#14201F', borderColor: '#14201F' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
+                    style={on ? (o.id === 'none' ? { background: '#1C1B19', borderColor: '#1C1B19' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
                   >
                     {o.label}
                   </button>
@@ -2534,7 +2534,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-[2px] border bg-white px-2.5 py-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]"
+            className="fade-up flex items-center gap-1.5 rounded-[2px] border bg-white px-2.5 py-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: rightPanelAccent }} />
@@ -2546,7 +2546,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[2px] border border-line bg-white/96 p-2 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] backdrop-blur">
+          <div className="fade-up rounded-[2px] border border-line bg-white/96 p-2 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] backdrop-blur">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2577,13 +2577,13 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-white text-ink-2 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-white text-ink-2 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[2px] bg-white py-1 border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
+        <div className="flex w-9 flex-col items-center rounded-[2px] bg-white py-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
             className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
@@ -2656,7 +2656,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-[2px] border border-line bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
+    <div className="w-[208px] overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2704,7 +2704,7 @@ function MapLegend({
                       ['road', '#7F1D1D', 'Major road inside'],
                       ['pipe', EVENT_COLOR, 'Pipe inside'],
                       ['dot', '#7F1D1D', 'Council building inside'],
-                      ['muted', '#9AA8A7', 'Roads and pipes outside'],
+                      ['muted', '#A29D93', 'Roads and pipes outside'],
                     ] as const
                   ).map(([kind, c, label]) => (
                     <div key={label} className="flex items-center gap-2">
@@ -2734,7 +2734,7 @@ function MapLegend({
               ))}
               <div className="flex items-center gap-2">
                 <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
-                  <path d="M1.5 6 H16.5" stroke="#4A5A59" strokeWidth="1.2" strokeDasharray="3 3" />
+                  <path d="M1.5 6 H16.5" stroke="#4E4B45" strokeWidth="1.2" strokeDasharray="3 3" />
                 </svg>
                 <span className="text-sm text-ink-2">Area shown, {caseRadius} m around</span>
               </div>
@@ -2745,7 +2745,7 @@ function MapLegend({
               <div className="text-sm font-medium text-ink">Suburbs: {shade.label}</div>
               <div
                 className="mt-1.5 h-[8px] w-full"
-                style={{ background: `linear-gradient(90deg, #EEF2F2, ${shade.color})`, opacity: 0.85 }}
+                style={{ background: `linear-gradient(90deg, #EFECE6, ${shade.color})`, opacity: 0.85 }}
               />
               <div className="num mt-0.5 flex justify-between text-sm text-ink-3">
                 <span>{shade.lo}</span>
@@ -2921,14 +2921,14 @@ function LocatorMap({
     });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mini);
     for (const s of SUBURBS) {
-      L.polygon(s.path, { color: '#9AA8A7', weight: 0.6, fill: false, interactive: false }).addTo(mini);
+      L.polygon(s.path, { color: '#A29D93', weight: 0.6, fill: false, interactive: false }).addTo(mini);
     }
     L.polygon(LGA_BOUNDARY.ring, { color: ACCENT, weight: 1.4, fillColor: ACCENT, fillOpacity: 0.05, interactive: false }).addTo(mini);
     mini.fitBounds(lgaBounds, { padding: [6, 6] });
     const box = L.rectangle(main.getBounds(), {
-      color: '#14201F',
+      color: '#1C1B19',
       weight: 1.5,
-      fillColor: '#14201F',
+      fillColor: '#1C1B19',
       fillOpacity: 0.08,
       interactive: false,
     }).addTo(mini);
@@ -2967,7 +2967,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-[2px] border border-line bg-white border border-[#CFD6D5] shadow-[0_1px_3px_rgba(20,32,31,0.08)]">
+    <div className="fade-in overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -3528,7 +3528,7 @@ function shadeFor(def: IndexDef, sel?: ScenarioSel): Record<string, string> {
   const rows = rankSuburbs(def, sel).filter((r) => r.v !== null);
   const lo = Math.min(...rows.map((r) => r.v!));
   const hi = Math.max(...rows.map((r) => r.v!));
-  return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EEF2F2', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
+  return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EFECE6', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
 }
 
 function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexId) => void }) {
@@ -4032,7 +4032,7 @@ function RightPanelShell({
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink-3">{eyebrow}</div>
-          <div className="mt-0.5 text-[19px] font-semibold leading-tight text-ink">{title}</div>
+          <div className="mt-0.5 text-[19px] font-bold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
@@ -4884,10 +4884,10 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]}–${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;color:#14201F;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DDE3E2;padding-bottom:4px}
-.sub{color:#5B6B6A;margin:6px 0 0}.note{color:#7E8D8C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
-th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}th{font-weight:600;color:#3B4A49;border-bottom:1px solid #CFD6D5}
+<style>body{font:13px/1.5 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;color:#1C1B19;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DED9CF;padding-bottom:4px}
+.sub{color:#5E5A53;margin:6px 0 0}.note{color:#86827A;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
+th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EFECE6}th{font-weight:600;color:#3F3C37;border-bottom:1px solid #D3CEC4}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
 <h1>The Queen Elizabeth Hospital, Woodville: worked example</h1>
 <p class="sub">CoCS Climate Risk Tolerance Tool · ${esc(s.event)} · likelihood ${esc(s.likelihood)} (assumed) · ${esc(s.climate)} · generated ${new Date().toLocaleDateString('en-AU')}</p>
@@ -5060,8 +5060,8 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   }
   return (
     <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
-      <path d="M1.5 6 H13" stroke="#14201F" strokeWidth="1.6" strokeDasharray="3 2.5" />
-      <circle cx="14.5" cy="6" r="2.5" fill="#14201F" />
+      <path d="M1.5 6 H13" stroke="#1C1B19" strokeWidth="1.6" strokeDasharray="3 2.5" />
+      <circle cx="14.5" cy="6" r="2.5" fill="#1C1B19" />
     </svg>
   );
 }
@@ -5074,11 +5074,11 @@ type WorkedView = 'area' | 'costs' | 'wider' | 'tolerance';
 function StepHeading({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
     <div className="mb-2.5 flex items-start gap-2.5">
-      <span className="w-4 shrink-0 text-[17px] font-semibold leading-tight text-accent">
+      <span className="w-4 shrink-0 text-[16px] font-bold leading-tight text-ink">
         {n}
       </span>
       <span className="min-w-0">
-        <span className="block text-[16px] font-semibold leading-tight text-ink">{title}</span>
+        <span className="block text-[16px] font-bold leading-tight text-ink">{title}</span>
         {hint && <span className="mt-0.5 block text-sm text-ink-3">{hint}</span>}
       </span>
     </div>
@@ -5311,7 +5311,7 @@ function CaseControls({
         <StepHeading n={5} title="Download" />
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="w-full rounded-[2px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#005963]"
+          className="w-full rounded-[2px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
         >
           Download report
         </button>
@@ -5371,7 +5371,7 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
           >
             Not now
           </button>
-          <button onClick={onYes} className="rounded-[2px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#005963]">
+          <button onClick={onYes} className="rounded-[2px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#0A5652]">
             Show me
           </button>
         </div>
@@ -5513,8 +5513,8 @@ function ToleranceChart({
         <path
           key={l}
           d={path(Array(n).fill(l))}
-          fill={l === 4 ? '#FAFBFB' : 'none'}
-          stroke="#DDE3E2"
+          fill={l === 4 ? '#FBFAF7' : 'none'}
+          stroke="#DED9CF"
           strokeWidth={0.8}
           className="tol-fade"
           style={{ animationDelay: `${l * 60}ms` }}
@@ -5530,14 +5530,14 @@ function ToleranceChart({
             y1={c}
             x2={x}
             y2={y}
-            stroke={on ? '#14201F' : '#E6EBEA'}
+            stroke={on ? '#1C1B19' : '#E7E3DA'}
             strokeWidth={on ? 1.4 : 0.8}
             style={{ transition: 'stroke 160ms, stroke-width 160ms' }}
           />
         );
       })}
       {RISK_LEVELS.map((l, k) => (
-        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9796" className="tol-fade" style={{ animationDelay: '200ms' }}>
+        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8C887F" className="tol-fade" style={{ animationDelay: '200ms' }}>
           {l}
         </text>
       ))}
@@ -5548,7 +5548,7 @@ function ToleranceChart({
         <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="1.5 2" />
       </g>
       {/* Council target: draws itself round. */}
-      <path d={path(target)} fill="none" stroke="#14201F" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
+      <path d={path(target)} fill="none" stroke="#1C1B19" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
       {target.map((v, i) => {
         const [x, y] = pt(i, v);
         return (
@@ -5557,7 +5557,7 @@ function ToleranceChart({
             cx={x}
             cy={y}
             r={active === i ? 4.2 : 3}
-            fill="#14201F"
+            fill="#1C1B19"
             stroke="#fff"
             strokeWidth={1.2}
             className="tol-pop"
@@ -5585,7 +5585,7 @@ function ToleranceChart({
               fontWeight={on ? 700 : 500}
               textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
               dominantBaseline="middle"
-              fill={on ? '#14201F' : '#3B4A49'}
+              fill={on ? '#1C1B19' : '#3F3C37'}
             >
               {s}
             </text>
@@ -5694,7 +5694,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
 
   return (
     <div>
-      <div className="text-xs font-semibold" style={{ color: '#17506B' }}>Risk tolerance · worked example</div>
+      <div className="text-xs font-semibold" style={{ color: '#0E6E6A' }}>Risk tolerance · worked example</div>
       <div className="mt-0.5 text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
       <div className="mt-0.5 text-sm text-ink-3">
         {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
@@ -5942,7 +5942,7 @@ function TqehTab({
 function Glance({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
     <div className="bg-white px-1 py-2.5">
-      <div className="text-sm font-medium" style={{ color: color ?? '#7E8D8C' }}>
+      <div className="text-sm font-medium" style={{ color: color ?? '#86827A' }}>
         {label}
       </div>
       <div className="num mt-0.5 text-xl font-semibold leading-tight text-ink">{value}</div>
@@ -6186,7 +6186,7 @@ function TqehTolerance() {
             <button
               onClick={save}
               disabled={!dirty}
-              className="rounded-[2px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+              className="rounded-[2px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#0A5652] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
             >
               Save
             </button>
@@ -6429,7 +6429,7 @@ function ProbePanel({
   const mostFrequent = r.floods.length ? r.floods[0] : null;
   return (
     <RightPanelShell
-      accent="#14201F"
+      accent="#1C1B19"
       eyebrow="Inspect a point"
       title={r.suburb ? r.suburb.name : r.inLga ? 'Inside the council area' : 'Outside the council area'}
       onClose={onClose}
@@ -8507,7 +8507,7 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         >
           <button
             onClick={onGuide}
-            className="w-full rounded-[2px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#005963]"
+            className="w-full rounded-[2px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0A5652]"
           >
             Take the guide
           </button>
@@ -8641,7 +8641,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
             )}
             <button
               onClick={() => (step < steps.length - 1 ? setStep((v) => v + 1) : onDone())}
-              className="rounded-[2px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#005963]"
+              className="rounded-[2px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0A5652]"
             >
               {step < steps.length - 1 ? 'Next' : 'Done'}
             </button>
@@ -8975,7 +8975,7 @@ export default function App() {
       >
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="text-[20px] font-semibold leading-tight text-ink">{meta.title}</div>
+            <div className="text-[20px] font-bold leading-tight text-ink">{meta.title}</div>
             <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button

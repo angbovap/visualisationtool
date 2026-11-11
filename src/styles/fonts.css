@@ -1,5 +1,4 @@
-/* Typeface for the CoCS Climate Risk Tolerance Tool: Aptos, the face the
-   project's reports are set in (installed with Microsoft 365 on Windows),
-   falling back to the system interface font (Segoe UI on Windows, San
-   Francisco on macOS). Nothing is downloaded. Numbers use tabular figures
-   (see .num in globals.css). */
+/* Typeface for the CoCS Climate Risk Tolerance Tool: Libre Franklin, the
+   open-source Franklin Gothic, for everything (see STYLE.md). Numbers use
+   its tabular figures (.num in globals.css). */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');

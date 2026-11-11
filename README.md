@@ -47,7 +47,7 @@ alone with no emit.
   - `tqehSite.json` — The Queen Elizabeth Hospital's grounds, from
     OpenStreetMap (not council data).
 - `src/styles/globals.css` — design tokens; `fonts.css` — the Google Fonts
-  note: the tool uses the system interface font (Segoe UI on Windows), no web fonts.
+  import for Libre Franklin (open-source Franklin Gothic). The whole style is set out in `STYLE.md`.
 - `netlify.toml` / `.github/workflows/deploy-pages.yml` — deploy config for
   Netlify and GitHub Pages respectively. Both build with `npm run build`
   and publish `dist`; Pages additionally needs its Source set to
