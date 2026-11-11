@@ -149,7 +149,7 @@ interface LayerDef {
  * Constants
  * ------------------------------------------------------------------ */
 
-const ACCENT = '#006E78';
+const ACCENT = '#0E7C76';
 
 /** One colour per hazard, used wherever that hazard appears in the UI. */
 const HAZARD_COLOR = {
@@ -1060,16 +1060,20 @@ function Accordion({
 /** An on/off switch, for anything that is literally on or off on the map,
  *  so the state reads at a glance from the knob's side and colour rather
  *  than from a small tick. */
+/** On/off for layers and options: a checkbox, the convention in desktop
+ *  GIS layer lists (ArcGIS Pro, QGIS), not a phone-style toggle. */
 function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
-      className="relative inline-flex h-[18px] w-[32px] shrink-0 items-center rounded-full transition-colors duration-200"
-      style={{ background: on ? color : '#D5DDDC' }}
+      className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[2px] border transition-colors"
+      style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8A9796' }}
+      aria-hidden
     >
-      <span
-        className="absolute h-[14px] w-[14px] rounded-full bg-white shadow-[0_1px_2px_rgba(20,32,31,0.3)] transition-transform duration-200"
-        style={{ transform: on ? 'translateX(16px)' : 'translateX(2px)' }}
-      />
+      {on && (
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <path d="M2.5 6.3 5 8.7 9.6 3.4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </span>
   );
 }
@@ -1220,8 +1224,8 @@ function PanelHeading({
   color?: string;
 }) {
   return (
-    <div className="mb-2 flex items-center justify-between">
-      <span className="flex items-center gap-2 text-[15.5px] font-semibold text-ink">
+    <div className="mb-2 flex items-center justify-between border-b border-[#D5DBDA] bg-[#F1F3F3] px-2 py-[5px]">
+      <span className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: '#17506B' }}>
         {color && <span className="h-[7px] w-[7px] shrink-0" style={{ background: color }} />}
         {children}
       </span>
@@ -3204,7 +3208,7 @@ function LayersTab({
             <div className="px-3">
               <PanelHeading>Browse layers</PanelHeading>
             </div>
-            <div className="grid grid-cols-2 gap-2 px-3">
+            <div className="mx-3 divide-y divide-line border-y border-line">
               {categories.map((c) => {
                 const Icon = CATEGORY_ICON[c.value];
                 const pending = c.value === 'planning';
@@ -3212,29 +3216,23 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className={`group flex flex-col rounded-[2px] border bg-white p-2.5 text-left transition-all hover:border-ink-3 ${pending ? 'border-dashed border-line' : 'border-line'}`}
-                    style={c.on > 0 ? { borderColor: c.color } : undefined}
+                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2"
                   >
-                    <span className="flex items-start justify-between">
-                      <span
-                        className="flex h-6 items-center"
-                        style={{ color: c.color }}
-                      >
-                        <Icon size={17} />
+                    <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
+                      <Icon size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-base font-medium text-ink">{c.label}</span>
+                      <span className="num block text-xs text-ink-3">
+                        {pending ? 'Not supplied yet' : `${c.total} layer${c.total === 1 ? '' : 's'}`}
                       </span>
-                      {c.on > 0 && (
-                        <span
-                          className="num rounded-[2px] px-1.5 py-[1px] text-2xs font-semibold text-white"
-                          style={{ background: c.color }}
-                        >
-                          {c.on} on
-                        </span>
-                      )}
                     </span>
-                    <span className="mt-2.5 text-base font-semibold leading-tight text-ink">{c.label}</span>
-                    <span className="num mt-1 text-xs text-ink-3">
-                      {pending ? 'Not supplied yet' : `${c.total} layer${c.total === 1 ? '' : 's'}`}
-                    </span>
+                    {c.on > 0 && (
+                      <span className="num shrink-0 text-xs font-semibold" style={{ color: c.color }}>
+                        {c.on} on
+                      </span>
+                    )}
+                    <IconChevron size={12} className="shrink-0 text-ink-3" />
                   </button>
                 );
               })}
@@ -3873,21 +3871,20 @@ function PlaceTab({
 
         <section className="mt-6">
         <PanelHeading>Suburbs</PanelHeading>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="divide-y divide-line border-y border-line">
           {SUBURBS.map((s) => {
             const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
             return (
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex min-h-[78px] flex-col justify-between rounded-[2px] border border-line bg-white p-2.5 text-left transition-colors hover:border-ink-3"
+                className="flex w-full items-center gap-3 px-1 py-2 text-left hover:bg-surface-2"
               >
-                <span className="text-base font-semibold leading-tight text-ink">{s.name}</span>
-                <span className="num mt-2 text-sm leading-[1.4] text-ink-3">
-                  {bs.length} buildings
-                  <br />
-                  {bs.filter(inFlood).length} in a flood extent
+                <span className="min-w-0 flex-1 truncate text-base font-medium text-ink">{s.name}</span>
+                <span className="num shrink-0 text-right text-xs text-ink-3">
+                  {bs.length} buildings · {bs.filter(inFlood).length} in flood
                 </span>
+                <IconChevron size={12} className="shrink-0 text-ink-3" />
               </button>
             );
           })}
@@ -5697,29 +5694,16 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
 
   return (
     <div>
-      {/* A dark title band: this tab reads differently from Cases. */}
-      <div className="tol-rise -mx-3 -mt-4 bg-ink px-4 pb-4 pt-4 text-white">
-        <div className="text-xs font-semibold text-[#9FD8DC]">Risk tolerance · worked example</div>
-        <div className="mt-1 text-[20px] font-semibold leading-tight">The Queen Elizabeth Hospital, Woodville</div>
-        <div className="mt-1 text-sm text-[#C9D6D5]">
-          {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
-        </div>
-        <div className="mt-3 flex gap-4">
-          {(
-            [
-              ['Above target', count('Above target'), '#FCA5A5'],
-              ['Partly above', count('Upper range above target'), '#FDBA74'],
-              ['Within target', count('Within target'), '#86EFAC'],
-            ] as const
-          ).map(([label, n, col], i) => (
-            <div key={label} className="tol-rise" style={{ animationDelay: `${120 + i * 80}ms` }}>
-              <div className="num text-[24px] font-semibold leading-none" style={{ color: col }}>
-                {n}
-              </div>
-              <div className="mt-1 text-xs text-[#C9D6D5]">{label}</div>
-            </div>
-          ))}
-        </div>
+      <div className="text-xs font-semibold" style={{ color: '#17506B' }}>Risk tolerance · worked example</div>
+      <div className="mt-0.5 text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
+      <div className="mt-0.5 text-sm text-ink-3">
+        {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
+      </div>
+      <div className="num mt-2 flex flex-wrap gap-x-3 border-y border-line py-1.5 text-sm">
+        <span style={{ color: '#B91C1C' }}>{count('Above target')} above target</span>
+        <span style={{ color: '#C2410C' }}>{count('Upper range above target')} partly above</span>
+        <span style={{ color: '#15803D' }}>{count('Within target')} within</span>
+        <span className="text-ink-3">of {WORKED.categories.length} categories</span>
       </div>
 
       <section className="mt-4">
@@ -5751,7 +5735,6 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
                 aria-expanded={open}
                 className={`flex w-full items-center gap-3 px-1 py-2 text-left transition-colors ${active === i ? 'bg-surface-2' : ''}`}
               >
-                <span className="h-[26px] w-[3px] shrink-0" style={{ background: st.color }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-medium text-ink">{c.name}</span>
                   <span className="block text-sm text-ink-3">
@@ -8054,7 +8037,7 @@ function RealBuildingsRegister({
             >
               Explore the register
             </PanelHeading>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="divide-y divide-line border-y border-line">
               {(
                 [
                   {
@@ -8099,16 +8082,16 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex flex-col rounded-[2px] border border-line bg-white p-2.5 text-left transition-all hover:border-ink-3"
+                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2"
                   >
-                    <span
-                      className="flex h-6 items-center"
-                      style={{ color: t.color }}
-                    >
-                      <Icon size={17} />
+                    <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
+                      <Icon size={16} />
                     </span>
-                    <span className="mt-2.5 text-base font-semibold leading-tight text-ink">{t.title}</span>
-                    <span className="mt-1 block text-xs text-ink-3">{t.sub}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-base font-medium text-ink">{t.title}</span>
+                      <span className="block text-xs text-ink-3">{t.sub}</span>
+                    </span>
+                    <IconChevron size={12} className="shrink-0 text-ink-3" />
                   </button>
                 );
               })}

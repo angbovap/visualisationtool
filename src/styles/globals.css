@@ -3,9 +3,9 @@
 @import 'leaflet/dist/leaflet.css';
 
 @theme {
-  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans: Aptos, 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 
-  --color-accent: #006E78;
+  --color-accent: #0E7C76;
   --color-accent-soft: #E3F1F2;
   --color-accent-line: #B6DADD;
   --color-ink: #14201F;

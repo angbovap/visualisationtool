@@ -1,4 +1,5 @@
-/* Typeface for the CoCS Climate Risk Tolerance Tool: the operating
-   system's own interface font (Segoe UI on Windows, as in ArcGIS Pro and
-   Office; San Francisco on macOS). Nothing is downloaded. Numbers use its
-   tabular figures (see .num in globals.css). */
+/* Typeface for the CoCS Climate Risk Tolerance Tool: Aptos, the face the
+   project's reports are set in (installed with Microsoft 365 on Windows),
+   falling back to the system interface font (Segoe UI on Windows, San
+   Francisco on macOS). Nothing is downloaded. Numbers use tabular figures
+   (see .num in globals.css). */
