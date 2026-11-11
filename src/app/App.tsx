@@ -1358,7 +1358,7 @@ function MapView(props: MapViewProps) {
   const [dimOutside, setDimOutside] = useState(true);
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
   // The map controls card can fold down to one button when it's in the way.
-  const [controlsOpen, setControlsOpen] = useState(true);
+  const [controlsOpen, setControlsOpen] = useState(false);
   // Which hazard the scenario dock is set to.
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
@@ -2145,7 +2145,7 @@ function MapView(props: MapViewProps) {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight?.area) return;
-    map.flyToBounds(L.latLngBounds(highlight.area.ring), { padding: [36, 36], duration: 0.8 });
+    map.flyToBounds(L.latLngBounds(highlight.area.ring), { paddingTopLeft: [260, 64], paddingBottomRight: [72, 28], duration: 0.8 });
     // Only when the area itself changes, not on every switch toggle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, caseRadius, highlight?.lat, highlight?.lng]);
@@ -2851,7 +2851,7 @@ function LocatorMap({
   if (!open) return null;
   return (
     <div className="fade-in overflow-hidden rounded-[12px] border-[3px] border-[#16191D] bg-white">
-      <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
+      <div ref={ref} className="h-[104px] w-[132px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
 }
