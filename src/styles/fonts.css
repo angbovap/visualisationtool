@@ -1,4 +1,9 @@
-/* Typeface for the CoCS Climate Risk Tolerance Tool: Libre Franklin, the
-   open-source Franklin Gothic, for everything (see STYLE.md). Numbers use
-   its tabular figures (.num in globals.css). */
-@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+/* Typeface: Franklin Gothic (see STYLE.md). The installed Windows/Office
+   faces are used by name: Book for text, Medium for labels, Demi for
+   headings. Libre Franklin is only the fallback where they are missing. */
+@import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+@font-face { font-family: 'Franklin'; font-weight: 400; font-style: normal; src: local('Franklin Gothic Book'), local('FranklinGothic-Book'); }
+@font-face { font-family: 'Franklin'; font-weight: 400; font-style: italic; src: local('Franklin Gothic Book Italic'), local('FranklinGothic-BookItalic'); }
+@font-face { font-family: 'Franklin'; font-weight: 500; font-style: normal; src: local('Franklin Gothic Medium'), local('FranklinGothic-Medium'); }
+@font-face { font-family: 'Franklin'; font-weight: 600 800; font-style: normal; src: local('Franklin Gothic Demi'), local('FranklinGothic-Demi'); }

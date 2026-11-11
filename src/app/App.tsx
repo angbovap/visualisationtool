@@ -1225,7 +1225,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-end justify-between">
-      <span className="flex items-center gap-2 text-[12.5px] font-semibold text-ink-2">
+      <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
         {children}
       </span>
       {right}
@@ -2081,7 +2081,7 @@ function MapView(props: MapViewProps) {
           pane: 'caseContent',
           icon: L.divIcon({
             className: '',
-            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
+            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
             iconSize: [24, 16],
             iconAnchor: [12, 8],
           }),
@@ -2279,7 +2279,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 border border-[#CDD2D6]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[236px] rounded-[4px] border border-[#C3C9CD] bg-white p-1">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2287,9 +2287,9 @@ function MapView(props: MapViewProps) {
           }}
           aria-label="Minimise map settings"
           title="Minimise"
-          className="flex w-full items-center justify-between rounded-[4px] px-2 py-1 text-ink-3 hover:text-accent hover:text-ink"
+          className="flex w-full items-center justify-between rounded-[4px] px-2 py-1.5 text-ink hover:text-accent"
         >
-          <span className="text-xs font-semibold">Map settings</span>
+          <span className="text-base font-semibold">Map settings</span>
           <IconChevron size={12} className="-rotate-90" />
         </button>
         {(
@@ -2334,19 +2334,13 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
               >
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] ${open ? 'text-accent' : 'text-ink-2'}`}
-                >
-                  <Icon size={16} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink">{c.label}</span>
-                  <span className="block truncate text-xs text-ink-3">{current}</span>
-                </span>
-                <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+                <Icon size={15} className={`shrink-0 ${open ? 'text-accent' : 'text-ink-2'}`} />
+                <span className="shrink-0 text-base text-ink">{c.label}</span>
+                <span className="min-w-0 flex-1 truncate text-right text-base text-ink-2">{current}</span>
+                <IconChevron size={12} className={`shrink-0 text-ink-2 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
                 <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[4px] bg-white p-1.5 border border-[#CDD2D6]`}>
@@ -2376,28 +2370,20 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:text-accent"
+          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center text-ink-2">
-            <IconFocus size={16} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-ink">Focus on council</span>
-            <span className="block text-xs text-ink-3">Dims the area outside it</span>
-          </span>
+          <IconFocus size={15} className="shrink-0 text-ink-2" />
+          <span className="min-w-0 flex-1 text-base text-ink" title="Dims the area outside the council boundary">Focus on council</span>
           <Switch on={dimOutside} />
         </button>
         <button
           onClick={() => setProbeMode(!probeMode)}
           aria-pressed={probeMode}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-1.5 text-left transition-colors hover:text-accent"
+          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
-          <span className={`flex h-7 w-7 shrink-0 items-center justify-center ${probeMode ? 'text-accent' : 'text-ink-2'}`}>
-            <IconLocate size={16} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-ink">Inspect a point</span>
-            <span className="block text-xs text-ink-3">{probeMode ? 'Click the map to read it' : 'Read any spot from every layer'}</span>
+          <IconLocate size={15} className={`shrink-0 ${probeMode ? 'text-accent' : 'text-ink-2'}`} />
+          <span className="min-w-0 flex-1 text-base text-ink" title="Click any spot on the map to read every layer there">
+            {probeMode ? 'Click the map' : 'Inspect a point'}
           </span>
           <Switch on={probeMode} />
         </button>
@@ -2543,7 +2529,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[4px] border border-line bg-white/96 p-2 border border-[#CDD2D6] backdrop-blur">
+          <div className="fade-up rounded-[4px] border border-line bg-white p-2 border-[#C3C9CD]">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -3172,21 +3158,16 @@ function LayersTab({
                 key={b.id}
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
-                className="group flex w-full items-center gap-3 rounded-[4px] px-1.5 py-2 text-left transition-colors hover:text-accent"
-                style={on ? { boxShadow: `inset 3px 0 0 ${b.accent}` } : undefined}
+                title={`${b.layers.length} layers`}
+                className={`group flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
               >
-                <span className="shrink-0" style={{ color: b.accent }}>
-                  <Icon size={18} />
+                <span className="flex w-5 shrink-0 justify-center" style={{ color: b.accent }}>
+                  <Icon size={16} />
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className={`block truncate text-lg ${on ? 'font-semibold text-ink' : 'font-medium text-ink'}`}>
-                    {b.title}
-                  </span>
-                  <span className="num block text-xs text-ink-3">{b.layers.length} layers</span>
-                </span>
+                <span className={`min-w-0 flex-1 truncate text-lg text-ink ${on ? 'font-semibold' : ''}`}>{b.title}</span>
                 <span
-                  className={`shrink-0 text-sm font-semibold ${on ? '' : 'text-ink-3 group-hover:text-ink'}`}
-                  style={on ? { color: b.accent } : undefined}
+                  className={`shrink-0 rounded-[3px] px-1.5 py-[1px] text-sm font-medium ${on ? 'text-white' : 'text-accent group-hover:underline'}`}
+                  style={on ? { background: b.accent } : undefined}
                 >
                   {on ? 'Applied' : 'Apply'}
                 </span>
@@ -3196,16 +3177,13 @@ function LayersTab({
         </div>
       </div>
 
-      {/* The one divider: between "pick a ready-made set" and "build your own". */}
-      <div className="mx-3 mt-3 border-t border-line" />
-
-      <div className="flex-1 pb-4 pt-4" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
+      <div className="flex-1 pb-4 pt-5" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
         {activeTab === null ? (
           <>
             <div className="px-3">
               <PanelHeading>Browse layers</PanelHeading>
             </div>
-            <div className="mx-3 divide-y divide-line border-y border-line">
+            <div className="space-y-px px-1.5">
               {categories.map((c) => {
                 const Icon = CATEGORY_ICON[c.value];
                 const pending = c.value === 'planning';
@@ -3213,23 +3191,22 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent"
+                    className="flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
                       <Icon size={16} />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-base font-medium text-ink">{c.label}</span>
-                      <span className="num block text-xs text-ink-3">
-                        {pending ? 'Not supplied yet' : `${c.total} layer${c.total === 1 ? '' : 's'}`}
+                    <span className={`min-w-0 flex-1 truncate text-lg ${pending ? 'text-ink-3' : 'text-ink'}`}>{c.label}</span>
+                    {pending ? (
+                      <span className="shrink-0 text-sm text-ink-3">Not supplied</span>
+                    ) : c.on > 0 ? (
+                      <span className="num shrink-0 rounded-[3px] px-1.5 py-[1px] text-sm font-medium text-white" style={{ background: c.color }}>
+                        {c.on} of {c.total} on
                       </span>
-                    </span>
-                    {c.on > 0 && (
-                      <span className="num shrink-0 text-xs font-semibold" style={{ color: c.color }}>
-                        {c.on} on
-                      </span>
+                    ) : (
+                      <span className="num shrink-0 text-sm text-ink-2">{c.total}</span>
                     )}
-                    <IconChevron size={12} className="shrink-0 text-ink-3" />
+                    <IconChevron size={12} className="shrink-0 text-ink-2" />
                   </button>
                 );
               })}
@@ -3287,24 +3264,16 @@ function LayersTab({
         <button
           onClick={() => setDisplayOpen((v) => !v)}
           aria-expanded={displayOpen}
-          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:text-accent"
+          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
         >
-          <span
-            className={`flex h-7 w-7 items-center justify-center rounded-[4px] ${checkedLayers.size > 0 ? 'bg-accent text-white' : 'bg-surface-2 text-ink-3'}`}
-          >
-            <IconLayers size={15} />
+          <IconLayers size={15} className={checkedLayers.size > 0 ? 'text-accent' : 'text-ink-2'} />
+          <span className="min-w-0 flex-1 truncate text-lg font-medium text-ink">
+            {checkedLayers.size === 0
+              ? 'No layers on'
+              : `${checkedLayers.size} layer${checkedLayers.size === 1 ? '' : 's'} on the map`}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-base font-semibold text-ink">
-              {checkedLayers.size === 0
-                ? 'No layers on'
-                : `${checkedLayers.size} layer${checkedLayers.size === 1 ? '' : 's'} on the map`}
-            </span>
-            <span className="num block text-xs text-ink-3">
-              Opacity {Math.round(overlayOpacity * 100)}%
-            </span>
-          </span>
-          <IconChevron size={14} className={`text-ink-3 transition-transform ${displayOpen ? 'rotate-90' : '-rotate-90'}`} />
+          <span className="num shrink-0 text-sm text-ink-2">Opacity {Math.round(overlayOpacity * 100)}%</span>
+          <IconChevron size={13} className={`text-ink-2 transition-transform ${displayOpen ? 'rotate-90' : '-rotate-90'}`} />
         </button>
       </div>
     </div>
@@ -3848,7 +3817,7 @@ function PlaceTab({
               <button
                 key={r.s.id}
                 onClick={() => setSelectedId(r.s.id)}
-                className="flex w-full items-center gap-3 py-1.5 text-left hover:opacity-80"
+                className="flex w-full items-center gap-3 py-1.5 text-left hover:text-accent"
               >
                 <span className="num w-4 shrink-0 text-sm text-ink-3">{r.rank ?? '–'}</span>
                 <span className="w-[104px] shrink-0 truncate text-base text-ink-2">{r.s.name}</span>
@@ -4881,8 +4850,8 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
+<style>body{font:13px/1.5 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
 .sub{color:#5B6268;margin:6px 0 0}.note{color:#7F868C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF0F1}th{font-weight:600;color:#3D444A;border-bottom:1px solid #D5D9DC}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
@@ -6682,17 +6651,17 @@ function IconRail({
   // suburb profile, it doesn't belong nested under one.
   const order: PanelTab[] = ['layers', 'assets', 'place', 'cases', 'tolerance', 'help'];
   return (
-    <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1 border-r border-line bg-white py-3">
+    <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1 bg-[#0B3D3B] py-3 text-white">
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-[4px] text-ink-3 transition-colors hover:text-accent hover:text-ink"
+          className="flex h-11 w-[56px] items-center justify-center rounded-[4px] text-white transition-colors hover:bg-[#145653]"
           aria-label="Home"
         >
           <IconHome size={21} />
         </button>
       </Tip>
-      <div className="my-1.5 h-px w-8 bg-line" />
+      <div className="my-1.5 h-px w-8 bg-[#2B5F5C]" />
       {order.map((t) => {
         const meta = TAB_META[t];
         const Icon = meta.icon;
@@ -6700,18 +6669,17 @@ function IconRail({
         const separator = t === 'help';
         return (
           <React.Fragment key={t}>
-            {separator && <div className="my-1.5 h-px w-8 bg-line" />}
+            {separator && <div className="my-1.5 h-px w-8 bg-[#2B5F5C]" />}
             <Tip label={meta.title} body={meta.subtitle}>
               <button
                 data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-[4px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:text-accent hover:text-ink'}`}
-                style={on ? { boxShadow: `inset 3px 0 0 ${ACCENT}` } : undefined}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-[4px] py-1.5 text-white transition-colors ${on ? 'bg-[#1A7470]' : 'hover:bg-[#145653]'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
                 <Icon size={21} />
-                <span className={`text-[10px] leading-none ${on ? 'font-semibold' : 'font-medium'}`}>{RAIL_LABEL[t]}</span>
+                <span className={`text-[11px] leading-none ${on ? 'font-semibold' : ''}`}>{RAIL_LABEL[t]}</span>
               </button>
             </Tip>
           </React.Fragment>
@@ -6719,7 +6687,7 @@ function IconRail({
       })}
       <div className="mt-auto">
         <Tip label="Prepared by" body="Value Advisory Partners" side="right">
-          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 object-contain" />
+          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 rounded-[4px] bg-white object-contain p-1" />
         </Tip>
       </div>
     </nav>
@@ -7409,7 +7377,7 @@ function BarRow({ label, n, max, color, onClick }: { label: string; n: number; m
     </>
   );
   return onClick ? (
-    <button onClick={onClick} className="flex w-full items-center gap-3 py-1 hover:opacity-80">
+    <button onClick={onClick} className="flex w-full items-center gap-3 py-1 hover:text-accent">
       {inner}
     </button>
   ) : (
@@ -7968,7 +7936,7 @@ function RealBuildingsRegister({
             >
               Explore the register
             </PanelHeading>
-            <div className="divide-y divide-line border-y border-line">
+            <div className="-mx-1.5 space-y-px">
               {(
                 [
                   {
@@ -8013,16 +7981,14 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent"
+                    className="flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
                       <Icon size={16} />
                     </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-base font-medium text-ink">{t.title}</span>
-                      <span className="block text-xs text-ink-3">{t.sub}</span>
-                    </span>
-                    <IconChevron size={12} className="shrink-0 text-ink-3" />
+                    <span className="min-w-0 flex-1 truncate text-lg text-ink">{t.title}</span>
+                    <span className={t.id === 'condition' ? 'w-[64px] shrink-0' : 'shrink-0 text-sm text-ink-2'}>{t.sub}</span>
+                    <IconChevron size={12} className="shrink-0 text-ink-2" />
                   </button>
                 );
               })}
@@ -8335,7 +8301,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
 
   return (
     <div
-      className="fixed inset-0 z-[2100] flex items-start justify-center bg-ink/25 px-4 pt-[12vh] backdrop-blur-[2px]"
+      className="fixed inset-0 z-[2100] flex items-start justify-center bg-ink/40 px-4 pt-[12vh]"
       onClick={onClose}
     >
       <div
@@ -8904,11 +8870,8 @@ export default function App() {
         data-tour="left-panel"
         className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[440px]' : 'w-80'}`}
       >
-        <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
-          <div className="min-w-0">
-            <div className="text-[16px] font-semibold leading-tight text-ink">{meta.title}</div>
-            <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
-          </div>
+        <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
+          <h1 className="min-w-0 truncate text-[17px] font-semibold leading-tight text-ink">{meta.title}</h1>
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
@@ -8923,7 +8886,7 @@ export default function App() {
         <div className="border-b border-line px-2.5 py-2">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2 rounded-[4px] border border-line bg-surface-2 px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent hover:text-ink-2"
+            className="flex w-full items-center gap-2 rounded-[4px] border border-[#C3C9CD] bg-white px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent"
           >
             <IconSearch size={14} className="shrink-0" />
             <span className="flex-1">Search suburbs, layers, buildings</span>

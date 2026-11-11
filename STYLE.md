@@ -7,10 +7,10 @@ is decorative.
 
 ## Type
 
-- **Libre Franklin** (the open-source Franklin Gothic) for everything:
-  headings, text, labels and numbers. No second family.
-- Weights: 400 text, 500 labels, 600 headings and key figures. No bold
-  (700) display type; headings stay at 16px or below.
+- **Franklin Gothic**, the installed Windows and Office faces: Book for
+  text, Medium for labels, Demi for headings. Libre Franklin (the
+  open-source version) only where those are missing.
+- Headings Demi, 17px at most. No bold display type.
 - Numbers use tabular figures (`.num`) so columns line up.
 - Sentence case everywhere. No all-caps labels, no letter-spaced text.
 
@@ -21,9 +21,10 @@ is decorative.
 | Page grey | `#F3F4F5` | Page behind widgets, secondary surfaces |
 | White | `#FFFFFF` | Panels and map cards |
 | Ink | `#1F2328` | Headings and primary text |
-| Ink 2 | `#4B5258` | Body text |
-| Ink 3 | `#7F868C` | Labels, notes, units |
-| Rule | `#E1E4E6` | Dividers and borders |
+| Ink 2 | `#3E454B` | Body text, values |
+| Ink 3 | `#596066` | Notes and units only |
+| Rule | `#DADEE1` | Dividers and borders |
+| Rail | `#0B3D3B` | The navigation rail, the one block of solid colour in the frame |
 | Accent | `#0E6E6A` | Interactive elements only (links, selected states, checkboxes) |
 
 Hazard colours encode data and are used the same way everywhere:
@@ -32,8 +33,17 @@ social vulnerability amber `#B45309`, assets slate `#374151`.
 Risk ratings: Low `#15803D`, Moderate `#CA8A04`, High `#EA580C`,
 Extreme `#B91C1C`.
 
-Colour is never used as decoration: no tinted backgrounds behind text, no
-coloured edge bars, no gradients.
+Colour has three jobs and no others:
+
+1. **Frame:** the rail is solid council teal, so navigation reads apart
+   from content.
+2. **Data:** each theme keeps its map colour wherever it appears (icon,
+   "on" count, map symbol, chart). A filled chip in that colour means
+   "something of this theme is on the map now".
+3. **Action:** accent teal marks what can be clicked or is selected.
+
+No pale or translucent text, no frosted glass, no tinted backgrounds
+behind text, no coloured edge bars, no gradients.
 
 ## Structure
 
@@ -45,8 +55,10 @@ modular widgets, most important first, figures shown against a reference.
   title bar (12.5px semibold) and its content below. Related widgets sit
   together; the most important comes first.
 - **Group labels:** outside widgets, a small semibold ink-2 label.
-- **Lists:** rows divided by thin rules. Icon (if any) on the left, label,
-  then value or chevron on the right. No icon-on-top tiles.
+- **Lists:** one line per row: icon on the left, name, then value, count
+  or chevron on the right. No second line of description under a row;
+  explanations go in a tooltip. Rows are separated by space, not rules,
+  and highlight grey on hover.
 - **Figures:** a label above a value, always with a reference (target,
   total, or comparison) where one exists.
 - **Tabs:** a segmented control; the selected tab is white with a border.

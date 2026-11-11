@@ -3,15 +3,15 @@
 @import 'leaflet/dist/leaflet.css';
 
 @theme {
-  --font-sans: 'Libre Franklin', 'Franklin Gothic Book', 'Franklin Gothic', Arial, sans-serif;
+  --font-sans: 'Franklin', 'Libre Franklin', Arial, sans-serif;
 
   --color-accent: #0E6E6A;
   --color-accent-soft: #E5F0EF;
   --color-accent-line: #A8CFCB;
   --color-ink: #1F2328;
-  --color-ink-2: #4B5258;
-  --color-ink-3: #7F868C;
-  --color-line: #E1E4E6;
+  --color-ink-2: #3E454B;
+  --color-ink-3: #596066;
+  --color-line: #DADEE1;
   --color-surface: #FFFFFF;
   --color-surface-2: #F3F4F5;
 
@@ -34,13 +34,13 @@
      No line-height is paired here deliberately: every call site already
      sets its own leading-* utility, and pairing one in here would fight
      that rather than replace it. */
-  --text-2xs: 10.5px;
-  --text-xs: 11px;
-  --text-sm: 11.5px;
-  --text-base: 12px;
-  --text-md: 12.5px;
-  --text-lg: 13px;
-  --text-xl: 14px;
+  --text-2xs: 11px;
+  --text-xs: 11.5px;
+  --text-sm: 12px;
+  --text-base: 12.5px;
+  --text-md: 13px;
+  --text-lg: 13.5px;
+  --text-xl: 14.5px;
   --text-2xl: 17px;
   /* A deliberate step above the in-app scale, for the one hero moment
      (the landing screen's title) that genuinely is a splash, not dense
@@ -56,10 +56,9 @@ html, body, #root { height: 100%; }
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 13.5px;
   color: var(--color-ink);
   background: var(--color-surface-2);
-  -webkit-font-smoothing: antialiased;
 }
 
 /* Numbers always read in the mono face, tabular so columns line up. */
