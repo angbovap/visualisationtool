@@ -1359,6 +1359,10 @@ function MapView(props: MapViewProps) {
   const [openControl, setOpenControl] = useState<'basemap' | 'bounds' | 'scenario' | null>(null);
   // The map controls card can fold down to one button when it's in the way.
   const [controlsOpen, setControlsOpen] = useState(false);
+  // The map's width. Under 1000px (both side panels out) the floating
+  // cards shrink: no locator, legend folded to its title.
+  const [mapW, setMapW] = useState(1200);
+  const compact = mapW < 1000;
   // Which hazard the scenario dock is set to.
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
@@ -1396,7 +1400,12 @@ function MapView(props: MapViewProps) {
       // The map's box changes when side panels change width (the Risk
       // tolerance tab is wider); Leaflet only watches the window, so tell it.
       if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
-        const ro = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+        const el = containerRef.current;
+        setMapW(el.clientWidth);
+        const ro = new ResizeObserver(() => {
+          map.invalidateSize({ pan: false });
+          setMapW(el.clientWidth);
+        });
         ro.observe(containerRef.current);
         map.once('unload', () => ro.disconnect());
       }
@@ -2145,10 +2154,23 @@ function MapView(props: MapViewProps) {
     const L = LRef.current;
     const map = mapRef.current;
     if (!ready || !L || !map || !highlight?.area) return;
-    map.flyToBounds(L.latLngBounds(highlight.area.ring), { paddingTopLeft: [260, 64], paddingBottomRight: [72, 28], duration: 0.8 });
+    map.flyToBounds(L.latLngBounds(highlight.area.ring), { paddingTopLeft: [compact ? 24 : 260, 64], paddingBottomRight: [64, compact ? 64 : 28], duration: 0.8 });
     // Only when the area itself changes, not on every switch toggle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, caseRadius, highlight?.lat, highlight?.lng]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    const fold = () => {
+      setControlsOpen(false);
+      setOpenControl(null);
+    };
+    map.on('click', fold);
+    return () => {
+      map.off('click', fold);
+    };
+  }, [ready]);
 
   /* -- Crosshair while inspecting. Toggled on the element directly:
      React must never rewrite this container's className, or it strips
@@ -2441,9 +2463,10 @@ function MapView(props: MapViewProps) {
       {/* Bottom-left column: the locator (when zoomed in) above the legend. */}
       <div className="pointer-events-none absolute bottom-4 left-3 z-[999] flex flex-col items-start gap-2 [&>*]:pointer-events-auto">
         {ready && LRef.current && mapRef.current && (
-          <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
+          !compact && <LocatorMap L={LRef.current} main={mapRef.current} selectedId={selectedId} />
         )}
         <MapLegend
+          compact={compact}
           checkedLayers={checkedLayers}
           showBuildings={showBuildings}
           shade={suburbShade}
@@ -2527,7 +2550,9 @@ function MapLegend({
   caseRadius,
   floodEvent = 'none',
   heatEvent = 'none',
+  compact = false,
 }: {
+  compact?: boolean;
   checkedLayers: Set<string>;
   showBuildings: boolean;
   shade: SuburbShade | null;
@@ -2536,7 +2561,9 @@ function MapLegend({
   floodEvent?: FloodEvent;
   heatEvent?: HeatEvent;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(!compact);
+  // Folds itself when the map narrows, opens again when it widens.
+  useEffect(() => setOpen(!compact), [compact]);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
     <div className="w-[224px] overflow-hidden rounded-[12px] bg-white shadow-[0_6px_20px_rgba(16,24,40,0.10)]">
