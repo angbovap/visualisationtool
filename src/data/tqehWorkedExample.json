@@ -1,0 +1,129 @@
+{
+  "source": "Climate Risk Tolerance Framework Report: City of Charles Sturt, Section 4 (The Systems Cooperative, draft 1.0, 26 October 2026). Box 1 from the Risk Tolerance Framework Summary. Values are the report's own illustrative estimates, not validated risk assessments.",
+  "scenario": {
+    "event": "1-in-100-year flood",
+    "likelihood": "Likely",
+    "likelihoodNote": "Assumed for demonstration within Council's risk framework",
+    "climate": "Current climate conditions",
+    "period": "50-year assessment period for expected damage costs"
+  },
+  "disclaimer": "Illustrative only. Based on indicative assumptions and inputs; not validated risk estimates and not a basis for Council decision-making. Does not include the effect of risk treatments.",
+  "councilBuildings": [
+    { "id": "B1", "name": "Civic Library", "depth": "0.10–0.20 m", "note": "Nearby; floor unverified", "damage": "$0–180k", "time": "0–14 days", "loc": [-34.87881, 138.53828], "locSource": "OpenStreetMap: Civic Library, 72 Woodville Road" },
+    { "id": "B2", "name": "CoCS Civic Centre", "depth": "0.00–0.10 m", "note": "Nearby; floor unverified", "damage": "$0–95k", "time": "0–7 days", "loc": [-34.87886, 138.53788], "locSource": "OpenStreetMap: City of Charles Sturt Civic Centre, 72 Woodville Road" },
+    { "id": "B3", "name": "St Clair Recreation Centre (YMCA)", "depth": "0.00–0.10 m", "note": "Perimeter/approaches", "damage": "$0–265k", "time": "0–14 days", "loc": [-34.87487, 138.53985], "locSource": "OpenStreetMap: St Clair Recreation Centre (YMCA), 109 Woodville Road" },
+    { "id": "B4", "name": "The Brocas Youth Space (Community Centre)", "depth": "0.00–0.10 m", "note": "Nearby; floor unverified", "damage": "$0–25k", "time": "0–14 days", "loc": [-34.87406, 138.54086], "locSource": "OpenStreetMap: Brocas House, 111 Woodville Road" },
+    { "id": "B5", "name": "St Clair Reserve changeroom", "depth": "0.00–0.10 m", "note": "At perimeters", "damage": "$0–15k", "time": "0–14 days", "loc": [-34.87441, 138.53929], "locSource": "OpenStreetMap: Saint Clair Recreation Ground (the ground, not the changeroom itself)" },
+    { "id": "B6", "name": "Woodville District Table Tennis Club", "depth": "0.00–0.02 m", "note": "Around vicinity", "damage": "$0–10k", "time": "0–2 days", "loc": null, "locSource": "Not found in OpenStreetMap; not mapped" },
+    { "id": "B7", "name": "Woodville Oval Croquet Clubrooms", "depth": "0.10–0.20 m", "note": "At adjacent grounds", "damage": "$0–20k", "time": "0–28 days", "loc": [-34.88588, 138.53853], "locSource": "OpenStreetMap: Woodville Croquet Club, Koolunda Avenue" }
+  ],
+  "councilRoads": [
+    { "id": "R1", "name": "Rowley Terrace", "note": "West of station local links", "depth": "0.10–0.20 m", "damage": "$0–10k", "time": "0–1 days" },
+    { "id": "R2", "name": "Belmore Tc, Woodville", "note": "South of station", "depth": "0.20–0.50 m", "damage": "$0–35k", "time": "0–3 days" },
+    { "id": "R3", "name": "Leslie St, East Woodville", "note": "Near aged care centres", "depth": "0.20–0.50 m", "damage": "$0–20k", "time": "0–3 days" },
+    { "id": "R4", "name": "Glen Rowan Rd, Woodville South", "note": "West of hospital local links", "depth": "0.20–0.50 m", "damage": "$0–25k", "time": "0–3 days" },
+    { "id": "R5", "name": "Cedar Av, Woodville South", "note": "East of hospital local links", "depth": "0.20–0.50 m", "damage": "$0–15k", "time": "0–3 days" },
+    { "id": "R6", "name": "Laity Place", "note": "East of station local links", "depth": "0.00–0.02 m", "damage": "$0–1k", "time": "0–1 days" }
+  ],
+  "facilities": [
+    { "id": "S1", "name": "The Queen Elizabeth Hospital", "owner": "SA Health (Government of South Australia)", "depth": "0.20–0.75 m (grounds/roads); local deeper cells", "consequence": "High public visibility; emergency access, patient transport, disruption of essential healthcare.", "loc": "tqeh" },
+    { "id": "S2", "name": "Woodville Primary School", "owner": "South Australian Department for Education", "depth": "0–0.35 m (nearby grounds/access); school footprint uncertain", "consequence": "Student safety, school accessibility, interruption to education; heritage-sensitive buildings.", "loc": [-34.88034, 138.53272], "locSource": "OpenStreetMap: Woodville Primary School, Evans Street" },
+    { "id": "S3", "name": "Woodville Railway Station", "owner": "Department for Infrastructure and Transport / Adelaide Metro", "depth": "0.20–0.75 m nearby; local channels 0.75–1.25 m", "consequence": "Rail-service disruption, commuter access, transport safety and network-wide consequences.", "loc": [-34.8771, 138.53773], "locSource": "OpenStreetMap: Woodville station" },
+    { "id": "S4", "name": "Bupa Woodville Residential Aged Care", "owner": "Bupa Care Services Pty Limited (private)", "depth": "0–0.35 m (grounds/approaches; interior unverified)", "consequence": "Vulnerable residents, staff and emergency access, potential evacuation or interruption to care.", "loc": null, "locSource": "Not found in OpenStreetMap; not mapped" },
+    { "id": "S5", "name": "Bene Aged Care St Clair", "owner": "Bene Aged Care (not-for-profit community organisation)", "depth": "0–0.35 m (local vicinity; entrance depth unverified)", "consequence": "Vulnerable residents, continuity of care, potential evacuation, and public concern.", "loc": null, "locSource": "Not found in OpenStreetMap; not mapped" },
+    { "id": "S6", "name": "Woodville Power Substation", "owner": null, "depth": "0.10–0.35 m", "consequence": "Potential electricity supply disruption; cascading impacts on essential services, businesses and residential areas; electrical safety and infrastructure reliability.", "loc": null, "locSource": "Not found in OpenStreetMap; not mapped" }
+  ],
+  "stateRoads": [
+    { "id": "A1", "name": "Woodville Rd, Woodville South", "note": "Heavy traffic; near The Queen Elizabeth Hospital", "depth": "0.10–0.20 m", "consequence": "Disruption to major arterial traffic; restricted access to The Queen Elizabeth Hospital and emergency services; impacts on commuters, businesses and essential service accessibility." },
+    { "id": "A2", "name": "Woodville Rd, Woodville", "note": "Heavy traffic; near power station", "depth": "0.02–0.05 m", "consequence": "Disruption to major arterial traffic and public transport connections; restricted access to civic facilities, commercial areas and community services; broader network congestion." },
+    { "id": "A3", "name": "Port Rd", "note": "Heavy traffic; near Civic Centre", "depth": "0.20–0.50 m", "consequence": "Disruption to a major arterial transport corridor; significant traffic congestion and network-wide delays; impacts on freight, emergency access, business operations and essential services." }
+  ],
+  "categories": [
+    {
+      "name": "Financial Sustainability",
+      "appetite": "Balanced",
+      "target": "Moderate",
+      "assessed": ["Moderate", "High"],
+      "basis": "quantitative",
+      "evidence": ["Up to ~$600k damage cost to buildings in area (moderate)", "Up to ~$110k damage to selected key road segments (minor)"],
+      "tolerance": "Council tolerates likely financial impacts of up to $20K or 2% of their annual budget. Financial impacts (expenditure or revenue) of up to $5M or 50% of the annual budget may be accepted for strategic initiatives or transformative projects."
+    },
+    {
+      "name": "Core Service Delivery / Asset Management",
+      "appetite": "Balanced",
+      "target": "Low",
+      "assessed": ["Moderate", "High"],
+      "basis": "quantitative",
+      "evidence": [
+        "Council facility (civic centre, YMCA, community centre) impacted two weeks (minor)",
+        "Temporary impact on compliance, service KPIs or vulnerable populations; may require management intervention (moderate)",
+        "Woodville Oval Croquet Clubrooms affected up to one month (moderate)",
+        "Roads near The Queen Elizabeth Hospital could be closed for 3 days"
+      ],
+      "tolerance": "Council does not tolerate likely impacts on Council facilities lasting more than one month or delays in infrastructure project milestones exceeding three months."
+    },
+    {
+      "name": "Legislative / Regulatory",
+      "appetite": "Minimal",
+      "target": "Moderate",
+      "assessed": ["Moderate", "High"],
+      "basis": "proxy",
+      "evidence": ["Exposure of critical infrastructure and essential services, including the hospital (S1), railway station (S3), power substation (S6) and major arterial roads (A1–A3)"],
+      "tolerance": "Council does not tolerate any likely breaches of a technical nature or any litigation or court proceedings."
+    },
+    {
+      "name": "Reputation",
+      "appetite": "Balanced",
+      "target": "Low",
+      "assessed": ["Moderate", "High"],
+      "basis": "proxy",
+      "evidence": [
+        "Disrupted access to The Queen Elizabeth Hospital (S1) through Woodville Rd, Woodville South (A1, 0.10–0.20 m)",
+        "Aged care residents may need evacuation or face disrupted care (S4, S5)",
+        "Woodville Primary School closure (S2) and disruption at the Woodville rail junction (S3)",
+        "Port Rd (A3, 0.20–0.50 m), the direct route to the Royal Adelaide Hospital, partly unsafe for vehicles, causing congestion across the network"
+      ],
+      "tolerance": "Council does not tolerate likely repeated negative national or state media coverage lasting several months, a successful vote of no confidence, or the forced resignation or government investigation of the CEO, Mayor or councillors. Negative media coverage lasting more than 30 days, large-scale campaigns or petitions may be tolerated in limited circumstances where key strategic outcomes can be achieved or differing community views need to be balanced."
+    },
+    {
+      "name": "Our People",
+      "appetite": "Cautious",
+      "target": "Moderate",
+      "assessed": ["Low", "Moderate"],
+      "basis": "proxy",
+      "evidence": [
+        "Crews doing traffic control and clean-up next to flooded arterials (A1, A3)",
+        "Access to civic facilities restricted on Woodville Rd (A2, 0.02–0.05 m)",
+        "More demand on relief-centre staff and volunteers"
+      ],
+      "tolerance": "Council does not tolerate any likely near-miss incidents. Council tolerates annual permanent staff and volunteer turnover of up to 10%."
+    },
+    {
+      "name": "Environment",
+      "appetite": "Balanced",
+      "target": "Moderate",
+      "assessed": ["Low", "Moderate"],
+      "basis": "proxy",
+      "evidence": [
+        "Hydrocarbons, litter and sediment washed off Port Rd and Woodville Rd into the stormwater network",
+        "Reserves (St Clair Recreation Ground, Woodville Park) temporarily closed"
+      ],
+      "tolerance": "Likely temporary environmental impacts lasting up to one month (reversible impacts), potentially affecting multiple sites but remaining localised."
+    },
+    {
+      "name": "Community Wellbeing and Local Economy",
+      "appetite": "Balanced",
+      "target": "Low",
+      "assessed": ["Moderate", "High"],
+      "basis": "proxy",
+      "evidence": [
+        "Delays for ambulances, patient transport and hospital staff getting to S1",
+        "Disrupted care for aged care residents (S4, S5), made worse if a substation outage (S6) cuts power to medical equipment or cooling",
+        "Lost school days (S2)",
+        "Rail commuters displaced (S3); freight and commuter delays on Port Rd (A3)",
+        "Lost trade for businesses along Woodville Rd and Port Rd"
+      ],
+      "tolerance": "Council does not tolerate any likely decrease in the use of community facilities (libraries, halls, community centres, reserves and sporting grounds) or any direct impacts on community members' safety."
+    }
+  ]
+}

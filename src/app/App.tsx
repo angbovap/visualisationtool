@@ -57,6 +57,9 @@ import sa1IndicatorsData from '@/data/sa1Indicators.json';
 // The Queen Elizabeth Hospital's site outline and centre, from
 // OpenStreetMap (amenity=hospital) via Nominatim. Not council data.
 import tqehSiteData from '@/data/tqehSite.json';
+// The framework report's Section 4 worked example (tables 4 to 12, Box 1),
+// copied from the report; its values are the report's illustrative ones.
+import tqehWorkedExampleData from '@/data/tqehWorkedExample.json';
 // StormwaterPipes.shp, built by scripts/build-stormwater.cjs: geometry
 // only (no attribute table was supplied).
 import stormwaterPipesData from '@/data/stormwaterPipes.json';
@@ -2060,6 +2063,28 @@ function MapView(props: MapViewProps) {
               .bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] })
               .addTo(map),
           );
+        }
+      }
+      // Worked-example sites, labelled with their report IDs.
+      const siteMarker = (id: string, name: string, loc: LatLngTuple, color: string) =>
+        L.marker(loc, {
+          pane: 'caseContent',
+          icon: L.divIcon({
+            className: '',
+            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Source Sans 3',sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
+            iconSize: [24, 16],
+            iconAnchor: [12, 8],
+          }),
+          opacity: op(id.startsWith('B') ? 'sitesB' : 'sitesS'),
+        }).bindTooltip(`${id} · ${name}`, { direction: 'top', offset: [0, -8] });
+      if (show.has('sitesB')) {
+        for (const b of WORKED.councilBuildings) {
+          if (b.loc) added.push(siteMarker(b.id, b.name, b.loc, '#0E5A63').addTo(map));
+        }
+      }
+      if (show.has('sitesS')) {
+        for (const f of WORKED.facilities) {
+          if (Array.isArray(f.loc)) added.push(siteMarker(f.id, f.name, f.loc, '#6D28D9').addTo(map));
         }
       }
       if (show.has('buildings')) {
@@ -4676,6 +4701,8 @@ type CaseLayer =
   | 'pipes'
   | 'roads'
   | 'buildings'
+  | 'sitesB'
+  | 'sitesS'
   | 'lines'
   | 'focus';
 /** The heat grid's own categories, 2 (coolest in the grid) to 4 (hottest). */
@@ -4840,65 +4867,57 @@ function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; 
   );
 }
 
-/** The case study as a standalone, printable HTML report: every reading
- *  from the three sections plus the tolerance sheet as filled in so far. */
+/** The worked example as a standalone, printable HTML report, in the
+ *  framework report's Section 4 order, plus the tool's own site readings. */
 function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const row = (k: string, v: string) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`;
+  const td = (v: string) => `<td>${esc(v)}</td>`;
+  const table = (head: string[], rows: string[][]) =>
+    `<table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows
+      .map((row) => `<tr>${row.map(td).join('')}</tr>`)
+      .join('')}</tbody></table>`;
   const sheet = loadTolerance();
-  const groups: { name: string; n: number; metres: number }[] = [];
-  for (const { b, metres } of r.buildings) {
-    const g = groups.find((x) => x.name === b.name);
-    if (g) g.n++;
-    else groups.push({ name: b.name, n: 1, metres });
-  }
-  const heatRow = r.heatHere
-    ? row('Heat cell', `UHI category ${r.heatHere.uhiCat}, SVI ${r.heatHere.svi.toFixed(2)}`)
-    : r.nearestHeat
-      ? row(
-          'Nearest heat cell',
-          `${formatMetres(r.nearestHeat.metres)} away, UHI category ${r.nearestHeat.uhiCat}, SVI ${r.nearestHeat.svi.toFixed(2)}`,
-        )
-      : '';
-  const indexRows = r.suburb
-    ? INDEXES.filter((d) => d.group !== 'Assets')
-        .map((d) => {
-          const x = rankSuburbs(d, sel).find((y) => y.s.id === r.suburb!.id)!;
-          return row(d.label, x.v === null ? 'n/a' : `${d.format(x.v)} (${ordinal(x.rank!)} of 8)`);
-        })
-        .join('')
-    : '';
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH case study</title>
-<style>body{font:14px/1.5 'Source Sans 3',system-ui,sans-serif;color:#14201F;max-width:760px;margin:40px auto;padding:0 20px}
-h1{font-size:24px;margin:0}h2{font-size:16px;margin:28px 0 8px;border-bottom:1px solid #E2E7E7;padding-bottom:4px}
-.sub{color:#7E8D8C;margin:4px 0 0}table{width:100%;border-collapse:collapse}
-th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}
-th{width:40%;font-weight:500;color:#4A5A59}.note{color:#7E8D8C;font-size:12px;margin-top:24px}</style></head><body>
-<h1>The Queen Elizabeth Hospital</h1>
-<p class="sub">Case study, CoCS Climate Risk Tolerance Tool. Woodville South${r.suburb ? ` (${esc(r.suburb.name)} SA2)` : ''}. Generated ${new Date().toLocaleDateString('en-AU')}.</p>
-<h2>Hazard</h2><table>
-${r.flood.map((f) => row(`Flood ${FLOOD_SHORT[f.id]}`, floodAtSite(f))).join('')}
-${heatRow}
-${row('Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`)}
-</table>
-${r.suburb ? `<h2>${esc(r.suburb.name)} indexes${sel.scenario === 'today' ? '' : `, ${esc(scenarioName(sel))} (speculative placeholder figures)`}</h2><table>${indexRows}</table>` : ''}
-<h2>Assets and access</h2><table>
-${row('Train station', formatMetres(r.stationM))}${row('Railway', formatMetres(r.railM))}${row('Pedestrian network', formatMetres(r.pedM))}${row('Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m, of which ${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`)}${row('Nearest stormwater pipe', `${formatMetres(r.pipeM)} from the centre`)}${r.road ? row('Nearest major road', `${r.road.name}, ${formatMetres(r.road.m)}`) : ''}${row('Local streets, pipe sizes, people', 'Waiting on council data')}
-</table>
-<h2>Nearest council buildings</h2><table>
-${groups
-  .slice(0, 10)
-  .map((g) => row(g.n > 1 ? `${g.name} (${g.n} buildings)` : g.name, formatMetres(g.metres)))
-  .join('')}
-</table>
-<h2>Risk tolerance</h2><table>
-${CONSEQUENCE_CATEGORIES.map((c) => row(c.name, [sheet[c.name]?.tolerance || 'Not set', sheet[c.name]?.notes].filter(Boolean).join(' | '))).join('')}
-</table>
-<p class="note">Flood extents are long-term runs as labelled in the supplied files (River Torrens to 2050), not current conditions. Flood data is partial: 1 in 20 covers three catchments and 1 in 5 has no Trimmer data. Site from OpenStreetMap (amenity=hospital); readings at the centre of the grounds. Indexes are measured from the supplied layers, not scored.</p>
+  const s = WORKED.scenario;
+  const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]}–${c.assessed[1]}`);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
+<style>body{font:13px/1.5 'Source Sans 3',system-ui,sans-serif;color:#14201F;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Source Serif 4',Georgia,serif;margin:0}h2{font:600 17px/1.3 'Source Serif 4',Georgia,serif;margin:28px 0 8px;border-bottom:1px solid #DDE3E2;padding-bottom:4px}
+.sub{color:#5B6B6A;margin:6px 0 0}.note{color:#7E8D8C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
+th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF2F2}th{font-weight:600;color:#3B4A49;border-bottom:1px solid #CFD6D5}
+.box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
+<h1>The Queen Elizabeth Hospital, Woodville: worked example</h1>
+<p class="sub">CoCS Climate Risk Tolerance Tool · ${esc(s.event)} · likelihood ${esc(s.likelihood)} (assumed) · ${esc(s.climate)} · generated ${new Date().toLocaleDateString('en-AU')}</p>
+<p class="note">${esc(WORKED.disclaimer)}</p>
+<h2>4.1 Area and exposure</h2>
+${table(['', 'Council building'], WORKED.councilBuildings.map((b) => [b.id, b.name]))}
+${table(['', 'Facility', 'Owner / operator'], WORKED.facilities.map((f) => [f.id, f.name, f.owner ?? '']))}
+${table(['', 'Road', 'Notes'], [...WORKED.councilRoads, ...WORKED.stateRoads].map((x) => [x.id, x.name, x.note]))}
+<h2>4.2 Financial and core service delivery</h2>
+${table(['', 'Council building', 'Inundation', 'Notes', 'Expected damage', 'Time to function'], WORKED.councilBuildings.map((b) => [b.id, b.name, b.depth, b.note, b.damage, b.time]))}
+${table(['', 'Council road', 'Inundation', 'Expected damage', 'Time to function'], WORKED.councilRoads.map((x) => [x.id, x.name, x.depth, x.damage, x.time]))}
+${table(['Category', 'Evidence', 'Risk rating'], WORKED.categories.filter((c) => c.basis === 'quantitative').map((c) => [c.name, c.evidence.join('; '), rating(c)]))}
+<h2>4.3 Wider consequences</h2>
+${table(['', 'Facility / road', 'Inundation', 'Potential consequences'], [...WORKED.facilities, ...WORKED.stateRoads].map((f) => [f.id, f.name, f.depth, f.consequence]))}
+${table(['Category', 'Contextual information', 'Indicative rating'], WORKED.categories.filter((c) => c.basis === 'proxy').map((c) => [c.name, c.evidence.join('; '), rating(c)]))}
+<h2>4.4 Risk tolerance</h2>
+${table(['Category', 'Appetite', 'Target', 'Assessed', 'Against target'], WORKED.categories.map((c) => [c.name, c.appetite, c.target, rating(c), toleranceStatus(c).label]))}
+<p class="note">Council's climate risk tolerance statements (Box 1; example statements, assumed likelihood "Likely")</p>
+<table class="box"><tbody>${WORKED.categories.map((c) => `<tr><td>${esc(c.name)}</td><td>${esc(c.tolerance)}${sheet[c.name]?.notes?.trim() ? `<br><em>Notes: ${esc(sheet[c.name].notes)}</em>` : ''}</td></tr>`).join('')}</tbody></table>
+<h2>Tool readings at the site</h2>
+${table(['Reading', 'Value'], [
+    ...r.flood.map((f) => [`Flood ${FLOOD_SHORT[f.id]} (long-term)`, floodAtSite(f)]),
+    ['Nearest heat cell', r.heatHere ? `UHI category ${r.heatHere.uhiCat} at the site` : r.nearestHeat ? `${formatMetres(r.nearestHeat.metres)} away, UHI category ${r.nearestHeat.uhiCat}` : 'n/a'],
+    ['Nearest water', `${formatMetres(r.waterM)} to a ${r.waterKind}`],
+    ['Train station', formatMetres(r.stationM)],
+    ['Stormwater pipe in the grounds', `${Math.round(r.pipeInSiteM)} m`],
+    ...(r.road ? [['Nearest major road', `${r.road.name}, ${formatMetres(r.road.m)}`]] : []),
+    ...(sel.scenario !== 'today' ? [['Climate scenario shown', `${scenarioName(sel)} (speculative)`]] : []),
+  ])}
+<p class="note">Source: ${esc(WORKED.source)}</p>
 </body></html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-  a.download = 'tqeh-case-study.html';
+  a.download = 'tqeh-worked-example.html';
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -4993,12 +5012,24 @@ const CASE_LAYER_DEFS: { id: CaseLayer; label: string }[] = [
   { id: 'heat2', label: 'UHI category 2' },
   { id: 'pipes', label: 'Stormwater pipes' },
   { id: 'roads', label: 'Major roads' },
-  { id: 'buildings', label: 'Council buildings' },
+  { id: 'buildings', label: 'Other council buildings' },
+  { id: 'sitesB', label: 'Council buildings (B1–B7)' },
+  { id: 'sitesS', label: 'Facilities (S1–S6)' },
   { id: 'lines', label: 'Distance lines' },
 ];
 
 /** The legend and switch drawing for each case layer, as on the map. */
 function CaseGlyph({ id }: { id: CaseLayer }) {
+  if (id === 'sitesB' || id === 'sitesS') {
+    return (
+      <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
+        <rect x="2.5" y="1" width="13" height="10" rx="1.5" fill={id === 'sitesB' ? '#0E5A63' : '#6D28D9'} />
+        <text x="9" y="8.6" fontSize="7" fontWeight="700" fill="#fff" textAnchor="middle">
+          {id === 'sitesB' ? 'B' : 'S'}
+        </text>
+      </svg>
+    );
+  }
   if (id === 'flood100' || id === 'flood20' || id === 'flood5') {
     const l = LAYER_BY_ID[{ flood100: 'flood-1in100-real', flood20: 'flood-1in20-real', flood5: 'flood-1in5-real' }[id]];
     return <LayerGlyph l={l} />;
@@ -5028,7 +5059,7 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   );
 }
 
-type CaseView = 'hazard' | 'assets' | 'tolerance';
+type CaseView = 'area' | 'costs' | 'wider' | 'tolerance';
 
 /** A numbered step heading, so the case reads top to bottom in the order
  *  you use it. */
@@ -5139,6 +5170,8 @@ function CaseControls({
     pipes: `${Math.round(r.pipeInSiteM)} m in the grounds`,
     roads: r.road ? `${r.road.name}, ${formatMetres(r.road.m)}` : 'None nearby',
     buildings: `${area.buildings.reduce((n, g) => n + g.ids.length, 0)} within ${radius} m`,
+    sitesB: '',
+    sitesS: '',
     lines: 'To the nearest station, water and heat cell',
     focus: 'Fades the map outside the area',
   };
@@ -5158,7 +5191,7 @@ function CaseControls({
     return () => window.removeEventListener(TOLERANCE_SAVED_EVENT, on);
   }, []);
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
-  const setCount = CONSEQUENCE_CATEGORIES.filter((c) => sheet[c.name]?.tolerance.trim()).length;
+  const setCount = WORKED.categories.filter((c) => sheet[c.name]?.notes?.trim()).length;
   const group = (ids: CaseLayer[], color?: string) => (
     <div
       className="divide-y divide-line border-y border-line"
@@ -5232,7 +5265,9 @@ function CaseControls({
 
       <section className="mt-6" data-tour="case-layers">
         <StepHeading n={2} title="Choose what's on the map" />
-        <div className="mb-1 text-sm font-semibold text-ink-2">Hazards</div>
+        <div className="mb-1 text-sm font-semibold text-ink-2">Worked example sites</div>
+        {group(['sitesB', 'sitesS'])}
+        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Hazards</div>
         {groupLabel('Flood', HAZARD_COLOR.flood, true)}
         {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
         {groupLabel('Heat', HAZARD_COLOR.heat)}
@@ -5246,19 +5281,22 @@ function CaseControls({
       <section className="mt-6" data-tour="case-report-steps">
         <StepHeading n={3} title="Read the report" />
         <div className="flex gap-1.5">
-          <button onClick={() => setView('hazard')} className={linkBtn}>
-            Hazard
+          <button onClick={() => setView('area')} className={linkBtn}>
+            Area
           </button>
-          <button onClick={() => setView('assets')} className={linkBtn}>
-            Assets
+          <button onClick={() => setView('costs')} className={linkBtn}>
+            Costs
+          </button>
+          <button onClick={() => setView('wider')} className={linkBtn}>
+            Wider
           </button>
         </div>
       </section>
 
       <section className="mt-6">
-        <StepHeading n={4} title="Record risk tolerance" hint={`${setCount} of ${CONSEQUENCE_CATEGORIES.length} categories set`} />
+        <StepHeading n={4} title="Risk tolerance" hint={`Notes on ${setCount} of ${WORKED.categories.length} categories`} />
         <button onClick={() => setView('tolerance')} className={`${linkBtn} w-full`}>
-          Open the tolerance sheet
+          Compare with Council targets
         </button>
       </section>
 
@@ -5359,13 +5397,13 @@ const CASE_TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="case-glance"]',
     placement: 'left',
     title: '3. Read the report',
-    body: 'The headline readings for the site. Below them, the Hazard and Assets tabs hold the detail.',
+    body: "The scenario, and how many of Council's seven categories sit above target. The tabs follow the framework report's Section 4: Area, Costs, Wider impacts and Tolerance.",
   },
   {
     selector: '[data-tour="case-tabs"]',
     placement: 'left',
-    title: '4. Record risk tolerance',
-    body: "The Risk tolerance tab lists council's seven consequence categories. Click one to record the tolerance agreed for this site.",
+    title: '4. Risk tolerance',
+    body: "The Tolerance tab compares each category's assessed range with Council's target, lists Council's tolerance statements, and takes notes.",
   },
   {
     selector: '[data-tour="case-download"]',
@@ -5374,6 +5412,162 @@ const CASE_TOUR_STEPS: TourStep[] = [
     body: 'Saves every reading and the tolerance sheet as one report file you can print or share.',
   },
 ];
+
+/* ------------------------------------------------------------------ *
+ * Worked example (report Section 4)
+ *
+ * The Queen Elizabeth Hospital case study as the framework report sets
+ * it out: 4.1 area and exposure, 4.2 quantitative (financial and core
+ * service), 4.3 proxy consequences, 4.4 overall risk tolerance against
+ * Council's targets and Box 1 statements. Every figure is the report's
+ * own illustrative estimate, labelled as such.
+ * ------------------------------------------------------------------ */
+
+interface WorkedCategory {
+  name: string;
+  appetite: string;
+  target: string;
+  assessed: [string, string];
+  basis: 'quantitative' | 'proxy';
+  evidence: string[];
+  tolerance: string;
+}
+const WORKED = tqehWorkedExampleData as unknown as {
+  source: string;
+  scenario: { event: string; likelihood: string; likelihoodNote: string; climate: string; period: string };
+  disclaimer: string;
+  councilBuildings: { id: string; name: string; depth: string; note: string; damage: string; time: string; loc: LatLngTuple | null; locSource: string }[];
+  councilRoads: { id: string; name: string; note: string; depth: string; damage: string; time: string }[];
+  facilities: { id: string; name: string; owner: string | null; depth: string; consequence: string; loc: LatLngTuple | 'tqeh' | null; locSource?: string }[];
+  stateRoads: { id: string; name: string; note: string; depth: string; consequence: string }[];
+  categories: WorkedCategory[];
+};
+
+const RISK_LEVELS = ['Low', 'Moderate', 'High', 'Extreme'] as const;
+const levelOf = (l: string) => RISK_LEVELS.indexOf(l as (typeof RISK_LEVELS)[number]) + 1;
+const RISK_COLOR: Record<string, string> = { Low: '#15803D', Moderate: '#CA8A04', High: '#EA580C', Extreme: '#B91C1C' };
+
+/** How a category's assessed range sits against Council's target. */
+function toleranceStatus(c: WorkedCategory): { label: string; color: string } {
+  const lo = levelOf(c.assessed[0]);
+  const hi = levelOf(c.assessed[1]);
+  const t = levelOf(c.target);
+  if (lo > t) return { label: 'Above target', color: '#B91C1C' };
+  if (hi > t) return { label: 'Upper range above target', color: '#EA580C' };
+  return { label: 'Within target', color: '#15803D' };
+}
+
+function RatingTag({ range }: { range: [string, string] }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-ink">
+      <span className="flex h-[8px] w-[16px] overflow-hidden" aria-hidden>
+        <span className="flex-1" style={{ background: RISK_COLOR[range[0]] }} />
+        <span className="flex-1" style={{ background: RISK_COLOR[range[1]] }} />
+      </span>
+      {range[0] === range[1] ? range[0] : `${range[0]}–${range[1]}`}
+    </span>
+  );
+}
+
+/** Report Figure 10 redrawn: the assessed range per category (shaded band)
+ *  against Council's target rating (line), on Low to Extreme rings. */
+function ToleranceChart() {
+  const cats = WORKED.categories;
+  const n = cats.length;
+  const size = 288;
+  const c = size / 2;
+  const R = 92;
+  const ang = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+  const pt = (i: number, level: number): [number, number] => [c + Math.cos(ang(i)) * (R * level) / 4, c + Math.sin(ang(i)) * (R * level) / 4];
+  const path = (vals: number[]) => vals.map((v, i) => pt(i, v)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ') + ' Z';
+  const hi = cats.map((k) => levelOf(k.assessed[1]));
+  const lo = cats.map((k) => levelOf(k.assessed[0]));
+  const target = cats.map((k) => levelOf(k.target));
+  const short = ['Financial', 'Core service', 'Legislative', 'Reputation', 'Our People', 'Environment', 'Community'];
+  return (
+    <figure>
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full" role="img" aria-label="Assessed risk range against Council target by category">
+        {[1, 2, 3, 4].map((l) => (
+          <path key={l} d={path(Array(n).fill(l))} fill="none" stroke="#DDE3E2" strokeWidth={l === 4 ? 1 : 0.8} />
+        ))}
+        {cats.map((_, i) => {
+          const [x, y] = pt(i, 4);
+          return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="#E6EBEA" strokeWidth={0.8} />;
+        })}
+        {RISK_LEVELS.map((l, k) => (
+          <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9796">
+            {l}
+          </text>
+        ))}
+        {/* Assessed range: the band between the low and high ends. */}
+        <path d={`${path(hi)} ${path(lo)}`} fill="#EA580C" fillOpacity={0.16} fillRule="evenodd" stroke="none" />
+        <path d={path(hi)} fill="none" stroke="#EA580C" strokeWidth={1.2} strokeDasharray="3 2" />
+        <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="1.5 2" />
+        <path d={path(target)} fill="none" stroke="#14201F" strokeWidth={1.8} />
+        {target.map((v, i) => {
+          const [x, y] = pt(i, v);
+          return <circle key={i} cx={x} cy={y} r={2.8} fill="#14201F" stroke="#fff" strokeWidth={1} />;
+        })}
+        {short.map((s, i) => {
+          const [x, y] = pt(i, 4.75);
+          return (
+            <text key={s} x={x} y={y} fontSize="8.5" textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'} dominantBaseline="middle" fill="#3B4A49">
+              {s}
+            </text>
+          );
+        })}
+      </svg>
+      <figcaption className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+        <span className="flex items-center gap-1.5">
+          <span className="h-[8px] w-[14px]" style={{ background: 'rgba(234,88,12,0.25)', borderTop: '1px dashed #EA580C' }} />
+          Assessed range (worked example)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-[2px] w-[14px] bg-ink" />
+          Council risk target
+        </span>
+      </figcaption>
+    </figure>
+  );
+}
+
+function Bullets({ items }: { items: string[] }) {
+  return (
+    <ul className="mt-1 space-y-0.5">
+      {items.map((t) => (
+        <li key={t} className="flex gap-1.5 text-sm leading-[1.45] text-ink-2">
+          <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-ink-3" />
+          {t}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function IdRow({ id, title, sub, right }: { id: string; title: string; sub?: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5 py-2">
+      <span className="num w-6 shrink-0 pt-[1px] text-sm font-semibold text-ink-3">{id}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-base font-medium text-ink">{title}</span>
+        {sub && <span className="mt-0.5 block text-sm leading-[1.45] text-ink-2">{sub}</span>}
+      </span>
+      {right && <span className="num shrink-0 pt-[1px] text-right text-sm text-ink-2">{right}</span>}
+    </div>
+  );
+}
+
+function CategoryBlock({ c }: { c: WorkedCategory }) {
+  return (
+    <div className="py-2.5">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-base font-semibold text-ink">{c.name}</span>
+        <RatingTag range={c.assessed} />
+      </div>
+      <Bullets items={c.evidence} />
+    </div>
+  );
+}
 
 function TqehTab({
   showLayers,
@@ -5392,7 +5586,11 @@ function TqehTab({
 }) {
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
-  const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
+  const statuses = WORKED.categories.map(toleranceStatus);
+  const fully = statuses.filter((s) => s.label === 'Above target').length;
+  const partly = statuses.filter((s) => s.label === 'Upper range above target').length;
+  const above = fully + partly;
+  const s = WORKED.scenario;
 
   return (
     <div>
@@ -5400,43 +5598,155 @@ function TqehTab({
         Woodville South{r.suburb ? ` · ${r.suburb.name} SA2` : ''} · State hospital (non-council asset)
       </p>
 
-      {/* At a glance: the four readings people ask about first. */}
-      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
-        <Glance
-          color={HAZARD_COLOR.flood}
-          label="Flood"
-          value={inside ? `${pct(inside.share)} of grounds` : 'Outside'}
-          sub={inside ? `in the ${FLOOD_SHORT[inside.id]} extent` : 'every mapped extent'}
-        />
-        <Glance
-          color={HAZARD_COLOR.heat}
-          label="Urban heat"
-          value={r.heatHere ? `Category ${r.heatHere.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
-          sub={r.heatHere ? 'at the site' : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.metres)}` : 'no heat data'}
-        />
-        <Glance color={HAZARD_COLOR.water} label="Nearest water" value={formatMetres(r.waterM)} sub={`to a ${r.waterKind}`} />
-        <Glance color={HAZARD_COLOR.assets} label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
+      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 border-y border-line">
+        <div className="py-2.5">
+          <div className="text-sm text-ink-3">Scenario</div>
+          <div className="mt-0.5 text-lg font-semibold leading-tight text-ink">{s.event}</div>
+          <div className="mt-0.5 text-sm text-ink-3">Likelihood: {s.likelihood} (assumed)</div>
+        </div>
+        <div className="py-2.5">
+          <div className="text-sm text-ink-3">Against Council targets</div>
+          <div className="num mt-0.5 text-lg font-semibold leading-tight" style={{ color: above ? '#B91C1C' : '#15803D' }}>
+            {fully} above · {partly} partly
+          </div>
+          <div className="mt-0.5 text-sm text-ink-3">of {WORKED.categories.length} categories vs target</div>
+        </div>
       </div>
+      <p className="mt-2 text-xs leading-[1.45] text-ink-3">{WORKED.disclaimer}</p>
 
-      <div className="mt-6" data-tour="case-tabs">
+      <div className="mt-5" data-tour="case-tabs">
         <TabStrip
           value={view}
           onChange={setView}
           tabs={[
-            { id: 'hazard', label: 'Hazard' },
-            { id: 'assets', label: 'Assets' },
-            { id: 'tolerance', label: 'Risk tolerance' },
+            { id: 'area', label: 'Area' },
+            { id: 'costs', label: 'Costs' },
+            { id: 'wider', label: 'Wider impacts' },
+            { id: 'tolerance', label: 'Tolerance' },
           ]}
         />
       </div>
-      {view === 'hazard' && <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />}
-      {view === 'assets' && (
-        <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
+
+      {view === 'area' && (
+        <>
+          <Section title="Council buildings" color={HAZARD_COLOR.assets}>
+            <div className="divide-y divide-line">
+              {WORKED.councilBuildings.map((b) => (
+                <IdRow key={b.id} id={b.id} title={b.name} sub={b.loc ? undefined : 'Location not mapped'} />
+              ))}
+            </div>
+          </Section>
+          <Section title="Community facilities and critical infrastructure" color={HAZARD_COLOR.people}>
+            <div className="divide-y divide-line">
+              {WORKED.facilities.map((f) => (
+                <IdRow key={f.id} id={f.id} title={f.name} sub={f.owner ?? undefined} />
+              ))}
+            </div>
+          </Section>
+          <Section title="Roads" color={HAZARD_COLOR.assets}>
+            <div className="mb-1 text-sm font-semibold text-ink-2">Council-owned</div>
+            <div className="divide-y divide-line">
+              {WORKED.councilRoads.map((x) => (
+                <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
+              ))}
+            </div>
+            <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">State Government-owned</div>
+            <div className="divide-y divide-line">
+              {WORKED.stateRoads.map((x) => (
+                <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
+              ))}
+            </div>
+          </Section>
+          <details className="group mt-6 border-t border-line pt-3">
+            <summary className="flex cursor-pointer list-none items-center justify-between font-serif text-[15.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              Tool readings at the site
+              <IconChevron size={13} className="text-ink-3 transition-transform group-open:rotate-90" />
+            </summary>
+            <div className="mt-2">
+              <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />
+              <div className="mt-6" />
+              <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
+            </div>
+          </details>
+        </>
       )}
+
+      {view === 'costs' && (
+        <>
+          <Section title="Council buildings" color={HAZARD_COLOR.flood}>
+            <div className="divide-y divide-line">
+              {WORKED.councilBuildings.map((b) => (
+                <IdRow
+                  key={b.id}
+                  id={b.id}
+                  title={b.name}
+                  sub={`Depth ${b.depth} · ${b.note}`}
+                  right={
+                    <>
+                      <span className="block font-semibold text-ink">{b.damage}</span>
+                      <span className="block text-xs">{b.time}</span>
+                    </>
+                  }
+                />
+              ))}
+            </div>
+          </Section>
+          <Section title="Council roads" color={HAZARD_COLOR.flood}>
+            <div className="divide-y divide-line">
+              {WORKED.councilRoads.map((x) => (
+                <IdRow
+                  key={x.id}
+                  id={x.id}
+                  title={x.name}
+                  sub={`Depth ${x.depth}`}
+                  right={
+                    <>
+                      <span className="block font-semibold text-ink">{x.damage}</span>
+                      <span className="block text-xs">{x.time}</span>
+                    </>
+                  }
+                />
+              ))}
+            </div>
+            <p className="mt-1.5 text-xs text-ink-3">Expected damage cost over a 50-year period, and time to restore function.</p>
+          </Section>
+          <Section title="Assessed risk" color={HAZARD_COLOR.heat}>
+            <div className="divide-y divide-line">
+              {WORKED.categories
+                .filter((c) => c.basis === 'quantitative')
+                .map((c) => (
+                  <CategoryBlock key={c.name} c={c} />
+                ))}
+            </div>
+          </Section>
+        </>
+      )}
+
+      {view === 'wider' && (
+        <>
+          <Section title="Facilities and arterial roads" color={HAZARD_COLOR.flood}>
+            <div className="divide-y divide-line">
+              {[...WORKED.facilities, ...WORKED.stateRoads].map((f) => (
+                <IdRow key={f.id} id={f.id} title={f.name} sub={<>{`Inundation ${f.depth}`}<br />{f.consequence}</>} />
+              ))}
+            </div>
+          </Section>
+          <Section title="Indicative risk" color={HAZARD_COLOR.heat}>
+            <div className="divide-y divide-line">
+              {WORKED.categories
+                .filter((c) => c.basis === 'proxy')
+                .map((c) => (
+                  <CategoryBlock key={c.name} c={c} />
+                ))}
+            </div>
+          </Section>
+        </>
+      )}
+
       {view === 'tolerance' && <TqehTolerance />}
 
       <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="text-sm text-ink-3">Readings and tolerance sheet</span>
+        <span className="text-sm text-ink-3">Worked example and notes</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
           className="shrink-0 rounded-[2px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
@@ -5444,6 +5754,7 @@ function TqehTab({
           Download report
         </button>
       </div>
+      <p className="mt-3 text-xs leading-[1.45] text-ink-3">Source: {WORKED.source}</p>
     </div>
   );
 }
@@ -5624,17 +5935,15 @@ function TqehAssets({
 }
 
 function TqehTolerance() {
-  // What's saved, and the edits in progress; Save makes them one.
+  // Notes per category, saved explicitly.
   const [saved, setSaved] = useState<ToleranceSheet>(() => (typeof window === 'undefined' ? {} : loadTolerance()));
   const [draft, setDraft] = useState<ToleranceSheet>(saved);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [open, setOpen] = useState<string | null>(null);
-  const val = (sh: ToleranceSheet, name: string, field: 'tolerance' | 'notes') => sh[name]?.[field] ?? '';
-  const dirty = CONSEQUENCE_CATEGORIES.some(
-    (c) => val(draft, c.name, 'tolerance') !== val(saved, c.name, 'tolerance') || val(draft, c.name, 'notes') !== val(saved, c.name, 'notes'),
-  );
-  const update = (name: string, field: 'tolerance' | 'notes', v: string) => {
-    setDraft((prev) => ({ ...prev, [name]: { ...(prev[name] ?? { tolerance: '', notes: '' }), [field]: v } }));
+  const note = (sh: ToleranceSheet, name: string) => sh[name]?.notes ?? '';
+  const dirty = WORKED.categories.some((c) => note(draft, c.name) !== note(saved, c.name));
+  const update = (name: string, v: string) => {
+    setDraft((prev) => ({ ...prev, [name]: { tolerance: prev[name]?.tolerance ?? '', notes: v } }));
     setSavedAt(null);
   };
   const save = () => {
@@ -5647,77 +5956,88 @@ function TqehTolerance() {
     setSavedAt(new Date());
     window.dispatchEvent(new Event(TOLERANCE_SAVED_EVENT));
   };
-  const filled = CONSEQUENCE_CATEGORIES.filter((c) => val(saved, c.name, 'tolerance').trim()).length;
+  const noted = WORKED.categories.filter((c) => note(saved, c.name).trim()).length;
 
   return (
     <>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <span className="num text-sm text-ink-3">
-          {filled} of {CONSEQUENCE_CATEGORIES.length} set
-          {dirty ? ' · unsaved changes' : savedAt ? ` · saved ${savedAt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ''}
-        </span>
-        <div className="flex items-center gap-2">
-          {dirty && (
-            <button onClick={() => setDraft(saved)} className="text-sm text-ink-3 hover:text-ink">
-              Discard
-            </button>
-          )}
-          <button
-            onClick={save}
-            disabled={!dirty}
-            className="rounded-[2px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-      <div className="divide-y divide-line rounded-[2px] border border-line">
-        {CONSEQUENCE_CATEGORIES.map((c) => {
-          const isOpen = open === c.name;
-          const value = val(draft, c.name, 'tolerance').trim();
-          return (
-            <div key={c.name}>
-              <button
-                onClick={() => setOpen(isOpen ? null : c.name)}
-                aria-expanded={isOpen}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-surface-2"
-              >
+      <Section title="Assessed risk against Council target">
+        <ToleranceChart />
+        <div className="mt-3 divide-y divide-line border-y border-line">
+          {WORKED.categories.map((c) => {
+            const st = toleranceStatus(c);
+            return (
+              <div key={c.name} className="flex items-center gap-3 py-2">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-base font-medium text-ink">{c.name}</span>
-                  <span className={`mt-0.5 block truncate text-sm ${value ? 'text-ink-2' : 'text-ink-3'}`}>{value || 'Not set'}</span>
+                  <span className="block truncate text-base font-medium text-ink">{c.name}</span>
+                  <span className="block text-sm text-ink-3">
+                    Target {c.target} · appetite {c.appetite}
+                  </span>
                 </span>
-                <IconChevron size={12} className={`shrink-0 text-ink-3 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
-              </button>
-              {isOpen && (
-                <div className="px-3 pb-3">
-                  <label className="block text-sm text-ink-2">
-                    Tolerance
-                    <input
-                      autoFocus
-                      value={val(draft, c.name, 'tolerance')}
-                      onChange={(e) => update(c.name, 'tolerance', e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && dirty) save();
-                      }}
-                      placeholder="Not set"
-                      className="mt-1 block w-full rounded-[2px] border border-line px-2 py-1.5 text-base text-ink placeholder:text-ink-3 focus:border-accent focus:outline-none"
-                    />
-                  </label>
-                  <label className="mt-2 block text-sm text-ink-2">
-                    Notes
-                    <textarea
-                      value={val(draft, c.name, 'notes')}
-                      onChange={(e) => update(c.name, 'notes', e.target.value)}
-                      rows={2}
-                      className="mt-1 block w-full resize-y rounded-[2px] border border-line px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
-                    />
-                  </label>
+                <span className="shrink-0 text-right">
+                  <RatingTag range={c.assessed} />
+                  <span className="block text-xs font-medium" style={{ color: st.color }}>
+                    {st.label}
+                  </span>
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </Section>
+
+      {/* Box 1, as the summary report presents it. */}
+      <Section title="Council's climate risk tolerance statements">
+        <div className="border border-[#9BC48A] bg-[#E3F2DC]">
+          <div className="border-b border-[#9BC48A] px-3 py-1.5 text-xs italic text-[#2F5D2A]">
+            Box 1 · example statements, assumed likelihood "Likely"
+          </div>
+          {WORKED.categories.map((c) => {
+            const isOpen = open === c.name;
+            return (
+              <div key={c.name} className="border-b border-[#B7D7A8] last:border-b-0">
+                <div className="grid grid-cols-[96px_1fr] gap-x-3 px-3 py-2.5">
+                  <span className="text-sm font-semibold leading-[1.35] text-[#1F3D1B]">{c.name}</span>
+                  <span className="text-sm leading-[1.45] text-[#26401F]">{c.tolerance}</span>
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                <div className="px-3 pb-2">
+                  <button onClick={() => setOpen(isOpen ? null : c.name)} className="text-xs font-medium text-[#2F5D2A] underline decoration-dotted">
+                    {isOpen ? 'Hide notes' : note(draft, c.name).trim() ? 'Edit notes' : 'Add notes'}
+                  </button>
+                  {isOpen && (
+                    <textarea
+                      autoFocus
+                      value={note(draft, c.name)}
+                      onChange={(e) => update(c.name, e.target.value)}
+                      rows={2}
+                      className="mt-1 block w-full resize-y rounded-[2px] border border-[#9BC48A] bg-white px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="num text-sm text-ink-3">
+            Notes on {noted} of {WORKED.categories.length}
+            {dirty ? ' · unsaved changes' : savedAt ? ` · saved ${savedAt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ''}
+          </span>
+          <div className="flex items-center gap-2">
+            {dirty && (
+              <button onClick={() => setDraft(saved)} className="text-sm text-ink-3 hover:text-ink">
+                Discard
+              </button>
+            )}
+            <button
+              onClick={save}
+              disabled={!dirty}
+              className="rounded-[2px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#005963] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </Section>
     </>
   );
 }
@@ -8196,9 +8516,9 @@ export default function App() {
   // The case study open in the Case studies tab, if any, and what its
   // left-panel controls have switched on around the site.
   const [caseId, setCaseId] = useState<CaseId | null>(null);
-  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['lines', 'focus']));
+  const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['sitesB', 'sitesS', 'lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
-  const [caseView, setCaseView] = useState<CaseView>('hazard');
+  const [caseView, setCaseView] = useState<CaseView>('area');
   const [caseOpacity, setCaseOpacity] = useState<Partial<Record<CaseLayer, number>>>({});
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
