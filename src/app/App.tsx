@@ -1190,18 +1190,16 @@ function Segmented<T extends string | number>({
 /** Back button plus where you are, for a view opened from a tile. */
 function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string; title: string }) {
   return (
-    <div className="mb-3 flex items-center gap-2.5">
+    <div className="mb-3 min-w-0">
       <button
         onClick={onBack}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+        className="-ml-0.5 flex items-center gap-1 text-xs font-medium text-ink-3 transition-colors hover:text-accent"
         aria-label={`Back to ${parent}`}
       >
-        <IconChevron size={14} className="rotate-180" />
+        <IconChevron size={10} className="rotate-180" />
+        {parent}
       </button>
-      <div className="min-w-0">
-        <div className="text-xs text-ink-3">{parent}</div>
-        <div className="truncate text-[14px] font-semibold leading-tight text-ink">{title}</div>
-      </div>
+      <div className="mt-1 truncate text-[15px] font-bold leading-tight text-ink">{title}</div>
     </div>
   );
 }
@@ -2990,13 +2988,13 @@ function LayersTab({
     }
     const layers = visibleLayers.filter((l) => l.group === g);
     return (
-      <div className="divide-y divide-line border-y border-line">
+      <div>
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
           return (
             <div key={l.id}>
-              <div className="flex items-center gap-2.5 px-1 py-2">
+              <div className="flex items-center gap-2.5 px-1 py-1.5">
                 <button onClick={() => toggleLayer(l.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:text-accent" aria-pressed={checked}>
                   <LayerGlyph l={l} />
                   <span className="min-w-0 flex-1">
@@ -3018,9 +3016,7 @@ function LayersTab({
                 </button>
               </div>
               {checked && (
-                <label className="fade-up flex items-center gap-2.5 px-1 pb-2">
-                  <span className="w-[18px] shrink-0" />
-                  <span className="text-xs text-ink-3">Opacity</span>
+                <label className="fade-up flex items-center gap-2 pb-1.5 pl-[29px] pr-1" title="Opacity">
                   <input
                     type="range"
                     min={10}
@@ -3030,7 +3026,7 @@ function LayersTab({
                     aria-label={`${l.name} opacity`}
                     className="min-w-0 flex-1"
                   />
-                  <span className="num w-9 shrink-0 text-right text-xs text-ink-3">{Math.round(op * 100)}%</span>
+                  <span className="num w-8 shrink-0 text-right text-2xs text-ink-3">{Math.round(op * 100)}%</span>
                 </label>
               )}
             </div>
@@ -4923,7 +4919,7 @@ function CaseSwitchRow({
 }) {
   return (
     <div>
-      <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent">
+      <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-1.5 text-left hover:text-accent">
         <CaseGlyph id={id} />
         <span className="min-w-0 flex-1">
           <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
@@ -4931,9 +4927,7 @@ function CaseSwitchRow({
         <Switch on={on} color={color} />
       </button>
       {on && (
-        <label className="flex items-center gap-2.5 px-1 pb-2">
-          <span className="w-[18px] shrink-0" />
-          <span className="text-xs text-ink-3">Opacity</span>
+        <label className="flex items-center gap-2 pb-1.5 pl-[29px] pr-1" title="Opacity">
           <input
             type="range"
             min={10}
@@ -4944,7 +4938,7 @@ function CaseSwitchRow({
             aria-label={`${label} opacity`}
             className="min-w-0 flex-1"
           />
-          <span className="num w-9 shrink-0 text-right text-xs text-ink-3">{Math.round(opacity * 100)}%</span>
+          <span className="num w-8 shrink-0 text-right text-2xs text-ink-3">{Math.round(opacity * 100)}%</span>
         </label>
       )}
     </div>
@@ -5020,7 +5014,7 @@ function CaseControls({
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
   const setCount = WORKED.categories.filter((c) => sheet[c.name]?.notes?.trim()).length;
   const group = (ids: CaseLayer[], color?: string) => (
-    <div className="divide-y divide-line border-y border-line">
+    <div>
       {ids.map((id) => (
         <CaseSwitchRow
           key={id}
@@ -5037,9 +5031,13 @@ function CaseControls({
     </div>
   );
   const groupLabel = (text: string, color: string, first = false) => (
-    <div className={`mb-1 ${first ? '' : 'mt-2.5'} flex items-center gap-1.5 text-sm font-semibold`} style={{ color }}>
+    <div className={`mb-0.5 ${first ? 'mt-1' : 'mt-2.5'} flex items-center gap-1.5 text-xs font-semibold`} style={{ color }}>
+      <span className="h-[6px] w-[6px] rounded-full" style={{ background: color }} />
       {text}
     </div>
+  );
+  const levelLabel = (text: string, first = false) => (
+    <div className={`${first ? '' : 'mt-4'} mb-1 text-xs font-semibold text-ink-3`}>{text}</div>
   );
   const linkBtn = 'flex-1 rounded-[8px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-accent hover:text-accent';
   const onCount = [...show].filter((id) => id !== 'focus').length;
@@ -5062,7 +5060,7 @@ function CaseControls({
       </div>
 
       <div className="mt-4">
-        <Section title="Area" meta={radius < 1000 ? `${radius} m` : `${radius / 1000} km`} tour="case-area">
+        <Section title="Area" tour="case-area">
           <div className="flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1">
             {TQEH_AREA_OPTIONS.map((m) => (
               <button
@@ -5087,16 +5085,18 @@ function CaseControls({
         </Section>
 
         <Section title="On the map" meta={`${onCount} on`} tour="case-layers">
-          <div className="mb-1 text-sm font-semibold text-ink-2">Worked example sites</div>
+          {levelLabel('Worked example sites', true)}
           {group(['sitesB', 'sitesS'])}
-          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Hazards</div>
-          {groupLabel('Flood', HAZARD_COLOR.flood, true)}
-          {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
-          {groupLabel('Heat', HAZARD_COLOR.heat)}
-          {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
-          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
+          {levelLabel('Hazards')}
+          <div className="pl-3">
+            {groupLabel('Flood', HAZARD_COLOR.flood, true)}
+            {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
+            {groupLabel('Heat', HAZARD_COLOR.heat)}
+            {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
+          </div>
+          {levelLabel('Assets and infrastructure')}
           {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
-          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
+          {levelLabel('Measurements')}
           {group(['lines'])}
         </Section>
 
