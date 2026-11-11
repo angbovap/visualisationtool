@@ -86,7 +86,7 @@ import vapLogo from '@/assets/vaplogo.png';
  * ------------------------------------------------------------------ */
 
 
-type PanelTab = 'layers' | 'assets' | 'place' | 'cases' | 'help';
+type PanelTab = 'layers' | 'assets' | 'place' | 'cases' | 'tolerance' | 'help';
 
 type LayerGroup =
   | 'hazard'
@@ -4947,6 +4947,7 @@ function CasesTab({
   onGuide,
   opacity,
   setOpacity,
+  onOpenWorked,
 }: {
   caseId: CaseId | null;
   setCaseId: (id: CaseId | null) => void;
@@ -4958,6 +4959,7 @@ function CasesTab({
   onGuide: () => void;
   opacity: Partial<Record<CaseLayer, number>>;
   setOpacity: (v: Partial<Record<CaseLayer, number>>) => void;
+  onOpenWorked: () => void;
 }) {
   const c = CASE_STUDIES.find((x) => x.id === caseId);
   if (!c) {
@@ -4999,6 +5001,7 @@ function CasesTab({
       onGuide={onGuide}
       opacity={opacity}
       setOpacity={setOpacity}
+      onOpenWorked={onOpenWorked}
     />
   );
 }
@@ -5059,7 +5062,8 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   );
 }
 
-type CaseView = 'area' | 'costs' | 'wider' | 'tolerance';
+type CaseView = 'hazard' | 'assets';
+type WorkedView = 'area' | 'costs' | 'wider' | 'tolerance';
 
 /** A numbered step heading, so the case reads top to bottom in the order
  *  you use it. */
@@ -5139,6 +5143,7 @@ function CaseControls({
   onGuide,
   opacity,
   setOpacity,
+  onOpenWorked,
 }: {
   onBack: () => void;
   name: string;
@@ -5150,6 +5155,7 @@ function CaseControls({
   onGuide: () => void;
   opacity: Partial<Record<CaseLayer, number>>;
   setOpacity: (v: Partial<Record<CaseLayer, number>>) => void;
+  onOpenWorked: () => void;
 }) {
   const r = tqehReading();
   const area = tqehArea(radius);
@@ -5281,22 +5287,19 @@ function CaseControls({
       <section className="mt-6" data-tour="case-report-steps">
         <StepHeading n={3} title="Read the report" />
         <div className="flex gap-1.5">
-          <button onClick={() => setView('area')} className={linkBtn}>
-            Area
+          <button onClick={() => setView('hazard')} className={linkBtn}>
+            Hazard
           </button>
-          <button onClick={() => setView('costs')} className={linkBtn}>
-            Costs
-          </button>
-          <button onClick={() => setView('wider')} className={linkBtn}>
-            Wider
+          <button onClick={() => setView('assets')} className={linkBtn}>
+            Assets
           </button>
         </div>
       </section>
 
       <section className="mt-6">
         <StepHeading n={4} title="Risk tolerance" hint={`Notes on ${setCount} of ${WORKED.categories.length} categories`} />
-        <button onClick={() => setView('tolerance')} className={`${linkBtn} w-full`}>
-          Compare with Council targets
+        <button onClick={onOpenWorked} className={`${linkBtn} w-full`}>
+          Open the worked example
         </button>
       </section>
 
@@ -5397,13 +5400,13 @@ const CASE_TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="case-glance"]',
     placement: 'left',
     title: '3. Read the report',
-    body: "The scenario, and how many of Council's seven categories sit above target. The tabs follow the framework report's Section 4: Area, Costs, Wider impacts and Tolerance.",
+    body: 'Headline readings for the site from the tool, with Hazard and Assets tabs below.',
   },
   {
-    selector: '[data-tour="case-tabs"]',
+    selector: '[data-tour="case-worked"]',
     placement: 'left',
     title: '4. Risk tolerance',
-    body: "The Tolerance tab compares each category's assessed range with Council's target, lists Council's tolerance statements, and takes notes.",
+    body: "The framework report's worked example has its own Risk tolerance tab: costs, wider impacts, and each category against Council's target and tolerance statements.",
   },
   {
     selector: '[data-tour="case-download"]',
@@ -5446,6 +5449,9 @@ const WORKED = tqehWorkedExampleData as unknown as {
 const RISK_LEVELS = ['Low', 'Moderate', 'High', 'Extreme'] as const;
 const levelOf = (l: string) => RISK_LEVELS.indexOf(l as (typeof RISK_LEVELS)[number]) + 1;
 const RISK_COLOR: Record<string, string> = { Low: '#15803D', Moderate: '#CA8A04', High: '#EA580C', Extreme: '#B91C1C' };
+
+/** What the map draws while the Risk tolerance tab is open. */
+const WORKED_SHOW = new Set<CaseLayer>(['sitesB', 'sitesS', 'focus']);
 
 /** How a category's assessed range sits against Council's target. */
 function toleranceStatus(c: WorkedCategory): { label: string; color: string } {
@@ -5569,21 +5575,9 @@ function CategoryBlock({ c }: { c: WorkedCategory }) {
   );
 }
 
-function TqehTab({
-  showLayers,
-  onOpenBuilding,
-  onOpenBuildings,
-  onOpenSuburb,
-  view,
-  setView,
-}: {
-  showLayers: (ids: string[]) => void;
-  onOpenBuilding: (id: string) => void;
-  onOpenBuildings: (ids: string[]) => void;
-  onOpenSuburb: (id: string) => void;
-  view: CaseView;
-  setView: (v: CaseView) => void;
-}) {
+/** The Risk tolerance rail tab: the framework report's Section 4 worked
+ *  example for The Queen Elizabeth Hospital, Woodville. */
+function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: WorkedView) => void }) {
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
   const statuses = WORKED.categories.map(toleranceStatus);
@@ -5594,11 +5588,10 @@ function TqehTab({
 
   return (
     <div>
-      <p className="text-base text-ink-2">
-        Woodville South{r.suburb ? ` · ${r.suburb.name} SA2` : ''} · State hospital (non-council asset)
-      </p>
+      <div className="font-serif text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
+      <p className="mt-0.5 text-sm text-ink-3">Worked example · framework report Section 4</p>
 
-      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 border-y border-line">
+      <div className="mt-3 grid grid-cols-2 gap-x-4 border-y border-line">
         <div className="py-2.5">
           <div className="text-sm text-ink-3">Scenario</div>
           <div className="mt-0.5 text-lg font-semibold leading-tight text-ink">{s.event}</div>
@@ -5614,7 +5607,7 @@ function TqehTab({
       </div>
       <p className="mt-2 text-xs leading-[1.45] text-ink-3">{WORKED.disclaimer}</p>
 
-      <div className="mt-5" data-tour="case-tabs">
+      <div className="mt-5">
         <TabStrip
           value={view}
           onChange={setView}
@@ -5657,17 +5650,6 @@ function TqehTab({
               ))}
             </div>
           </Section>
-          <details className="group mt-6 border-t border-line pt-3">
-            <summary className="flex cursor-pointer list-none items-center justify-between font-serif text-[15.5px] font-semibold text-ink [&::-webkit-details-marker]:hidden">
-              Tool readings at the site
-              <IconChevron size={13} className="text-ink-3 transition-transform group-open:rotate-90" />
-            </summary>
-            <div className="mt-2">
-              <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />
-              <div className="mt-6" />
-              <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
-            </div>
-          </details>
         </>
       )}
 
@@ -5745,7 +5727,7 @@ function TqehTab({
 
       {view === 'tolerance' && <TqehTolerance />}
 
-      <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
+      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-sm text-ink-3">Worked example and notes</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
@@ -5755,6 +5737,90 @@ function TqehTab({
         </button>
       </div>
       <p className="mt-3 text-xs leading-[1.45] text-ink-3">Source: {WORKED.source}</p>
+    </div>
+  );
+}
+
+/** The case study's right panel: a short site report from the tool's own
+ *  data. The framework report's worked example has its own rail tab. */
+function TqehTab({
+  showLayers,
+  onOpenBuilding,
+  onOpenBuildings,
+  onOpenSuburb,
+  view,
+  setView,
+  onOpenWorked,
+}: {
+  showLayers: (ids: string[]) => void;
+  onOpenBuilding: (id: string) => void;
+  onOpenBuildings: (ids: string[]) => void;
+  onOpenSuburb: (id: string) => void;
+  view: CaseView;
+  setView: (v: CaseView) => void;
+  onOpenWorked: () => void;
+}) {
+  const { sel: scenarioSel } = React.useContext(ScenarioContext);
+  const r = tqehReading();
+  const inside = [...r.flood].sort((a, z) => z.share - a.share).find((f) => f.share > 0);
+  return (
+    <div>
+      <p className="text-base text-ink-2">
+        Woodville South{r.suburb ? ` · ${r.suburb.name} SA2` : ''} · State hospital (non-council asset)
+      </p>
+      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
+        <Glance
+          color={HAZARD_COLOR.flood}
+          label="Flood"
+          value={inside ? `${pct(inside.share)} of grounds` : 'Outside'}
+          sub={inside ? `in the ${FLOOD_SHORT[inside.id]} extent` : 'every mapped extent'}
+        />
+        <Glance
+          color={HAZARD_COLOR.heat}
+          label="Urban heat"
+          value={r.heatHere ? `Category ${r.heatHere.uhiCat}` : r.nearestHeat ? `Category ${r.nearestHeat.uhiCat}` : 'n/a'}
+          sub={r.heatHere ? 'at the site' : r.nearestHeat ? `nearest cell, ${formatMetres(r.nearestHeat.metres)}` : 'no heat data'}
+        />
+        <Glance color={HAZARD_COLOR.water} label="Nearest water" value={formatMetres(r.waterM)} sub={`to a ${r.waterKind}`} />
+        <Glance color={HAZARD_COLOR.assets} label="Train station" value={formatMetres(r.stationM)} sub="nearest" />
+      </div>
+
+      <button
+        data-tour="case-worked"
+        onClick={onOpenWorked}
+        className="mt-4 flex w-full items-center justify-between gap-3 border border-line px-3 py-2.5 text-left hover:border-ink-3"
+      >
+        <span className="min-w-0">
+          <span className="block font-serif text-[15px] font-semibold text-ink">Worked example and risk tolerance</span>
+          <span className="block text-sm text-ink-3">Framework report, Section 4</span>
+        </span>
+        <IconChevron size={13} className="shrink-0 text-ink-3" />
+      </button>
+
+      <div className="mt-5" data-tour="case-tabs">
+        <TabStrip
+          value={view}
+          onChange={setView}
+          tabs={[
+            { id: 'hazard', label: 'Hazard' },
+            { id: 'assets', label: 'Assets' },
+          ]}
+        />
+      </div>
+      {view === 'hazard' && <TqehHazard r={r} showLayers={showLayers} onOpenSuburb={onOpenSuburb} />}
+      {view === 'assets' && (
+        <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
+      )}
+
+      <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
+        <span className="text-sm text-ink-3">Site readings and worked example</span>
+        <button
+          onClick={() => downloadTqehReport(r, scenarioSel)}
+          className="shrink-0 rounded-[2px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+        >
+          Download report
+        </button>
+      </div>
     </div>
   );
 }
@@ -6548,6 +6614,7 @@ const RAIL_LABEL: Record<PanelTab, string> = {
   assets: 'Assets',
   place: 'Place',
   cases: 'Cases',
+  tolerance: 'Tolerance',
   help: 'Help',
 };
 
@@ -6569,6 +6636,11 @@ const TAB_META: Record<
     title: 'Place',
     subtitle: 'The eight SA2s, and the council buildings inside each',
     icon: IconPlace,
+  },
+  tolerance: {
+    title: 'Risk tolerance',
+    subtitle: 'Worked example: The Queen Elizabeth Hospital, Woodville',
+    icon: IconGauge,
   },
   cases: {
     title: 'Case studies',
@@ -6593,7 +6665,7 @@ function IconRail({
 }) {
   // Assets split out from Place: a real, LGA-wide register isn't a
   // suburb profile, it doesn't belong nested under one.
-  const order: PanelTab[] = ['layers', 'assets', 'place', 'cases', 'help'];
+  const order: PanelTab[] = ['layers', 'assets', 'place', 'cases', 'tolerance', 'help'];
   return (
     <nav data-tour="rail" className="flex w-[68px] shrink-0 flex-col items-center gap-1 border-r border-line bg-white py-3">
       <Tip label="Home" body="Back to the landing screen" side="right">
@@ -8118,7 +8190,7 @@ const TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="rail"]',
     placement: 'right',
     title: 'Five tabs',
-    body: 'Layers to put data on the map, Assets for the council buildings register, Place to compare suburbs, Cases for site reports, and Help.',
+    body: 'Layers to put data on the map, Assets for the council buildings register, Place to compare suburbs, Cases for site reports, Tolerance for the risk tolerance worked example, and Help.',
   },
   {
     selector: '[data-tour="left-panel"]',
@@ -8518,7 +8590,8 @@ export default function App() {
   const [caseId, setCaseId] = useState<CaseId | null>(null);
   const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['sitesB', 'sitesS', 'lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
-  const [caseView, setCaseView] = useState<CaseView>('area');
+  const [caseView, setCaseView] = useState<CaseView>('hazard');
+  const [workedView, setWorkedView] = useState<WorkedView>('area');
   const [caseOpacity, setCaseOpacity] = useState<Partial<Record<CaseLayer, number>>>({});
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
@@ -8761,6 +8834,9 @@ export default function App() {
   }, []);
   const highlight = useMemo(() => {
     const c = CASE_STUDIES.find((x) => x.id === caseId);
+    if (panelTab === 'tolerance') {
+      return { ...TQEH, links: [], area: tqehArea(1000), show: WORKED_SHOW, opacity: {} };
+    }
     return panelTab === 'cases' && c
       ? { ...c.point, links: tqehLinks(), area: tqehArea(caseRadius), show: caseShow, opacity: caseOpacity }
       : null;
@@ -8882,7 +8958,13 @@ export default function App() {
               }}
               opacity={caseOpacity}
               setOpacity={setCaseOpacity}
+              onOpenWorked={() => setPanelTab('tolerance')}
             />
+          )}
+          {panelTab === 'tolerance' && (
+            <div className="px-3 py-4">
+              <WorkedExampleTab view={workedView} setView={setWorkedView} />
+            </div>
           )}
           {panelTab === 'help' && <HelpTab />}
         </div>
@@ -8956,7 +9038,7 @@ export default function App() {
             }}
             onProbe={(lat, lng) => setProbePoint({ lat, lng })}
             probePoint={probePoint}
-            hideHazards={panelTab === 'cases' && !!caseId}
+            hideHazards={(panelTab === 'cases' && !!caseId) || panelTab === 'tolerance'}
           />
         </div>
 
@@ -8989,6 +9071,7 @@ export default function App() {
               onOpenSuburb={handleSelectSuburb}
               view={caseView}
               setView={setCaseView}
+              onOpenWorked={() => setPanelTab('tolerance')}
             />
           </div>
         </RightPanelShell>
