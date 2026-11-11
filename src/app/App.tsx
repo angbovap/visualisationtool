@@ -1391,6 +1391,13 @@ function MapView(props: MapViewProps) {
         if (probeRef.current.probeMode) probeRef.current.onProbe(e.latlng.lat, e.latlng.lng);
       });
       mapRef.current = map;
+      // The map's box changes when side panels change width (the Risk
+      // tolerance tab is wider); Leaflet only watches the window, so tell it.
+      if (typeof ResizeObserver !== 'undefined' && containerRef.current) {
+        const ro = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+        ro.observe(containerRef.current);
+        map.once('unload', () => ro.disconnect());
+      }
       setReady(true);
     })();
     return () => {
@@ -5475,65 +5482,130 @@ function RatingTag({ range }: { range: [string, string] }) {
   );
 }
 
-/** Report Figure 10 redrawn: the assessed range per category (shaded band)
- *  against Council's target rating (line), on Low to Extreme rings. */
-function ToleranceChart() {
+const SHORT_CAT = ['Financial', 'Core service', 'Legislative', 'Reputation', 'Our People', 'Environment', 'Community'];
+
+/** Report Figure 10, interactive: the assessed range per category (band)
+ *  against Council's target (line), on Low to Extreme rings. Draws itself
+ *  in on mount; hovering or selecting a category highlights its axis. */
+function ToleranceChart({
+  active,
+  onHover,
+  onSelect,
+}: {
+  active: number | null;
+  onHover: (i: number | null) => void;
+  onSelect: (i: number) => void;
+}) {
   const cats = WORKED.categories;
   const n = cats.length;
-  const size = 288;
+  const size = 320;
   const c = size / 2;
-  const R = 92;
+  const R = 104;
   const ang = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
-  const pt = (i: number, level: number): [number, number] => [c + Math.cos(ang(i)) * (R * level) / 4, c + Math.sin(ang(i)) * (R * level) / 4];
-  const path = (vals: number[]) => vals.map((v, i) => pt(i, v)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ') + ' Z';
+  const pt = (i: number, level: number): [number, number] => [c + (Math.cos(ang(i)) * R * level) / 4, c + (Math.sin(ang(i)) * R * level) / 4];
+  const path = (vals: number[]) =>
+    vals.map((v, i) => pt(i, v)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ') + ' Z';
   const hi = cats.map((k) => levelOf(k.assessed[1]));
   const lo = cats.map((k) => levelOf(k.assessed[0]));
   const target = cats.map((k) => levelOf(k.target));
-  const short = ['Financial', 'Core service', 'Legislative', 'Reputation', 'Our People', 'Environment', 'Community'];
+  const grow: React.CSSProperties = { transformOrigin: `${c}px ${c}px`, transformBox: 'view-box' };
+
   return (
-    <figure>
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full" role="img" aria-label="Assessed risk range against Council target by category">
-        {[1, 2, 3, 4].map((l) => (
-          <path key={l} d={path(Array(n).fill(l))} fill="none" stroke="#DDE3E2" strokeWidth={l === 4 ? 1 : 0.8} />
-        ))}
-        {cats.map((_, i) => {
-          const [x, y] = pt(i, 4);
-          return <line key={i} x1={c} y1={c} x2={x} y2={y} stroke="#E6EBEA" strokeWidth={0.8} />;
-        })}
-        {RISK_LEVELS.map((l, k) => (
-          <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9796">
-            {l}
-          </text>
-        ))}
-        {/* Assessed range: the band between the low and high ends. */}
-        <path d={`${path(hi)} ${path(lo)}`} fill="#EA580C" fillOpacity={0.16} fillRule="evenodd" stroke="none" />
-        <path d={path(hi)} fill="none" stroke="#EA580C" strokeWidth={1.2} strokeDasharray="3 2" />
+    <svg viewBox={`0 0 ${size} ${size}`} className="w-full" role="img" aria-label="Assessed risk range against Council target by category">
+      {[1, 2, 3, 4].map((l) => (
+        <path
+          key={l}
+          d={path(Array(n).fill(l))}
+          fill={l === 4 ? '#FAFBFB' : 'none'}
+          stroke="#DDE3E2"
+          strokeWidth={0.8}
+          className="tol-fade"
+          style={{ animationDelay: `${l * 60}ms` }}
+        />
+      ))}
+      {cats.map((_, i) => {
+        const [x, y] = pt(i, 4);
+        const on = active === i;
+        return (
+          <line
+            key={i}
+            x1={c}
+            y1={c}
+            x2={x}
+            y2={y}
+            stroke={on ? '#14201F' : '#E6EBEA'}
+            strokeWidth={on ? 1.4 : 0.8}
+            style={{ transition: 'stroke 160ms, stroke-width 160ms' }}
+          />
+        );
+      })}
+      {RISK_LEVELS.map((l, k) => (
+        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9796" className="tol-fade" style={{ animationDelay: '200ms' }}>
+          {l}
+        </text>
+      ))}
+      {/* Assessed range: grows out from the centre. */}
+      <g className="tol-grow" style={{ ...grow, animationDelay: '250ms' }}>
+        <path d={`${path(hi)} ${path(lo)}`} fill="#EA580C" fillOpacity={0.18} fillRule="evenodd" />
+        <path d={path(hi)} fill="none" stroke="#EA580C" strokeWidth={1.3} strokeDasharray="3 2" />
         <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="1.5 2" />
-        <path d={path(target)} fill="none" stroke="#14201F" strokeWidth={1.8} />
-        {target.map((v, i) => {
-          const [x, y] = pt(i, v);
-          return <circle key={i} cx={x} cy={y} r={2.8} fill="#14201F" stroke="#fff" strokeWidth={1} />;
-        })}
-        {short.map((s, i) => {
-          const [x, y] = pt(i, 4.75);
-          return (
-            <text key={s} x={x} y={y} fontSize="8.5" textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'} dominantBaseline="middle" fill="#3B4A49">
+      </g>
+      {/* Council target: draws itself round. */}
+      <path d={path(target)} fill="none" stroke="#14201F" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
+      {target.map((v, i) => {
+        const [x, y] = pt(i, v);
+        return (
+          <circle
+            key={i}
+            cx={x}
+            cy={y}
+            r={active === i ? 4.2 : 3}
+            fill="#14201F"
+            stroke="#fff"
+            strokeWidth={1.2}
+            className="tol-pop"
+            style={{ animationDelay: `${1150 + i * 60}ms`, transition: 'r 160ms', ...{ transformOrigin: `${x}px ${y}px`, transformBox: 'view-box' } }}
+          />
+        );
+      })}
+      {SHORT_CAT.map((s, i) => {
+        const [x, y] = pt(i, 4.7);
+        const on = active === i;
+        const st = toleranceStatus(cats[i]);
+        return (
+          <g
+            key={s}
+            onMouseEnter={() => onHover(i)}
+            onMouseLeave={() => onHover(null)}
+            onClick={() => onSelect(i)}
+            className="cursor-pointer"
+          >
+            <circle cx={x} cy={y} r={20} fill="transparent" />
+            <text
+              x={x}
+              y={y - 4}
+              fontSize="9"
+              fontWeight={on ? 700 : 500}
+              textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
+              dominantBaseline="middle"
+              fill={on ? '#14201F' : '#3B4A49'}
+            >
               {s}
             </text>
-          );
-        })}
-      </svg>
-      <figcaption className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
-        <span className="flex items-center gap-1.5">
-          <span className="h-[8px] w-[14px]" style={{ background: 'rgba(234,88,12,0.25)', borderTop: '1px dashed #EA580C' }} />
-          Assessed range (worked example)
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-[2px] w-[14px] bg-ink" />
-          Council risk target
-        </span>
-      </figcaption>
-    </figure>
+            <text
+              x={x}
+              y={y + 7}
+              fontSize="7.5"
+              textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
+              dominantBaseline="middle"
+              fill={st.color}
+            >
+              {st.label === 'Within target' ? 'within' : st.label === 'Above target' ? 'above' : 'partly above'}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
 
@@ -5575,157 +5647,215 @@ function CategoryBlock({ c }: { c: WorkedCategory }) {
   );
 }
 
+/** "$0–180k" -> 180 (thousand dollars), the upper end of a damage range. */
+const damageHi = (d: string) => {
+  const m = d.match(/–\$?(\d+(?:\.\d+)?)(k|M)?/);
+  return m ? Number(m[1]) * (m[2] === 'M' ? 1000 : 1) : 0;
+};
+
+/** Damage ranges as bars that grow in, upper end of each range. */
+function DamageBars({ rows }: { rows: { id: string; name: string; damage: string; time: string; depth: string }[] }) {
+  const max = Math.max(...rows.map((r) => damageHi(r.damage)));
+  return (
+    <div className="space-y-2.5">
+      {rows.map((r, i) => (
+        <div key={r.id} className="tol-rise" style={{ animationDelay: `${i * 50}ms` }}>
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="min-w-0 truncate text-base text-ink">
+              <span className="num mr-1.5 text-sm font-semibold text-ink-3">{r.id}</span>
+              {r.name}
+            </span>
+            <span className="num shrink-0 text-base font-semibold text-ink">{r.damage}</span>
+          </div>
+          <div className="mt-1 h-[6px] bg-surface-2">
+            <div
+              className="tol-bar h-full"
+              style={{ width: `${max ? (damageHi(r.damage) / max) * 100 : 0}%`, background: HAZARD_COLOR.flood, animationDelay: `${150 + i * 50}ms` }}
+            />
+          </div>
+          <div className="num mt-0.5 text-xs text-ink-3">
+            Depth {r.depth} · back in {r.time}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** The Risk tolerance rail tab: the framework report's Section 4 worked
- *  example for The Queen Elizabeth Hospital, Woodville. */
+ *  example, chart first, then the evidence behind it. */
 function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: WorkedView) => void }) {
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
+  const [hover, setHover] = useState<number | null>(null);
+  const [selected, setSelected] = useState<number | null>(null);
   const statuses = WORKED.categories.map(toleranceStatus);
-  const fully = statuses.filter((s) => s.label === 'Above target').length;
-  const partly = statuses.filter((s) => s.label === 'Upper range above target').length;
-  const above = fully + partly;
+  const count = (l: string) => statuses.filter((s) => s.label === l).length;
   const s = WORKED.scenario;
+  const active = hover ?? selected;
+  const sel = selected !== null ? WORKED.categories[selected] : null;
 
   return (
     <div>
-      <div className="font-serif text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
-      <p className="mt-0.5 text-sm text-ink-3">Worked example · framework report Section 4</p>
-
-      <div className="mt-3 grid grid-cols-2 gap-x-4 border-y border-line">
-        <div className="py-2.5">
-          <div className="text-sm text-ink-3">Scenario</div>
-          <div className="mt-0.5 text-lg font-semibold leading-tight text-ink">{s.event}</div>
-          <div className="mt-0.5 text-sm text-ink-3">Likelihood: {s.likelihood} (assumed)</div>
+      {/* A dark title band: this tab reads differently from Cases. */}
+      <div className="tol-rise -mx-3 -mt-4 bg-ink px-4 pb-4 pt-4 text-white">
+        <div className="text-xs font-semibold text-[#9FD8DC]">Risk tolerance · worked example</div>
+        <div className="mt-1 font-serif text-[20px] font-semibold leading-tight">The Queen Elizabeth Hospital, Woodville</div>
+        <div className="mt-1 text-sm text-[#C9D6D5]">
+          {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
         </div>
-        <div className="py-2.5">
-          <div className="text-sm text-ink-3">Against Council targets</div>
-          <div className="num mt-0.5 text-lg font-semibold leading-tight" style={{ color: above ? '#B91C1C' : '#15803D' }}>
-            {fully} above · {partly} partly
-          </div>
-          <div className="mt-0.5 text-sm text-ink-3">of {WORKED.categories.length} categories vs target</div>
+        <div className="mt-3 flex gap-4">
+          {(
+            [
+              ['Above target', count('Above target'), '#FCA5A5'],
+              ['Partly above', count('Upper range above target'), '#FDBA74'],
+              ['Within target', count('Within target'), '#86EFAC'],
+            ] as const
+          ).map(([label, n, col], i) => (
+            <div key={label} className="tol-rise" style={{ animationDelay: `${120 + i * 80}ms` }}>
+              <div className="num font-serif text-[24px] font-semibold leading-none" style={{ color: col }}>
+                {n}
+              </div>
+              <div className="mt-1 text-xs text-[#C9D6D5]">{label}</div>
+            </div>
+          ))}
         </div>
       </div>
-      <p className="mt-2 text-xs leading-[1.45] text-ink-3">{WORKED.disclaimer}</p>
 
-      <div className="mt-5">
+      <section className="mt-4">
+        <ToleranceChart active={active} onHover={setHover} onSelect={(i) => setSelected(selected === i ? null : i)} />
+        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
+          <span className="flex items-center gap-1.5">
+            <span className="h-[8px] w-[14px]" style={{ background: 'rgba(234,88,12,0.25)', borderTop: '1px dashed #EA580C' }} />
+            Assessed range
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-[2px] w-[14px] bg-ink" />
+            Council target
+          </span>
+          <span className="text-ink-3">Click a category for its detail</span>
+        </div>
+      </section>
+
+      {/* Categories: click to open the evidence behind each rating. */}
+      <section className="mt-4 divide-y divide-line border-y border-line">
+        {WORKED.categories.map((c, i) => {
+          const st = statuses[i];
+          const open = selected === i;
+          return (
+            <div key={c.name} className="tol-rise" style={{ animationDelay: `${300 + i * 55}ms` }}>
+              <button
+                onMouseEnter={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
+                onClick={() => setSelected(open ? null : i)}
+                aria-expanded={open}
+                className={`flex w-full items-center gap-3 px-1 py-2 text-left transition-colors ${active === i ? 'bg-surface-2' : ''}`}
+              >
+                <span className="h-[26px] w-[3px] shrink-0" style={{ background: st.color }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-base font-medium text-ink">{c.name}</span>
+                  <span className="block text-sm text-ink-3">
+                    Target {c.target} · {c.basis === 'quantitative' ? 'quantified' : 'indicative'}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <RatingTag range={c.assessed} />
+                  <span className="block text-xs font-medium" style={{ color: st.color }}>
+                    {st.label}
+                  </span>
+                </span>
+                <IconChevron size={12} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+              </button>
+              {open && sel && (
+                <div className="fade-up px-1 pb-3 pl-4">
+                  <div className="text-sm font-semibold text-ink-2">Evidence</div>
+                  <Bullets items={sel.evidence} />
+                  <div className="mt-2 border-l-2 border-[#9BC48A] bg-[#E3F2DC] px-2.5 py-2 text-sm leading-[1.45] text-[#26401F]">
+                    <span className="font-semibold">Council tolerance: </span>
+                    {sel.tolerance}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </section>
+
+      <div className="mt-6">
         <TabStrip
           value={view}
           onChange={setView}
           tabs={[
-            { id: 'area', label: 'Area' },
             { id: 'costs', label: 'Costs' },
             { id: 'wider', label: 'Wider impacts' },
-            { id: 'tolerance', label: 'Tolerance' },
+            { id: 'area', label: 'Sites' },
+            { id: 'tolerance', label: 'Box 1' },
           ]}
         />
       </div>
 
-      {view === 'area' && (
-        <>
-          <Section title="Council buildings" color={HAZARD_COLOR.assets}>
-            <div className="divide-y divide-line">
-              {WORKED.councilBuildings.map((b) => (
-                <IdRow key={b.id} id={b.id} title={b.name} sub={b.loc ? undefined : 'Location not mapped'} />
-              ))}
-            </div>
-          </Section>
-          <Section title="Community facilities and critical infrastructure" color={HAZARD_COLOR.people}>
-            <div className="divide-y divide-line">
-              {WORKED.facilities.map((f) => (
-                <IdRow key={f.id} id={f.id} title={f.name} sub={f.owner ?? undefined} />
-              ))}
-            </div>
-          </Section>
-          <Section title="Roads" color={HAZARD_COLOR.assets}>
-            <div className="mb-1 text-sm font-semibold text-ink-2">Council-owned</div>
-            <div className="divide-y divide-line">
-              {WORKED.councilRoads.map((x) => (
-                <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
-              ))}
-            </div>
-            <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">State Government-owned</div>
-            <div className="divide-y divide-line">
-              {WORKED.stateRoads.map((x) => (
-                <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
-              ))}
-            </div>
-          </Section>
-        </>
-      )}
+      <div key={view} className="fade-up">
+        {view === 'costs' && (
+          <>
+            <Section title="Council buildings" color={HAZARD_COLOR.flood}>
+              <DamageBars rows={WORKED.councilBuildings} />
+            </Section>
+            <Section title="Council roads" color={HAZARD_COLOR.flood}>
+              <DamageBars rows={WORKED.councilRoads} />
+              <p className="mt-2 text-xs text-ink-3">Upper end of each expected damage range over a 50-year period.</p>
+            </Section>
+          </>
+        )}
 
-      {view === 'costs' && (
-        <>
-          <Section title="Council buildings" color={HAZARD_COLOR.flood}>
-            <div className="divide-y divide-line">
-              {WORKED.councilBuildings.map((b) => (
-                <IdRow
-                  key={b.id}
-                  id={b.id}
-                  title={b.name}
-                  sub={`Depth ${b.depth} · ${b.note}`}
-                  right={
-                    <>
-                      <span className="block font-semibold text-ink">{b.damage}</span>
-                      <span className="block text-xs">{b.time}</span>
-                    </>
-                  }
-                />
-              ))}
-            </div>
-          </Section>
-          <Section title="Council roads" color={HAZARD_COLOR.flood}>
-            <div className="divide-y divide-line">
-              {WORKED.councilRoads.map((x) => (
-                <IdRow
-                  key={x.id}
-                  id={x.id}
-                  title={x.name}
-                  sub={`Depth ${x.depth}`}
-                  right={
-                    <>
-                      <span className="block font-semibold text-ink">{x.damage}</span>
-                      <span className="block text-xs">{x.time}</span>
-                    </>
-                  }
-                />
-              ))}
-            </div>
-            <p className="mt-1.5 text-xs text-ink-3">Expected damage cost over a 50-year period, and time to restore function.</p>
-          </Section>
-          <Section title="Assessed risk" color={HAZARD_COLOR.heat}>
-            <div className="divide-y divide-line">
-              {WORKED.categories
-                .filter((c) => c.basis === 'quantitative')
-                .map((c) => (
-                  <CategoryBlock key={c.name} c={c} />
-                ))}
-            </div>
-          </Section>
-        </>
-      )}
-
-      {view === 'wider' && (
-        <>
-          <Section title="Facilities and arterial roads" color={HAZARD_COLOR.flood}>
+        {view === 'wider' && (
+          <Section title="Facilities and arterial roads" color={HAZARD_COLOR.people}>
             <div className="divide-y divide-line">
               {[...WORKED.facilities, ...WORKED.stateRoads].map((f) => (
-                <IdRow key={f.id} id={f.id} title={f.name} sub={<>{`Inundation ${f.depth}`}<br />{f.consequence}</>} />
+                <IdRow
+                  key={f.id}
+                  id={f.id}
+                  title={f.name}
+                  sub={
+                    <>
+                      <span className="font-medium text-ink">{`Inundation ${f.depth}`}</span>
+                      <br />
+                      {f.consequence}
+                    </>
+                  }
+                />
               ))}
             </div>
           </Section>
-          <Section title="Indicative risk" color={HAZARD_COLOR.heat}>
-            <div className="divide-y divide-line">
-              {WORKED.categories
-                .filter((c) => c.basis === 'proxy')
-                .map((c) => (
-                  <CategoryBlock key={c.name} c={c} />
-                ))}
-            </div>
-          </Section>
-        </>
-      )}
+        )}
 
-      {view === 'tolerance' && <TqehTolerance />}
+        {view === 'area' && (
+          <>
+            <Section title="Council buildings" color={HAZARD_COLOR.assets}>
+              <div className="divide-y divide-line">
+                {WORKED.councilBuildings.map((b) => (
+                  <IdRow key={b.id} id={b.id} title={b.name} sub={b.loc ? undefined : 'Location not mapped'} />
+                ))}
+              </div>
+            </Section>
+            <Section title="Community facilities and critical infrastructure" color={HAZARD_COLOR.people}>
+              <div className="divide-y divide-line">
+                {WORKED.facilities.map((f) => (
+                  <IdRow key={f.id} id={f.id} title={f.name} sub={[f.owner, Array.isArray(f.loc) || f.loc === 'tqeh' ? null : 'Location not mapped'].filter(Boolean).join(' · ') || undefined} />
+                ))}
+              </div>
+            </Section>
+            <Section title="Roads" color={HAZARD_COLOR.assets}>
+              <div className="divide-y divide-line">
+                {[...WORKED.councilRoads, ...WORKED.stateRoads].map((x) => (
+                  <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
+                ))}
+              </div>
+            </Section>
+          </>
+        )}
+
+        {view === 'tolerance' && <TqehTolerance />}
+      </div>
 
       <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
         <span className="text-sm text-ink-3">Worked example and notes</span>
@@ -5736,7 +5866,8 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
           Download report
         </button>
       </div>
-      <p className="mt-3 text-xs leading-[1.45] text-ink-3">Source: {WORKED.source}</p>
+      <p className="mt-3 text-xs leading-[1.45] text-ink-3">{WORKED.disclaimer}</p>
+      <p className="mt-1 text-xs leading-[1.45] text-ink-3">Source: {WORKED.source}</p>
     </div>
   );
 }
@@ -6026,31 +6157,6 @@ function TqehTolerance() {
 
   return (
     <>
-      <Section title="Assessed risk against Council target">
-        <ToleranceChart />
-        <div className="mt-3 divide-y divide-line border-y border-line">
-          {WORKED.categories.map((c) => {
-            const st = toleranceStatus(c);
-            return (
-              <div key={c.name} className="flex items-center gap-3 py-2">
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-medium text-ink">{c.name}</span>
-                  <span className="block text-sm text-ink-3">
-                    Target {c.target} · appetite {c.appetite}
-                  </span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <RatingTag range={c.assessed} />
-                  <span className="block text-xs font-medium" style={{ color: st.color }}>
-                    {st.label}
-                  </span>
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </Section>
-
       {/* Box 1, as the summary report presents it. */}
       <Section title="Council's climate risk tolerance statements">
         <div className="border border-[#9BC48A] bg-[#E3F2DC]">
@@ -8591,7 +8697,7 @@ export default function App() {
   const [caseShow, setCaseShow] = useState<Set<CaseLayer>>(() => new Set<CaseLayer>(['sitesB', 'sitesS', 'lines', 'focus']));
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [caseView, setCaseView] = useState<CaseView>('hazard');
-  const [workedView, setWorkedView] = useState<WorkedView>('area');
+  const [workedView, setWorkedView] = useState<WorkedView>('costs');
   const [caseOpacity, setCaseOpacity] = useState<Partial<Record<CaseLayer, number>>>({});
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
@@ -8880,7 +8986,10 @@ export default function App() {
     <div className="flex h-full w-full overflow-hidden bg-surface-2 text-ink">
       <IconRail tab={panelTab} setTab={setPanelTab} onHome={() => setScreen('landing')} />
 
-      <section data-tour="left-panel" className="relative flex w-80 shrink-0 flex-col border-r border-line bg-white">
+      <section
+        data-tour="left-panel"
+        className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[440px]' : 'w-80'}`}
+      >
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
             <div className="font-serif text-[20px] font-semibold leading-tight text-ink">{meta.title}</div>

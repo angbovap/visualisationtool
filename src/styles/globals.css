@@ -173,3 +173,20 @@ input[type='range']::-moz-range-thumb {
 /* Inspect-a-point: a crosshair over the whole map while the tool is on. */
 .probe-mode.leaflet-container,
 .probe-mode .leaflet-interactive { cursor: crosshair !important; }
+
+/* Risk tolerance tab: the chart draws in, the band grows, rows rise. */
+@keyframes tolDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes tolGrow { from { transform: scale(0.05); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes tolPop { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+@keyframes tolRise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes tolBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes tolFade { from { opacity: 0; } to { opacity: 1; } }
+.tol-draw { stroke-dasharray: 1; animation: tolDraw 900ms cubic-bezier(0.65, 0, 0.35, 1) both; }
+.tol-grow { animation: tolGrow 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.tol-pop { animation: tolPop 380ms ease-out both; }
+.tol-rise { animation: tolRise 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.tol-bar { transform-origin: left center; animation: tolBar 700ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.tol-fade { animation: tolFade 500ms ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .tol-draw, .tol-grow, .tol-pop, .tol-rise, .tol-bar, .tol-fade { animation: none; }
+}
