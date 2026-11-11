@@ -6,14 +6,14 @@
   --font-sans: 'Libre Franklin', 'Franklin Gothic Book', 'Franklin Gothic', Arial, sans-serif;
 
   --color-accent: #0E6E6A;
-  --color-accent-soft: #E6EFEC;
-  --color-accent-line: #A9CBC5;
-  --color-ink: #1C1B19;
-  --color-ink-2: #4E4B45;
-  --color-ink-3: #86827A;
-  --color-line: #DCD8CE;
+  --color-accent-soft: #E5F0EF;
+  --color-accent-line: #A8CFCB;
+  --color-ink: #1F2328;
+  --color-ink-2: #4B5258;
+  --color-ink-3: #7F868C;
+  --color-line: #E1E4E6;
   --color-surface: #FFFFFF;
-  --color-surface-2: #F6F4EF;
+  --color-surface-2: #F3F4F5;
 
   --color-haz-heat: #DC2626;
   --color-haz-flooding: #2563EB;
@@ -82,13 +82,13 @@ body {
 }
 
 /* Thin scrollbars keep the dense panels from losing width to chrome. */
-.thin-scroll { scrollbar-width: thin; scrollbar-color: #CFCAC0 transparent; }
+.thin-scroll { scrollbar-width: thin; scrollbar-color: #CBD1D5 transparent; }
 .thin-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-.thin-scroll::-webkit-scrollbar-thumb { background: #CFCAC0; border-radius: 3px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #CBD1D5; border-radius: 3px; }
 .thin-scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* Leaflet defaults are tuned for larger type than this tool uses. */
-.leaflet-container { font-family: var(--font-sans); background: #EFECE6; outline: none; }
+.leaflet-container { font-family: var(--font-sans); background: #EEF0F1; outline: none; }
 .leaflet-container a { color: var(--color-accent); }
 .leaflet-control-attribution { font-size: 8px !important; background: rgba(255,255,255,0.72) !important; }
 .leaflet-interactive:focus { outline: none; }

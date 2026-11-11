@@ -1066,7 +1066,7 @@ function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
       className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[3px] border transition-colors"
-      style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8C887F' }}
+      style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8A9197' }}
       aria-hidden
     >
       {on && (
@@ -1170,7 +1170,7 @@ function Segmented<T extends string | number>({
             style={
               on
                 ? { background: accent, color: '#fff' }
-                : { background: 'transparent', color: '#5E5A53' }
+                : { background: 'transparent', color: '#5B6268' }
             }
           >
             {o.label}
@@ -1714,7 +1714,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon([outer, LGA_BOUNDARY.ring], {
           stroke: false,
-          fillColor: darkBase ? '#0B1211' : '#F6F4EF',
+          fillColor: darkBase ? '#0B1211' : '#F3F4F5',
           fillOpacity: darkBase ? 0.6 : 0.72,
           interactive: false,
         }),
@@ -1733,7 +1733,7 @@ function MapView(props: MapViewProps) {
             fill: !!shade,
             fillColor: shade,
             fillOpacity: 0.62,
-            color: darkBase ? '#F6F4EF' : '#2B3C3A',
+            color: darkBase ? '#F3F4F5' : '#2B3C3A',
             weight: shade ? 1 : 0.7,
             opacity: darkBase ? 0.55 : shade ? 0.6 : 0.4,
             interactive: true,
@@ -1748,7 +1748,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon(LGA_BOUNDARY.ring, {
           fill: false,
-          color: darkBase ? '#F6F4EF' : '#1C1B19',
+          color: darkBase ? '#F3F4F5' : '#1F2328',
           weight: 1.8,
           opacity: darkBase ? 0.9 : 0.8,
           interactive: false,
@@ -1761,7 +1761,7 @@ function MapView(props: MapViewProps) {
         push(
           L.polygon(a.path, {
             fill: false,
-            color: darkBase ? '#F6F4EF' : '#2B3C3A',
+            color: darkBase ? '#F3F4F5' : '#2B3C3A',
             weight: 1.1,
             opacity: darkBase ? 0.75 : 0.65,
             interactive: true,
@@ -1773,7 +1773,7 @@ function MapView(props: MapViewProps) {
       push(
         L.polygon(LGA_BOUNDARY.ring, {
           fill: false,
-          color: darkBase ? '#F6F4EF' : '#1C1B19',
+          color: darkBase ? '#F3F4F5' : '#1F2328',
           weight: 1.8,
           opacity: darkBase ? 0.9 : 0.8,
           interactive: false,
@@ -1914,8 +1914,8 @@ function MapView(props: MapViewProps) {
         push(L.polygon(ring.ring, { stroke: false, fillColor: fc, fillOpacity: 0.32, interactive: false }));
       }
       // Muted context first, then what the event reaches.
-      push(L.polyline(view.pipes.outside, { color: '#A29D93', weight: 0.8, opacity: 0.45, interactive: false }));
-      push(L.polyline(view.roads.outside, { color: '#A29D93', weight: 2, opacity: 0.7, interactive: false }));
+      push(L.polyline(view.pipes.outside, { color: '#A1A8AD', weight: 0.8, opacity: 0.45, interactive: false }));
+      push(L.polyline(view.roads.outside, { color: '#A1A8AD', weight: 2, opacity: 0.7, interactive: false }));
       push(L.polyline(view.pipes.inside, { color: EVENT_COLOR, weight: 1.6, opacity: 0.9, interactive: false }));
       push(L.polyline(view.roads.inside, { color: '#fff', weight: 6, opacity: 0.95, interactive: false }));
       push(L.polyline(view.roads.inside, { color: '#7F1D1D', weight: 3.6, opacity: 1, interactive: false }));
@@ -2011,7 +2011,7 @@ function MapView(props: MapViewProps) {
       added.push(
         L.polygon([world, area.ring], {
           stroke: false,
-          fillColor: darkBase ? '#0B1211' : '#F6F4EF',
+          fillColor: darkBase ? '#0B1211' : '#F3F4F5',
           fillOpacity: darkBase ? 0.72 : 0.82,
           interactive: false,
           pane: 'caseMask',
@@ -2111,13 +2111,13 @@ function MapView(props: MapViewProps) {
         }
       }
       added.push(
-        L.polygon(area.ring, { color: '#4E4B45', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false, pane: 'caseContent' }).addTo(map),
+        L.polygon(area.ring, { color: '#4B5258', weight: 1, dashArray: '3 4', opacity: 0.7, fill: false, interactive: false, pane: 'caseContent' }).addTo(map),
       );
     }
     added.push(
       L.circleMarker([highlight.lat, highlight.lng], {
         radius: 17,
-        color: '#1C1B19',
+        color: '#1F2328',
         weight: 2,
         fill: false,
         interactive: false, pane: 'caseContent' }).addTo(map),
@@ -2125,12 +2125,12 @@ function MapView(props: MapViewProps) {
     for (const link of show.has('lines') ? highlight.links ?? [] : []) {
       added.push(
         L.polyline([[highlight.lat, highlight.lng], link.to], {
-          color: '#1C1B19',
+          color: '#1F2328',
           weight: 1.6,
           opacity: 0.8 * op('lines'),
           dashArray: '5 4',
           interactive: false, pane: 'caseContent' }).addTo(map),
-        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, opacity: op('lines'), fillColor: '#1C1B19', fillOpacity: op('lines'), interactive: false, pane: 'caseContent' })
+        L.circleMarker(link.to, { radius: 4, color: '#fff', weight: 1.4, opacity: op('lines'), fillColor: '#1F2328', fillOpacity: op('lines'), interactive: false, pane: 'caseContent' })
           .bindTooltip(link.label, { permanent: true, direction: 'top', offset: [0, -5], className: 'building-label' })
           .addTo(map),
       );
@@ -2167,7 +2167,7 @@ function MapView(props: MapViewProps) {
     if (!ready || !L || !map || !probePoint || !probeMode) return;
     const ring = L.circleMarker([probePoint.lat, probePoint.lng], {
       radius: 10,
-      color: '#1C1B19',
+      color: '#1F2328',
       weight: 2,
       fill: false,
       interactive: false,
@@ -2176,7 +2176,7 @@ function MapView(props: MapViewProps) {
       radius: 3,
       color: '#fff',
       weight: 1,
-      fillColor: '#1C1B19',
+      fillColor: '#1F2328',
       fillOpacity: 1,
       interactive: false,
     }).addTo(map);
@@ -2270,7 +2270,7 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#C9C4B9] hover:text-accent"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#CDD2D6] hover:text-accent"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
@@ -2279,7 +2279,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 border border-[#C9C4B9]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[4px] bg-white p-1 border border-[#CDD2D6]">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2349,7 +2349,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[4px] bg-white p-1.5 border border-[#C9C4B9]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[4px] bg-white p-1.5 border border-[#CDD2D6]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2410,7 +2410,7 @@ function MapView(props: MapViewProps) {
           speculative scenario row shows here; with neither, no dock. */}
       {(!hideHazards || scenario.scenario !== 'today') && (
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-[4px] bg-white border border-[#C9C4B9]">
+        <div className="rounded-[4px] bg-white border border-[#CDD2D6]">
           {!hideHazards && (
           <>
           <div className="flex items-center gap-3 px-3 py-2">
@@ -2459,7 +2459,7 @@ function MapView(props: MapViewProps) {
                       }
                     }}
                     className={`num flex-1 whitespace-nowrap rounded-[4px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
-                    style={on ? (o.id === 'none' ? { background: '#1C1B19', borderColor: '#1C1B19' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
+                    style={on ? (o.id === 'none' ? { background: '#1F2328', borderColor: '#1F2328' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
                   >
                     {o.label}
                   </button>
@@ -2532,7 +2532,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-[4px] border bg-white px-2.5 py-1 border border-[#C9C4B9]"
+            className="fade-up flex items-center gap-1.5 rounded-[4px] border bg-white px-2.5 py-1 border border-[#CDD2D6]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="text-xl font-semibold text-ink">{selected.name}</span>
@@ -2543,7 +2543,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[4px] border border-line bg-white/96 p-2 border border-[#C9C4B9] backdrop-blur">
+          <div className="fade-up rounded-[4px] border border-line bg-white/96 p-2 border border-[#CDD2D6] backdrop-blur">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2574,13 +2574,13 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-white text-ink-2 border border-[#C9C4B9] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-white text-ink-2 border border-[#CDD2D6] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[4px] bg-white py-1 border border-[#C9C4B9]">
+        <div className="flex w-9 flex-col items-center rounded-[4px] bg-white py-1 border border-[#CDD2D6]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
             className="flex h-7 w-7 items-center justify-center rounded-[4px] text-ink-2 transition-colors hover:text-accent hover:text-accent"
@@ -2653,7 +2653,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-[4px] border border-line bg-white border border-[#C9C4B9]">
+    <div className="w-[208px] overflow-hidden rounded-[4px] border border-line bg-white border border-[#CDD2D6]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2701,7 +2701,7 @@ function MapLegend({
                       ['road', '#7F1D1D', 'Major road inside'],
                       ['pipe', EVENT_COLOR, 'Pipe inside'],
                       ['dot', '#7F1D1D', 'Council building inside'],
-                      ['muted', '#A29D93', 'Roads and pipes outside'],
+                      ['muted', '#A1A8AD', 'Roads and pipes outside'],
                     ] as const
                   ).map(([kind, c, label]) => (
                     <div key={label} className="flex items-center gap-2">
@@ -2731,7 +2731,7 @@ function MapLegend({
               ))}
               <div className="flex items-center gap-2">
                 <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden>
-                  <path d="M1.5 6 H16.5" stroke="#4E4B45" strokeWidth="1.2" strokeDasharray="3 3" />
+                  <path d="M1.5 6 H16.5" stroke="#4B5258" strokeWidth="1.2" strokeDasharray="3 3" />
                 </svg>
                 <span className="text-sm text-ink-2">Area shown, {caseRadius} m around</span>
               </div>
@@ -2742,7 +2742,7 @@ function MapLegend({
               <div className="text-sm font-medium text-ink">Suburbs: {shade.label}</div>
               <div
                 className="mt-1.5 h-[8px] w-full"
-                style={{ background: `linear-gradient(90deg, #EFECE6, ${shade.color})`, opacity: 0.85 }}
+                style={{ background: `linear-gradient(90deg, #EEF0F1, ${shade.color})`, opacity: 0.85 }}
               />
               <div className="num mt-0.5 flex justify-between text-sm text-ink-3">
                 <span>{shade.lo}</span>
@@ -2918,14 +2918,14 @@ function LocatorMap({
     });
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mini);
     for (const s of SUBURBS) {
-      L.polygon(s.path, { color: '#A29D93', weight: 0.6, fill: false, interactive: false }).addTo(mini);
+      L.polygon(s.path, { color: '#A1A8AD', weight: 0.6, fill: false, interactive: false }).addTo(mini);
     }
     L.polygon(LGA_BOUNDARY.ring, { color: ACCENT, weight: 1.4, fillColor: ACCENT, fillOpacity: 0.05, interactive: false }).addTo(mini);
     mini.fitBounds(lgaBounds, { padding: [6, 6] });
     const box = L.rectangle(main.getBounds(), {
-      color: '#1C1B19',
+      color: '#1F2328',
       weight: 1.5,
-      fillColor: '#1C1B19',
+      fillColor: '#1F2328',
       fillOpacity: 0.08,
       interactive: false,
     }).addTo(mini);
@@ -2964,7 +2964,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-[8px] border-2 border-white bg-white outline outline-1 outline-[#C9C4B9]">
+    <div className="fade-in overflow-hidden rounded-[8px] border-2 border-white bg-white outline outline-1 outline-[#CDD2D6]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -3525,7 +3525,7 @@ function shadeFor(def: IndexDef, sel?: ScenarioSel): Record<string, string> {
   const rows = rankSuburbs(def, sel).filter((r) => r.v !== null);
   const lo = Math.min(...rows.map((r) => r.v!));
   const hi = Math.max(...rows.map((r) => r.v!));
-  return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EFECE6', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
+  return Object.fromEntries(rows.map((r) => [r.s.id, lerpHex('#EEF0F1', def.color, hi > lo ? (r.v! - lo) / (hi - lo) : 1)]));
 }
 
 function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexId) => void }) {
@@ -4849,7 +4849,7 @@ function loadTolerance(): ToleranceSheet {
 
 function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="mb-3 flex gap-[2px] rounded-[5px] border border-line bg-[#ECEAE4] p-[2px]" role="tablist">
+    <div className="mb-3 flex gap-[2px] rounded-[5px] border border-line bg-[#E9EBED] p-[2px]" role="tablist">
       {tabs.map((t) => {
         const on = t.id === value;
         return (
@@ -4881,10 +4881,10 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;color:#1C1B19;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DED9CF;padding-bottom:4px}
-.sub{color:#5E5A53;margin:6px 0 0}.note{color:#86827A;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
-th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EFECE6}th{font-weight:600;color:#3F3C37;border-bottom:1px solid #D3CEC4}
+<style>body{font:13px/1.5 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
+.sub{color:#5B6268;margin:6px 0 0}.note{color:#7F868C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
+th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF0F1}th{font-weight:600;color:#3D444A;border-bottom:1px solid #D5D9DC}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
 <h1>The Queen Elizabeth Hospital, Woodville: worked example</h1>
 <p class="sub">CoCS Climate Risk Tolerance Tool, ${esc(s.event)}, likelihood ${esc(s.likelihood)} (assumed), ${esc(s.climate)}, generated ${new Date().toLocaleDateString('en-AU')}</p>
@@ -5057,8 +5057,8 @@ function CaseGlyph({ id }: { id: CaseLayer }) {
   }
   return (
     <svg width="18" height="12" viewBox="0 0 18 12" className="shrink-0" aria-hidden>
-      <path d="M1.5 6 H13" stroke="#1C1B19" strokeWidth="1.6" strokeDasharray="3 2.5" />
-      <circle cx="14.5" cy="6" r="2.5" fill="#1C1B19" />
+      <path d="M1.5 6 H13" stroke="#1F2328" strokeWidth="1.6" strokeDasharray="3 2.5" />
+      <circle cx="14.5" cy="6" r="2.5" fill="#1F2328" />
     </svg>
   );
 }
@@ -5508,8 +5508,8 @@ function ToleranceChart({
         <path
           key={l}
           d={path(Array(n).fill(l))}
-          fill={l === 4 ? '#FBFAF7' : 'none'}
-          stroke="#DED9CF"
+          fill={l === 4 ? '#FAFBFB' : 'none'}
+          stroke="#DFE3E6"
           strokeWidth={0.8}
           className="tol-fade"
           style={{ animationDelay: `${l * 60}ms` }}
@@ -5525,14 +5525,14 @@ function ToleranceChart({
             y1={c}
             x2={x}
             y2={y}
-            stroke={on ? '#1C1B19' : '#E7E3DA'}
+            stroke={on ? '#1F2328' : '#E6E9EB'}
             strokeWidth={on ? 1.4 : 0.8}
             style={{ transition: 'stroke 160ms, stroke-width 160ms' }}
           />
         );
       })}
       {RISK_LEVELS.map((l, k) => (
-        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8C887F" className="tol-fade" style={{ animationDelay: '200ms' }}>
+        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9197" className="tol-fade" style={{ animationDelay: '200ms' }}>
           {l}
         </text>
       ))}
@@ -5543,7 +5543,7 @@ function ToleranceChart({
         <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="1.5 2" />
       </g>
       {/* Council target: draws itself round. */}
-      <path d={path(target)} fill="none" stroke="#1C1B19" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
+      <path d={path(target)} fill="none" stroke="#1F2328" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
       {target.map((v, i) => {
         const [x, y] = pt(i, v);
         return (
@@ -5552,7 +5552,7 @@ function ToleranceChart({
             cx={x}
             cy={y}
             r={active === i ? 4.2 : 3}
-            fill="#1C1B19"
+            fill="#1F2328"
             stroke="#fff"
             strokeWidth={1.2}
             className="tol-pop"
@@ -5580,7 +5580,7 @@ function ToleranceChart({
               fontWeight={on ? 700 : 500}
               textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
               dominantBaseline="middle"
-              fill={on ? '#1C1B19' : '#3F3C37'}
+              fill={on ? '#1F2328' : '#3D444A'}
             >
               {s}
             </text>
@@ -5936,7 +5936,7 @@ function TqehTab({
 function Glance({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
     <div className="bg-white px-1 py-2.5">
-      <div className="text-sm font-medium" style={{ color: color ?? '#86827A' }}>
+      <div className="text-sm font-medium" style={{ color: color ?? '#7F868C' }}>
         {label}
       </div>
       <div className="num mt-0.5 text-xl font-semibold leading-tight text-ink">{value}</div>
@@ -6423,7 +6423,7 @@ function ProbePanel({
   const mostFrequent = r.floods.length ? r.floods[0] : null;
   return (
     <RightPanelShell
-      accent="#1C1B19"
+      accent="#1F2328"
       eyebrow="Inspect a point"
       title={r.suburb ? r.suburb.name : r.inLga ? 'Inside the council area' : 'Outside the council area'}
       onClose={onClose}

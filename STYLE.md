@@ -17,12 +17,12 @@ is decorative.
 
 | Role | Value | Use |
 |---|---|---|
-| Paper | `#F6F4EF` | Page and secondary surfaces |
+| Page grey | `#F3F4F5` | Page behind widgets, secondary surfaces |
 | White | `#FFFFFF` | Panels and map cards |
-| Ink | `#1C1B19` | Headings and primary text |
-| Ink 2 | `#4E4B45` | Body text |
-| Ink 3 | `#86827A` | Labels, notes, units |
-| Rule | `#DCD8CE` | Dividers and borders |
+| Ink | `#1F2328` | Headings and primary text |
+| Ink 2 | `#4B5258` | Body text |
+| Ink 3 | `#7F868C` | Labels, notes, units |
+| Rule | `#E1E4E6` | Dividers and borders |
 | Accent | `#0E6E6A` | Interactive elements only (links, selected states, checkboxes) |
 
 Hazard colours encode data and are used the same way everywhere:
