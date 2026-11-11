@@ -1002,7 +1002,7 @@ function Tip({
           <span
             ref={tipRef}
             role="tooltip"
-            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-none border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3]"
+            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[8px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3]"
             style={{ left: xy?.x ?? 0, top: xy?.y ?? 0, visibility: xy ? 'visible' : 'hidden' }}
           >
             <span className="mb-1 block text-base font-semibold text-white">{label}</span>
@@ -1065,7 +1065,7 @@ function Accordion({
 function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
-      className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[1px] border transition-colors"
+      className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[4px] border transition-colors"
       style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8A9197' }}
       aria-hidden
     >
@@ -1158,7 +1158,7 @@ function Segmented<T extends string | number>({
   dense?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-[2px] rounded-none border border-line bg-surface-2 p-[2px]">
+    <div className="inline-flex items-center gap-1 rounded-[10px] bg-[#F1F3F5] p-1">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -1166,7 +1166,7 @@ function Segmented<T extends string | number>({
             key={String(o.value)}
             disabled={o.disabled}
             onClick={() => onChange(o.value)}
-            className={`num rounded-none ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
+            className={`num rounded-[8px] ${dense ? 'px-2 py-[3px]' : 'px-2.5 py-1'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
             style={
               on
                 ? { background: accent, color: '#fff' }
@@ -1193,7 +1193,7 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
     <div className="mb-3 flex items-center gap-2.5">
       <button
         onClick={onBack}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
         aria-label={`Back to ${parent}`}
       >
         <IconChevron size={14} className="rotate-180" />
@@ -1225,7 +1225,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-end justify-between">
-      <span className="head flex items-center gap-2 text-[15px] font-semibold text-ink">
+      <span className="flex items-center gap-2 text-[14px] font-bold text-ink">
         {children}
       </span>
       {right}
@@ -2269,7 +2269,7 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-none bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#BEC5CA] hover:text-accent"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[10px] bg-white px-3 py-2 text-sm font-semibold text-ink shadow-[0_6px_20px_rgba(16,24,40,0.10)] hover:text-accent"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
@@ -2278,7 +2278,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[236px] rounded-none border border-[#BEC5CA] bg-white p-1">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[248px] rounded-[12px] bg-white p-1.5 shadow-[0_6px_20px_rgba(16,24,40,0.10)]">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2286,9 +2286,9 @@ function MapView(props: MapViewProps) {
           }}
           aria-label="Minimise map settings"
           title="Minimise"
-          className="flex w-full items-center justify-between rounded-none px-2 py-1.5 text-ink hover:text-accent"
+          className="flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-ink hover:text-accent"
         >
-          <span className="head text-[14px] font-semibold">Map settings</span>
+          <span className="text-[14px] font-bold">Map settings</span>
           <IconChevron size={12} className="-rotate-90" />
         </button>
         {(
@@ -2333,16 +2333,16 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
               >
                 <Icon size={15} className={`shrink-0 ${open ? 'text-accent' : 'text-ink-2'}`} />
                 <span className="shrink-0 text-base text-ink">{c.label}</span>
-                <span className="min-w-0 flex-1 truncate text-right text-base text-ink-2">{current}</span>
+                <span className="min-w-0 flex-1 text-right"><span className="inline-block max-w-full truncate align-middle rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-sm text-ink-2">{current}</span></span>
                 <IconChevron size={12} className={`shrink-0 text-ink-2 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-none bg-white p-1.5 border border-[#BEC5CA]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[12px] bg-white p-1.5 shadow-[0_6px_20px_rgba(16,24,40,0.10)]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2355,7 +2355,7 @@ function MapView(props: MapViewProps) {
                           c.onChange(o.value);
                           setOpenControl(null);
                         }}
-                        className={`flex w-full items-center justify-between rounded-none px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:text-accent'}`}
+                        className={`flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:text-accent'}`}
                       >
                         {o.label}
                       </button>
@@ -2369,7 +2369,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          className="flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
           <IconFocus size={15} className="shrink-0 text-ink-2" />
           <span className="min-w-0 flex-1 text-base text-ink" title="Dims the area outside the council boundary">Focus on council</span>
@@ -2378,7 +2378,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setProbeMode(!probeMode)}
           aria-pressed={probeMode}
-          className="flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[8px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
           <IconLocate size={15} className={`shrink-0 ${probeMode ? 'text-accent' : 'text-ink-2'}`} />
           <span className="min-w-0 flex-1 text-base text-ink" title="Click any spot on the map to read every layer there">
@@ -2392,7 +2392,7 @@ function MapView(props: MapViewProps) {
       {/* The speculative climate scenario, when one is picked in Map settings. */}
       {scenario.scenario !== 'today' && (
       <div className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-none bg-white border border-[#BEC5CA]">
+        <div className="overflow-hidden rounded-[12px] bg-white shadow-[0_6px_20px_rgba(16,24,40,0.10)]">
           {(
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
@@ -2418,7 +2418,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-none border bg-white px-2.5 py-1 border border-[#BEC5CA]"
+            className="fade-up flex items-center gap-1.5 rounded-[10px] bg-white px-3 py-1.5 shadow-[0_6px_20px_rgba(16,24,40,0.10)]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="text-xl font-semibold text-ink">{selected.name}</span>
@@ -2429,7 +2429,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-none border border-line bg-white p-2 border-[#BEC5CA]">
+          <div className="fade-up rounded-[10px] bg-white p-2.5 shadow-[0_6px_20px_rgba(16,24,40,0.10)]">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2460,22 +2460,22 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-none bg-white text-ink-2 border border-[#BEC5CA] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#16191D] text-white transition-colors hover:bg-black"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-none bg-white py-1 border border-[#BEC5CA]">
+        <div className="flex w-9 flex-col items-center rounded-[10px] bg-[#16191D] py-1 text-white">
           <button
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-7 w-7 items-center justify-center rounded-none text-ink-2 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[8px] text-white transition-colors hover:text-[#7FD6CE]"
             aria-label="Zoom in"
           >
             <IconPlus size={16} />
           </button>
           {/* Where the current zoom sits between fully out and fully in. */}
-          <div className="relative my-1 h-[52px] w-[3px] rounded-full bg-line">
+          <div className="relative my-1 h-[52px] w-[3px] rounded-full bg-[#3A4048]">
             <span
               className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white bg-accent transition-all duration-200"
               style={{ bottom: `${(Math.min(Math.max(zoomLevel - 10, 0), 9) / 9) * 100}%` }}
@@ -2483,7 +2483,7 @@ function MapView(props: MapViewProps) {
           </div>
           <button
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-7 w-7 items-center justify-center rounded-none text-ink-2 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[8px] text-white transition-colors hover:text-[#7FD6CE]"
             aria-label="Zoom out"
           >
             <IconMinus size={16} />
@@ -2539,7 +2539,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-none border border-line bg-white border border-[#BEC5CA]">
+    <div className="w-[224px] overflow-hidden rounded-[12px] bg-white shadow-[0_6px_20px_rgba(16,24,40,0.10)]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2850,7 +2850,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-none border-2 border-white bg-white outline outline-1 outline-[#BEC5CA]">
+    <div className="fade-in overflow-hidden rounded-[12px] border-[3px] border-[#16191D] bg-white">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -2965,9 +2965,9 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-3 overflow-hidden rounded-none border border-dashed border-line">
+          <div className="mx-3 overflow-hidden rounded-[8px] border border-dashed border-line">
             <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <span className="h-[12px] w-[12px] shrink-0 rounded-none bg-[#A7D9C2] opacity-60" />
+              <span className="h-[12px] w-[12px] shrink-0 rounded-[8px] bg-[#A7D9C2] opacity-60" />
               <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
               <span className="text-xs text-ink-3">Not supplied yet</span>
             </div>
@@ -2979,7 +2979,7 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        <div className="mx-3 divide-y divide-line overflow-hidden rounded-none border border-line">
+        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[8px] border border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
@@ -3059,14 +3059,14 @@ function LayersTab({
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
                 title={`${b.layers.length} layers`}
-                className={`group flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`group flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
               >
                 <span className="flex w-5 shrink-0 justify-center" style={{ color: b.accent }}>
                   <Icon size={16} />
                 </span>
                 <span className={`min-w-0 flex-1 truncate text-lg text-ink ${on ? 'font-semibold' : ''}`}>{b.title}</span>
                 <span
-                  className={`shrink-0 rounded-[1px] px-1.5 py-[1px] text-sm font-medium ${on ? 'text-white' : 'text-accent group-hover:underline'}`}
+                  className={`shrink-0 rounded-[6px] border px-2.5 py-[3px] text-sm font-semibold ${on ? 'border-transparent text-white' : 'border-line text-ink group-hover:border-accent group-hover:text-accent'}`}
                   style={on ? { background: b.accent } : undefined}
                 >
                   {on ? 'Applied' : 'Apply'}
@@ -3091,7 +3091,7 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className="flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
                       <Icon size={16} />
@@ -3100,11 +3100,11 @@ function LayersTab({
                     {pending ? (
                       <span className="shrink-0 text-sm text-ink-3">Not supplied</span>
                     ) : c.on > 0 ? (
-                      <span className="num shrink-0 rounded-[1px] px-1.5 py-[1px] text-sm font-medium text-white" style={{ background: c.color }}>
+                      <span className="num shrink-0 rounded-[6px] px-2 py-[2px] text-sm font-semibold text-white" style={{ background: c.color }}>
                         {c.on} of {c.total} on
                       </span>
                     ) : (
-                      <span className="num shrink-0 text-sm text-ink-2">{c.total}</span>
+                      <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-sm text-ink-2">{c.total}</span>
                     )}
                     <IconChevron size={12} className="shrink-0 text-ink-2" />
                   </button>
@@ -3117,7 +3117,7 @@ function LayersTab({
             <div className="mb-2.5 flex items-center gap-2 px-3">
               <button
                 onClick={() => selectTab(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-none border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
                 aria-label="Back to all layer categories"
               >
                 <IconChevron size={14} className="rotate-180" />
@@ -3155,7 +3155,7 @@ function LayersTab({
                 setDisplayOpen(false);
               }}
               disabled={checkedLayers.size === 0}
-              className="w-full rounded-none border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
+              className="w-full rounded-[8px] border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
             >
               Turn all layers off
             </button>
@@ -3404,7 +3404,7 @@ function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexI
       value={value}
       onChange={(e) => onChange(e.target.value as IndexId)}
       aria-label="Index"
-      className="w-full rounded-none border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
+      className="w-full rounded-[8px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
     >
       {groups.map((g) => (
         <optgroup key={g} label={g}>
@@ -3518,7 +3518,7 @@ function RoadFindings() {
               key={id}
               onClick={() => set(id)}
               aria-pressed={by === id}
-              className={`flex-1 rounded-none border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+              className={`flex-1 rounded-[8px] border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
             >
               {label}
             </button>
@@ -3883,34 +3883,34 @@ function RightPanelShell({
   title,
   onClose,
   children,
+  width = 'w-80',
 }: {
   accent: string;
   eyebrow: string;
   title: string;
   onClose?: () => void;
   children: React.ReactNode;
+  width?: string;
 }) {
+  void accent;
   return (
-    <aside
-      className="flex h-full w-80 shrink-0 flex-col border-l border-line bg-white"
-      style={{ borderTop: `3px solid ${accent}` }}
-    >
+    <aside className={`flex h-full ${width} shrink-0 flex-col border-l border-line bg-white`}>
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink-3">{eyebrow}</div>
-          <div className="mt-0.5 text-[16px] font-semibold leading-tight text-ink">{title}</div>
+          <div className="mt-0.5 text-[17px] font-bold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="-mr-1 mt-[1px] shrink-0 rounded-none p-1 text-ink-3 transition-colors hover:text-accent hover:text-ink"
+            className="-mr-1 mt-[1px] shrink-0 rounded-[8px] p-1 text-ink-3 transition-colors hover:text-accent hover:text-ink"
             aria-label="Close"
           >
             <IconClose />
           </button>
         )}
       </header>
-      <div className="thin-scroll flex-1 overflow-y-auto bg-surface-2">{children}</div>
+      <div className="thin-scroll flex-1 overflow-y-auto bg-white">{children}</div>
     </aside>
   );
 }
@@ -4016,7 +4016,7 @@ function BlueprintPanel({
             {exposedToFlood && (
               <>
                 <PanelHeading>Buildings inside this flood extent</PanelHeading>
-                <div className="mb-3 rounded-none border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-[8px] border border-line bg-white px-3 py-2.5">
                   <div className="num text-stat font-semibold leading-none text-ink">
                     {exposedToFlood.length} <span className="text-base font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
@@ -4049,7 +4049,7 @@ function BlueprintPanel({
             {heatData && (
               <>
                 <PanelHeading>Buildings by UHI category</PanelHeading>
-                <div className="mb-3 rounded-none border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-[8px] border border-line bg-white px-3 py-2.5">
                   <div className="space-y-1.5">
                     {[...heatData.byCategory.keys()]
                       .sort((a, c) => c - a)
@@ -4058,9 +4058,9 @@ function BlueprintPanel({
                         return (
                           <div key={cat} className="flex items-center gap-2">
                             <span className="w-[80px] shrink-0 text-sm text-ink-2">Category {cat}</span>
-                            <span className="h-[6px] flex-1 overflow-hidden rounded-none bg-surface-2">
+                            <span className="h-[6px] flex-1 overflow-hidden rounded-[8px] bg-surface-2">
                               <span
-                                className="block h-full rounded-none bg-accent"
+                                className="block h-full rounded-[8px] bg-accent"
                                 style={{ width: `${(list.length / mappedTotal) * 100}%` }}
                               />
                             </span>
@@ -4143,7 +4143,7 @@ function BlueprintPanel({
         )}
 
         <PanelHeading>Layers this turns on</PanelHeading>
-        <div className="divide-y divide-line rounded-none border border-line">
+        <div className="divide-y divide-line rounded-[8px] border border-line">
           {blueprint.layers.map((id) => {
             const l = LAYER_BY_ID[id];
             return (
@@ -4718,7 +4718,7 @@ function loadTolerance(): ToleranceSheet {
 
 function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="mb-3 flex gap-[2px] rounded-none border border-line bg-[#E9EBED] p-[2px]" role="tablist">
+    <div className="mb-3 flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1" role="tablist">
       {tabs.map((t) => {
         const on = t.id === value;
         return (
@@ -4727,7 +4727,7 @@ function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; 
             role="tab"
             aria-selected={on}
             onClick={() => onChange(t.id)}
-            className={`flex-1 whitespace-nowrap rounded-none px-2 py-1 text-base transition-colors ${on ? 'border border-line bg-white font-semibold text-ink' : 'border border-transparent text-ink-2 hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-[8px] px-2 py-1.5 text-base transition-colors ${on ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(16,24,40,0.12)]' : 'text-ink-2 hover:text-ink'}`}
           >
             {t.label}
           </button>
@@ -4750,8 +4750,8 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Barlow','Segoe UI',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Barlow','Segoe UI',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Barlow','Segoe UI',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
+<style>body{font:13px/1.5 'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Plus Jakarta Sans','Segoe UI',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
 .sub{color:#5B6268;margin:6px 0 0}.note{color:#7F868C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF0F1}th{font-weight:600;color:#3D444A;border-bottom:1px solid #D5D9DC}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
@@ -5092,7 +5092,7 @@ function CaseControls({
       {text}
     </div>
   );
-  const linkBtn = 'flex-1 rounded-none border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
+  const linkBtn = 'flex-1 rounded-[8px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
 
   return (
     <div className="px-3 py-4">
@@ -5104,7 +5104,7 @@ function CaseControls({
           <button
             onClick={onGuide}
             aria-label="How this works"
-            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-none text-ink-3 hover:text-accent hover:text-accent"
+            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-3 hover:text-accent hover:text-accent"
           >
             <IconHelp size={17} />
           </button>
@@ -5113,13 +5113,13 @@ function CaseControls({
 
       <section className="mt-6" data-tour="case-area">
         <StepHeading n={1} title="Set the area" />
-        <div className="flex divide-x divide-line border border-line">
+        <div className="flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1">
           {TQEH_AREA_OPTIONS.map((m) => (
             <button
               key={m}
               onClick={() => setRadius(m)}
               aria-pressed={radius === m}
-              className={`num flex-1 px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-ink font-semibold text-white' : 'text-ink-2 hover:text-accent'}`}
+              className={`num flex-1 rounded-[8px] px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(16,24,40,0.12)]' : 'text-ink-2 hover:text-ink'}`}
             >
               {m < 1000 ? `${m} m` : `${m / 1000} km`}
             </button>
@@ -5176,7 +5176,7 @@ function CaseControls({
         <StepHeading n={5} title="Download" />
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="w-full rounded-none bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
+          className="w-full rounded-[8px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
         >
           Download report
         </button>
@@ -5221,7 +5221,7 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
     <div
       role="dialog"
       aria-label="Case study guide"
-      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-none border border-line bg-white p-3"
+      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[8px] border border-line bg-white p-3"
     >
       <div className="text-base font-semibold text-ink">Would you like a quick guide?</div>
       <p className="mt-0.5 text-sm leading-[1.45] text-ink-2">Six short steps on how this case study works.</p>
@@ -5232,11 +5232,11 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
         <div className="flex gap-1.5">
           <button
             onClick={onNo}
-            className="rounded-none border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
+            className="rounded-[8px] border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
           >
             Not now
           </button>
-          <button onClick={onYes} className="rounded-none bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#0A5652]">
+          <button onClick={onYes} className="rounded-[8px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#0A5652]">
             Show me
           </button>
         </div>
@@ -5335,7 +5335,7 @@ function toleranceStatus(c: WorkedCategory): { label: string; color: string } {
 function RatingTag({ range }: { range: [string, string] }) {
   return (
     <span
-      className="inline-flex whitespace-nowrap rounded-none px-1.5 py-[1px] text-xs font-semibold text-white"
+      className="inline-flex whitespace-nowrap rounded-[6px] px-2 py-[2px] text-xs font-semibold text-white"
       style={{ background: RISK_COLOR[range[1]] }}
     >
       {range[0] === range[1] ? range[0] : `${range[0]} to ${range[1]}`}
@@ -5417,236 +5417,357 @@ function DamageBars({ rows }: { rows: { id: string; name: string; damage: string
   );
 }
 
-/** The Risk tolerance rail tab: the framework report's Section 4 worked
- *  example as a risk register, one row per consequence category. */
-function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: WorkedView) => void }) {
-  const { sel: scenarioSel } = React.useContext(ScenarioContext);
-  const r = tqehReading();
-  const [selected, setSelected] = useState<number | null>(null);
-  const statuses = WORKED.categories.map(toleranceStatus);
-  const count = (l: string) => statuses.filter((s) => s.label === l).length;
-  const s = WORKED.scenario;
+/** Report Figure 10, interactive: per category, the assessed rating
+ *  against Council's target, on Low (centre) to Extreme (edge) rings.
+ *  Draws itself in; hovering or selecting a category highlights it. */
+function ToleranceChart({
+  active,
+  onHover,
+  onSelect,
+}: {
+  active: number | null;
+  onHover: (i: number | null) => void;
+  onSelect: (i: number) => void;
+}) {
+  const cats = WORKED.categories;
+  const n = cats.length;
+  const W = 360;
+  const H = 286;
+  const cx = W / 2;
+  const cy = H / 2 + 2;
+  const R = 96;
+  const ang = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+  const pt = (i: number, level: number): [number, number] => [cx + (Math.cos(ang(i)) * R * level) / 4, cy + (Math.sin(ang(i)) * R * level) / 4];
+  const path = (vals: number[]) =>
+    vals.map((v, i) => pt(i, v)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ') + ' Z';
+  const hi = cats.map((k) => levelOf(k.assessed[1]));
+  const lo = cats.map((k) => levelOf(k.assessed[0]));
+  const target = cats.map((k) => levelOf(k.target));
+  const grow: React.CSSProperties = { transformOrigin: `${cx}px ${cy}px`, transformBox: 'view-box' };
 
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Assessed risk against Council target by consequence category">
+      {[1, 2, 3, 4].map((l) => (
+        <path key={l} d={path(Array(n).fill(l))} fill={l === 4 ? '#FAFBFC' : 'none'} stroke="#E3E6EA" strokeWidth={1} className="tol-fade" style={{ animationDelay: `${l * 60}ms` }} />
+      ))}
+      {cats.map((_, i) => {
+        const [x, y] = pt(i, 4);
+        const on = active === i;
+        return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke={on ? '#16191D' : '#E3E6EA'} strokeWidth={on ? 1.4 : 1} style={{ transition: 'stroke 160ms' }} />;
+      })}
+      {/* Assessed: upper end filled, lower end dashed. */}
+      <g className="tol-grow" style={{ ...grow, animationDelay: '250ms' }}>
+        <path d={path(hi)} fill="#F97316" fillOpacity={0.16} stroke="#EA580C" strokeWidth={1.6} strokeLinejoin="round" />
+        <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="3 3" />
+      </g>
+      {/* Council target. */}
+      <g className="tol-grow" style={{ ...grow, animationDelay: '550ms' }}>
+        <path d={path(target)} fill="#14B8A6" fillOpacity={0.14} stroke="#0E7C76" strokeWidth={1.8} strokeLinejoin="round" />
+      </g>
+      {hi.map((v, i) => {
+        const [x, y] = pt(i, v);
+        return <circle key={`h${i}`} cx={x} cy={y} r={active === i ? 4 : 2.8} fill="#EA580C" stroke="#fff" strokeWidth={1.2} className="tol-pop" style={{ animationDelay: `${900 + i * 50}ms`, transformOrigin: `${x}px ${y}px`, transformBox: 'view-box', transition: 'r 160ms' }} />;
+      })}
+      {target.map((v, i) => {
+        const [x, y] = pt(i, v);
+        return <circle key={`t${i}`} cx={x} cy={y} r={active === i ? 4 : 2.8} fill="#0E7C76" stroke="#fff" strokeWidth={1.2} className="tol-pop" style={{ animationDelay: `${1100 + i * 50}ms`, transformOrigin: `${x}px ${y}px`, transformBox: 'view-box', transition: 'r 160ms' }} />;
+      })}
+      {SHORT_CAT.map((label, i) => {
+        const [x, y] = pt(i, 4.5);
+        const on = active === i;
+        const anchor = Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end';
+        return (
+          <g key={label} onMouseEnter={() => onHover(i)} onMouseLeave={() => onHover(null)} onClick={() => onSelect(i)} className="cursor-pointer">
+            <circle cx={x} cy={y} r={22} fill="transparent" />
+            <text x={x} y={y} fontSize="11" fontWeight={on ? 700 : 500} textAnchor={anchor} dominantBaseline="middle" fill={on ? '#16191D' : '#3E454B'}>
+              {label}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/** The Risk tolerance rail tab, left side: the overview. Summary, Figure 10
+ *  and the register; a category's detail, the costs and Box 1 open in the
+ *  right panel (WorkedDetailPanel). */
+function WorkedExampleTab({ selected, setSelected }: { selected: number | null; setSelected: (i: number | null) => void }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const statuses = WORKED.categories.map(toleranceStatus);
+  const count = (l: string) => statuses.filter((x) => x.label === l).length;
+  const s = WORKED.scenario;
   const n = WORKED.categories.length;
+  const active = hover ?? selected;
+  const pick = (i: number) => setSelected(selected === i ? null : i);
   const summary: [number, string, string][] = [
     [count('Above target'), 'Above target', RISK_COLOR.Extreme],
-    [count('Upper range above target'), 'Partly above target', RISK_COLOR.High],
+    [count('Upper range above target'), 'Partly above', RISK_COLOR.High],
     [count('Within target'), 'Within target', RISK_COLOR.Low],
   ];
-  const shortStatus = (l: string) => (l === 'Above target' ? 'Above' : l === 'Within target' ? 'Within' : 'Partly above');
-  const cols = 'grid grid-cols-[minmax(0,1fr)_176px_72px_12px] items-center gap-2';
+  const cols = 'grid grid-cols-[minmax(0,1fr)_150px_88px] items-center gap-2';
 
   return (
     <div>
-      <p className="text-sm leading-[1.45] text-ink-2">
+      <p className="text-sm leading-[1.5] text-ink-2">
         {s.event}, likelihood {s.likelihood} (assumed), {s.climate.toLowerCase()}.
       </p>
 
-      <div className="mt-3">
-        <Section title="Summary">
-          <div className="grid grid-cols-3 divide-x divide-line">
-            {summary.map(([v, l], k) => (
-              <div key={l} className={k ? 'pl-3' : ''}>
-                <div className="num text-[20px] font-semibold leading-none text-ink">{v}</div>
-                <div className="mt-1 text-xs text-ink-3">{l}</div>
+      <div className="mt-4">
+        <Section title="Summary" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">{n} categories</span>}>
+          <div className="grid grid-cols-3 gap-2">
+            {summary.map(([v, l, c]) => (
+              <div key={l} className="rounded-[10px] bg-[#F6F7F9] px-3 py-2.5">
+                <div className="num text-[22px] font-bold leading-none" style={{ color: c }}>
+                  {v}
+                </div>
+                <div className="mt-1.5 text-xs font-medium text-ink-2">{l}</div>
               </div>
             ))}
           </div>
-          <div className="mt-3 flex h-[6px]">
-            {summary.map(([v, l, c], k) =>
-              v ? (
-                <span
-                  key={l}
-                  className="tol-bar border-r border-white last:border-r-0"
-                  style={{ width: `${(v / n) * 100}%`, background: c, animationDelay: `${k * 120}ms` }}
-                />
-              ) : null,
-            )}
-          </div>
-          <p className="mt-1.5 text-xs text-ink-3">Assessed rating against Council's target, {n} consequence categories</p>
         </Section>
 
-        <Section title="Consequence categories" right={<span className="text-xs text-ink-3">Section 4</span>}>
+        <Section title="Assessed against target" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">Figure 10</span>}>
+          <ToleranceChart active={active} onHover={setHover} onSelect={pick} />
+          <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-ink-2">
+            <span className="flex items-center gap-1.5">
+              <span className="h-[9px] w-[9px] rounded-full bg-[#0E7C76]" />
+              Council target
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-[9px] w-[9px] rounded-full bg-[#EA580C]" />
+              Assessed, upper end
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-[14px] border-t border-dashed border-[#EA580C]" />
+              Lower end
+            </span>
+          </div>
+          <p className="mt-1.5 text-center text-xs text-ink-3">Rings run from Low at the centre to Extreme at the edge.</p>
+        </Section>
+
+        <Section title="Consequence categories" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">Section 4</span>}>
           <div role="table">
-            <div role="row" className={`${cols} border-b border-line pb-1 text-2xs text-ink-3`}>
+            <div role="row" className={`${cols} pb-1.5 text-2xs font-medium text-ink-3`}>
               <span>Category</span>
               <span className="grid grid-cols-4 text-center">
                 {RISK_LEVELS.map((l) => (
-                  <span key={l}>{l}</span>
+                  <span key={l}>{l === 'Moderate' ? 'Mod.' : l === 'Extreme' ? 'Ext.' : l}</span>
                 ))}
               </span>
-              <span>Status</span>
-              <span />
+              <span className="text-right">Status</span>
             </div>
             {WORKED.categories.map((c, i) => {
               const st = statuses[i];
-              const open = selected === i;
+              const on = selected === i;
               const lo = levelOf(c.assessed[0]);
               const hi = levelOf(c.assessed[1]);
               const t = levelOf(c.target);
               return (
-                <div key={c.name} role="row" className="border-b border-line last:border-b-0">
-                  <button
-                    onClick={() => setSelected(open ? null : i)}
-                    aria-expanded={open}
-                    className={`${cols} group w-full py-2 text-left`}
-                  >
-                    <span className={`truncate text-base text-ink group-hover:text-accent ${open ? 'font-semibold' : ''}`}>{SHORT_CAT[i]}</span>
-                    <span className="relative block h-[14px]" aria-label={`Assessed ${c.assessed[0]} to ${c.assessed[1]}, target ${c.target}`}>
-                      <span className="absolute inset-0 grid grid-cols-4">
-                        {RISK_LEVELS.map((l) => (
-                          <span key={l} className="border-r border-white bg-[#EEF0F1] last:border-r-0" />
-                        ))}
-                      </span>
-                      <span
-                        className="tol-bar absolute inset-y-0 flex"
-                        style={{ left: `${(lo - 1) * 25}%`, width: `${(hi - lo + 1) * 25}%`, animationDelay: `${200 + i * 60}ms` }}
-                      >
-                        {RISK_LEVELS.slice(lo - 1, hi).map((l) => (
-                          <span key={l} className="flex-1 border-r border-white last:border-r-0" style={{ background: RISK_COLOR[l] }} />
-                        ))}
-                      </span>
-                      <span
-                        className="tol-fade absolute -bottom-[3px] -top-[3px] w-[2px] bg-ink"
-                        style={{ left: `calc(${t * 25}% - 1px)`, animationDelay: `${700 + i * 60}ms` }}
-                      />
+                <button
+                  key={c.name}
+                  role="row"
+                  onClick={() => pick(i)}
+                  onMouseEnter={() => setHover(i)}
+                  onMouseLeave={() => setHover(null)}
+                  aria-pressed={on}
+                  className={`${cols} -mx-2 w-[calc(100%+16px)] rounded-[8px] px-2 py-2 text-left transition-colors ${on ? 'bg-[#EEF6F5]' : active === i ? 'bg-surface-2' : ''}`}
+                >
+                  <span className={`truncate text-base text-ink ${on ? 'font-semibold' : ''}`}>{SHORT_CAT[i]}</span>
+                  <span className="relative block h-[10px]" aria-label={`Assessed ${c.assessed[0]} to ${c.assessed[1]}, target ${c.target}`}>
+                    <span className="absolute inset-0 overflow-hidden rounded-full bg-[#EEF0F2]" />
+                    <span
+                      className="tol-bar absolute inset-y-0 flex overflow-hidden rounded-full"
+                      style={{ left: `${(lo - 1) * 25}%`, width: `${(hi - lo + 1) * 25}%`, animationDelay: `${200 + i * 60}ms` }}
+                    >
+                      {RISK_LEVELS.slice(lo - 1, hi).map((l) => (
+                        <span key={l} className="flex-1" style={{ background: RISK_COLOR[l] }} />
+                      ))}
                     </span>
-                    <span className="text-sm text-ink-2">{shortStatus(st.label)}</span>
-                    <IconChevron size={12} className={`text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-                  </button>
-                  {open && (
-                    <div className="fade-up pb-3">
-                      <div className="text-sm font-semibold text-ink">{c.name}</div>
-                      <dl className="mt-1.5 grid grid-cols-[72px_1fr] gap-y-0.5 text-sm">
-                        <dt className="text-ink-3">Appetite</dt>
-                        <dd className="text-ink">{c.appetite}</dd>
-                        <dt className="text-ink-3">Target</dt>
-                        <dd className="text-ink">{c.target}</dd>
-                        <dt className="text-ink-3">Assessed</dt>
-                        <dd className="text-ink">
-                          {c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`}
-                        </dd>
-                        <dt className="text-ink-3">Status</dt>
-                        <dd className="text-ink">{st.label}</dd>
-                        <dt className="text-ink-3">Basis</dt>
-                        <dd className="text-ink">{c.basis === 'quantitative' ? 'Quantitative' : 'Proxy'}</dd>
-                      </dl>
-                      <div className="mt-2 text-sm font-semibold text-ink-2">Evidence</div>
-                      <Bullets items={c.evidence} />
-                      <div className="mt-2 border-l-2 border-[#9BC48A] bg-[#E3F2DC] px-2.5 py-2 text-sm leading-[1.45] text-[#26401F]">
-                        <span className="font-semibold">Council tolerance: </span>
-                        {c.tolerance}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    <span
+                      className="tol-fade absolute -bottom-[4px] -top-[4px] w-[3px] rounded-full bg-ink"
+                      style={{ left: `calc(${t * 25}% - 1.5px)`, animationDelay: `${700 + i * 60}ms` }}
+                    />
+                  </span>
+                  <span className="text-right">
+                    <span className="inline-block whitespace-nowrap rounded-[6px] px-2 py-[2px] text-xs font-semibold text-white" style={{ background: st.color }}>
+                      {st.label === 'Above target' ? 'Above' : st.label === 'Within target' ? 'Within' : 'Partly above'}
+                    </span>
+                  </span>
+                </button>
               );
             })}
           </div>
-          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-2 text-xs text-ink-3">
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
             <span className="flex items-center gap-1.5">
-              <span className="flex h-[8px] w-[16px]">
+              <span className="flex h-[8px] w-[18px] overflow-hidden rounded-full">
                 <span className="flex-1" style={{ background: RISK_COLOR.Moderate }} />
                 <span className="flex-1" style={{ background: RISK_COLOR.High }} />
               </span>
               Assessed range
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-[12px] w-[2px] bg-ink" />
+              <span className="h-[12px] w-[3px] rounded-full bg-ink" />
               Council target
             </span>
           </div>
         </Section>
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-5">
-        <TabStrip
-          value={view}
-          onChange={setView}
-          tabs={[
-            { id: 'costs', label: 'Costs' },
-            { id: 'wider', label: 'Wider impacts' },
-            { id: 'area', label: 'Sites' },
-            { id: 'tolerance', label: 'Box 1' },
-          ]}
-        />
-      </div>
+/** The Risk tolerance tab, right side: the selected category's evidence and
+ *  tolerance statement, then the worked example's costs, wider impacts,
+ *  sites and Box 1. */
+function WorkedDetailPanel({
+  selected,
+  setSelected,
+  view,
+  setView,
+}: {
+  selected: number | null;
+  setSelected: (i: number | null) => void;
+  view: WorkedView;
+  setView: (v: WorkedView) => void;
+}) {
+  const { sel: scenarioSel } = React.useContext(ScenarioContext);
+  const r = tqehReading();
+  const c = selected !== null ? WORKED.categories[selected] : null;
+  const st = c ? toleranceStatus(c) : null;
+  const rows: [string, string][] = c
+    ? [
+        ['Appetite', c.appetite],
+        ['Target', c.target],
+        ['Assessed', c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`],
+        ['Basis', c.basis === 'quantitative' ? 'Quantitative' : 'Proxy'],
+      ]
+    : [];
 
-      <div key={view} className="fade-up">
-        {view === 'costs' && (
-          <>
-            <Section title="Council buildings" color={HAZARD_COLOR.flood}>
-              <DamageBars rows={WORKED.councilBuildings} />
-            </Section>
-            <Section title="Council roads" color={HAZARD_COLOR.flood}>
-              <DamageBars rows={WORKED.councilRoads} />
-              <p className="mt-2 text-xs text-ink-3">Upper end of each expected damage range over a 50-year period.</p>
-            </Section>
-          </>
-        )}
-
-        {view === 'wider' && (
-          <Section title="Facilities and arterial roads" color={HAZARD_COLOR.people}>
-            <div className="divide-y divide-line">
-              {[...WORKED.facilities, ...WORKED.stateRoads].map((f) => (
-                <IdRow
-                  key={f.id}
-                  id={f.id}
-                  title={f.name}
-                  sub={
-                    <>
-                      <span className="font-medium text-ink">{`Inundation ${f.depth}`}</span>
-                      <br />
-                      {f.consequence}
-                    </>
-                  }
-                />
-              ))}
+  return (
+    <RightPanelShell accent={ACCENT} eyebrow="Worked example, Section 4" title="The Queen Elizabeth Hospital" width="w-[360px]">
+      <div className="px-4 py-4">
+        <Section
+          title={c ? c.name : 'Category'}
+          right={
+            c ? (
+              <button onClick={() => setSelected(null)} className="shrink-0 rounded-[6px] border border-line px-2 py-[2px] text-xs font-semibold text-ink-2 hover:border-accent hover:text-accent">
+                Clear
+              </button>
+            ) : undefined
+          }
+        >
+          {c && st ? (
+            <div key={c.name} className="fade-up">
+              <span className="inline-block rounded-[6px] px-2 py-[2px] text-xs font-semibold text-white" style={{ background: st.color }}>
+                {st.label}
+              </span>
+              <dl className="mt-3 grid grid-cols-2 gap-2">
+                {rows.map(([k, v]) => (
+                  <div key={k} className="rounded-[8px] bg-[#F6F7F9] px-2.5 py-2">
+                    <dt className="text-xs text-ink-3">{k}</dt>
+                    <dd className="mt-0.5 text-base font-semibold text-ink">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-3 text-sm font-semibold text-ink">Evidence</div>
+              <Bullets items={c.evidence} />
+              <div className="mt-3 rounded-[8px] bg-[#E8F5E1] px-3 py-2.5 text-sm leading-[1.5] text-[#26401F]">
+                <span className="font-semibold">Council tolerance: </span>
+                {c.tolerance}
+              </div>
             </div>
-          </Section>
-        )}
+          ) : (
+            <p className="text-base leading-[1.5] text-ink-2">Choose a category on the chart or in the list to see its evidence and Council's tolerance statement.</p>
+          )}
+        </Section>
 
-        {view === 'area' && (
-          <>
-            <Section title="Council buildings" color={HAZARD_COLOR.assets}>
+        <div className="mt-5">
+          <TabStrip
+            value={view}
+            onChange={setView}
+            tabs={[
+              { id: 'costs', label: 'Costs' },
+              { id: 'wider', label: 'Impacts' },
+              { id: 'area', label: 'Sites' },
+              { id: 'tolerance', label: 'Box 1' },
+            ]}
+          />
+        </div>
+
+        <div key={view} className="fade-up">
+          {view === 'costs' && (
+            <>
+              <Section title="Council buildings">
+                <DamageBars rows={WORKED.councilBuildings} />
+              </Section>
+              <Section title="Council roads">
+                <DamageBars rows={WORKED.councilRoads} />
+                <p className="mt-2 text-xs text-ink-3">Upper end of each expected damage range over a 50-year period.</p>
+              </Section>
+            </>
+          )}
+
+          {view === 'wider' && (
+            <Section title="Facilities and arterial roads">
               <div className="divide-y divide-line">
-                {WORKED.councilBuildings.map((b) => (
-                  <IdRow key={b.id} id={b.id} title={b.name} sub={b.loc ? undefined : 'Location not mapped'} />
+                {[...WORKED.facilities, ...WORKED.stateRoads].map((f) => (
+                  <IdRow
+                    key={f.id}
+                    id={f.id}
+                    title={f.name}
+                    sub={
+                      <>
+                        <span className="font-medium text-ink">{`Inundation ${f.depth}`}</span>
+                        <br />
+                        {f.consequence}
+                      </>
+                    }
+                  />
                 ))}
               </div>
             </Section>
-            <Section title="Community facilities and critical infrastructure" color={HAZARD_COLOR.people}>
-              <div className="divide-y divide-line">
-                {WORKED.facilities.map((f) => (
-                  <IdRow key={f.id} id={f.id} title={f.name} sub={[f.owner, Array.isArray(f.loc) || f.loc === 'tqeh' ? null : 'Location not mapped'].filter(Boolean).join(', ') || undefined} />
-                ))}
-              </div>
-            </Section>
-            <Section title="Roads" color={HAZARD_COLOR.assets}>
-              <div className="divide-y divide-line">
-                {[...WORKED.councilRoads, ...WORKED.stateRoads].map((x) => (
-                  <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
-                ))}
-              </div>
-            </Section>
-          </>
-        )}
+          )}
 
-        {view === 'tolerance' && <TqehTolerance />}
-      </div>
+          {view === 'area' && (
+            <>
+              <Section title="Council buildings">
+                <div className="divide-y divide-line">
+                  {WORKED.councilBuildings.map((b) => (
+                    <IdRow key={b.id} id={b.id} title={b.name} sub={b.loc ? undefined : 'Location not mapped'} />
+                  ))}
+                </div>
+              </Section>
+              <Section title="Community facilities and critical infrastructure">
+                <div className="divide-y divide-line">
+                  {WORKED.facilities.map((f) => (
+                    <IdRow key={f.id} id={f.id} title={f.name} sub={[f.owner, Array.isArray(f.loc) || f.loc === 'tqeh' ? null : 'Location not mapped'].filter(Boolean).join(', ') || undefined} />
+                  ))}
+                </div>
+              </Section>
+              <Section title="Roads">
+                <div className="divide-y divide-line">
+                  {[...WORKED.councilRoads, ...WORKED.stateRoads].map((x) => (
+                    <IdRow key={x.id} id={x.id} title={x.name} sub={x.note} />
+                  ))}
+                </div>
+              </Section>
+            </>
+          )}
 
-      <div className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="text-sm text-ink-3">Worked example and notes</span>
+          {view === 'tolerance' && <TqehTolerance />}
+        </div>
+
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-none border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="mt-6 w-full rounded-[8px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
         >
           Download report
         </button>
+        <p className="mt-3 text-xs leading-[1.5] text-ink-3">{WORKED.disclaimer}</p>
+        <p className="mt-1 text-xs leading-[1.5] text-ink-3">Source: {WORKED.source}</p>
       </div>
-      <p className="mt-3 text-xs leading-[1.45] text-ink-3">{WORKED.disclaimer}</p>
-      <p className="mt-1 text-xs leading-[1.45] text-ink-3">Source: {WORKED.source}</p>
-    </div>
+    </RightPanelShell>
   );
 }
 
@@ -5725,7 +5846,7 @@ function TqehTab({
         <span className="text-sm text-ink-3">Site readings and worked example</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-none border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="shrink-0 rounded-[8px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
         >
           Download report
         </button>
@@ -5959,7 +6080,7 @@ function TqehTolerance() {
                       value={note(draft, c.name)}
                       onChange={(e) => update(c.name, e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full resize-y rounded-none border border-[#9BC48A] bg-white px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+                      className="mt-1 block w-full resize-y rounded-[8px] border border-[#9BC48A] bg-white px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
                     />
                   )}
                 </div>
@@ -5981,7 +6102,7 @@ function TqehTolerance() {
             <button
               onClick={save}
               disabled={!dirty}
-              className="rounded-none bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#0A5652] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+              className="rounded-[8px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#0A5652] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
             >
               Save
             </button>
@@ -6555,7 +6676,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-none text-white transition-colors hover:bg-[#145653]"
+          className="flex h-11 w-[56px] items-center justify-center rounded-[8px] text-white transition-colors hover:bg-[#145653]"
           aria-label="Home"
         >
           <IconHome size={21} />
@@ -6574,7 +6695,7 @@ function IconRail({
               <button
                 data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-none py-1.5 text-white transition-colors ${on ? 'bg-[#1A7470]' : 'hover:bg-[#145653]'}`}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-[8px] py-1.5 text-white transition-colors ${on ? 'bg-[#1A7470]' : 'hover:bg-[#145653]'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -6587,7 +6708,7 @@ function IconRail({
       })}
       <div className="mt-auto">
         <Tip label="Prepared by" body="Value Advisory Partners" side="right">
-          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 rounded-none bg-white object-contain p-1" />
+          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 rounded-[8px] bg-white object-contain p-1" />
         </Tip>
       </div>
     </nav>
@@ -7262,7 +7383,7 @@ function Figure({ label, value, sub }: { label: string; value: React.ReactNode; 
 }
 
 function FigureStrip({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 divide-x divide-line rounded-none border border-line py-3">{children}</div>;
+  return <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">{children}</div>;
 }
 
 /** A labelled count with a bar against the largest count in its group. */
@@ -7301,12 +7422,12 @@ function Section({
   // but not drawn: colour belongs in the data marks.
   void color;
   return (
-    <section className="mt-3 overflow-hidden rounded-none border border-line bg-white first:mt-0">
-      <div className="flex min-h-[34px] items-center justify-between gap-2 border-b border-line px-3 py-1.5">
-        <span className="head text-[14px] font-semibold text-ink">{title}</span>
+    <section className="mt-4 border-t border-line pt-4 first:mt-0 first:border-t-0 first:pt-0">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <span className="text-[14px] font-bold text-ink">{title}</span>
         {right}
       </div>
-      <div className="px-3 py-2.5">{children}</div>
+      {children}
     </section>
   );
 }
@@ -7610,14 +7731,14 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           <button
             onClick={() => setOffTypes(() => new Set())}
             disabled={offTypes.size === 0}
-            className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-[8px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Show all
           </button>
           <button
             onClick={() => setOffTypes(() => new Set(ALL_BUILDING_TYPES))}
             disabled={onCount === 0}
-            className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-[8px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Hide all
           </button>
@@ -7629,7 +7750,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           const isUnclassified = use.key === UNCLASSIFIED;
           const usedOn = use.types.filter((t) => !offTypes.has(t.key)).length;
           return (
-            <div key={use.key} className="rounded-none border border-line">
+            <div key={use.key} className="rounded-[8px] border border-line">
               {/* Category row: its switch turns the whole group on or off. */}
               <button
                 onClick={() => toggleUse(use)}
@@ -7687,7 +7808,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
-        <div className="fade-up mt-1 rounded-none border border-line bg-surface-2 px-2 py-1.5">
+        <div className="fade-up mt-1 rounded-[8px] border border-line bg-surface-2 px-2 py-1.5">
           <p className="mb-1 text-2xs leading-[1.45] text-ink-3">
             In the same export, not classed as buildings, so kept
             out of the toggle list above rather than folded in.
@@ -7796,7 +7917,7 @@ function RealBuildingsRegister({
                 setListScope(null);
               }}
               aria-label="Ward"
-              className="rounded-none border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
+              className="rounded-[8px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
             >
               <option value="">Whole LGA ({REAL_BUILDINGS.length})</option>
               {REAL_WARDS.map((w) => (
@@ -7809,7 +7930,7 @@ function RealBuildingsRegister({
         >
           Overview
         </PanelHeading>
-        <div className="grid grid-cols-2 divide-x divide-line rounded-none border border-line py-3">
+        <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">
           <div className="px-3">
             <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
@@ -7860,7 +7981,7 @@ function RealBuildingsRegister({
                     icon: IconGauge,
                     // The register's own rating mix, in its own colours.
                     sub: (
-                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-none bg-surface-2">
+                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[8px] bg-surface-2">
                         {conditionRows.map((r) => (
                           <span key={r.label} style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }} />
                         ))}
@@ -7881,13 +8002,13 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
                       <Icon size={16} />
                     </span>
                     <span className="min-w-0 flex-1 truncate text-lg text-ink">{t.title}</span>
-                    <span className={t.id === 'condition' ? 'w-[64px] shrink-0' : 'shrink-0 text-sm text-ink-2'}>{t.sub}</span>
+                    <span className={t.id === 'condition' ? 'w-[64px] shrink-0' : 'shrink-0 rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-sm text-ink-2'}>{t.sub}</span>
                     <IconChevron size={12} className="shrink-0 text-ink-2" />
                   </button>
                 );
@@ -7899,16 +8020,16 @@ function RealBuildingsRegister({
         {view === 'condition' && (
           <div>
             <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
-            <div className="rounded-none border border-line p-3">
+            <div className="rounded-[8px] border border-line p-3">
               <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
               <div className="space-y-2.5">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
-                    <span className="h-[8px] w-[8px] shrink-0 rounded-none" style={{ background: r.color }} />
+                    <span className="h-[8px] w-[8px] shrink-0 rounded-[8px]" style={{ background: r.color }} />
                     <span className="w-[112px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-                    <span className="h-[6px] flex-1 overflow-hidden rounded-none bg-surface-2">
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-[8px] bg-surface-2">
                       <span
-                        className="block h-full rounded-none"
+                        className="block h-full rounded-[8px]"
                         style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
                       />
                     </span>
@@ -7928,7 +8049,7 @@ function RealBuildingsRegister({
               fitout or meter.
             </p>
             <PanelHeading>Register dates</PanelHeading>
-            <div className="mb-4 space-y-1 rounded-none border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+            <div className="mb-4 space-y-1 rounded-[8px] border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
               <div>
                 Last modified{' '}
                 <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -7958,7 +8079,7 @@ function RealBuildingsRegister({
             >
               Map coverage
             </PanelHeading>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-none border border-line px-3 py-2.5 text-sm text-ink-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[8px] border border-line px-3 py-2.5 text-sm text-ink-3">
               <span className="flex items-center gap-1.5">
                 <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
                 {preciseCount} precise
@@ -7988,7 +8109,7 @@ function RealBuildingsRegister({
                 <div className="space-y-1">
                   <button
                     onClick={() => selectListScope('all')}
-                    className="flex w-full items-center justify-between rounded-none border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                    className="flex w-full items-center justify-between rounded-[8px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                   >
                     <span className="text-sm font-medium text-ink">
                       All {scoped.length} buildings
@@ -8004,7 +8125,7 @@ function RealBuildingsRegister({
                         <button
                           key={use.key}
                           onClick={() => selectListScope(use.key)}
-                          className="flex items-center gap-1 rounded-none border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
+                          className="flex items-center gap-1 rounded-[8px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
                         >
                           <span className="text-sm font-medium text-ink">
                             {isUnclassified ? 'Not yet classified' : use.label}
@@ -8199,7 +8320,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
       onClick={onClose}
     >
       <div
-        className="fade-up w-full max-w-[480px] overflow-hidden rounded-none border border-line bg-white"
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[8px] border border-line bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -8212,7 +8333,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
             placeholder="Search suburbs, layers or buildings"
             className="flex-1 bg-transparent text-lg text-ink outline-none placeholder:text-ink-3"
           />
-          <span className="num rounded-none border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
+          <span className="num rounded-[8px] border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
         </div>
 
         <div className="thin-scroll max-h-[360px] overflow-y-auto py-1">
@@ -8298,19 +8419,19 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         >
           <button
             onClick={onGuide}
-            className="w-full rounded-none bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0A5652]"
+            className="w-full rounded-[8px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0A5652]"
           >
             Take the guide
           </button>
           <button
             onClick={onSkip}
-            className="w-full rounded-none border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-[8px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View the tool
           </button>
           <button
             onClick={onCases}
-            className="w-full rounded-none border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-[8px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View case studies
           </button>
@@ -8397,7 +8518,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       <div className="fixed inset-0" onClick={(e) => e.stopPropagation()} />
       {rect && (
         <div
-          className="pointer-events-none fixed rounded-none transition-all duration-200"
+          className="pointer-events-none fixed rounded-[8px] transition-all duration-200"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
@@ -8411,7 +8532,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       )}
       <div
         ref={cardRef}
-        className="fixed rounded-none border border-line bg-white p-3 transition-all duration-200"
+        className="fixed rounded-[8px] border border-line bg-white p-3 transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
         <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {steps.length}</div>
@@ -8425,14 +8546,14 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
             {step > 0 && (
               <button
                 onClick={() => setStep((v) => v - 1)}
-                className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
+                className="rounded-[8px] border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
               >
                 Back
               </button>
             )}
             <button
               onClick={() => (step < steps.length - 1 ? setStep((v) => v + 1) : onDone())}
-              className="rounded-none bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0A5652]"
+              className="rounded-[8px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0A5652]"
             >
               {step < steps.length - 1 ? 'Next' : 'Done'}
             </button>
@@ -8472,6 +8593,7 @@ export default function App() {
   const [caseRadius, setCaseRadius] = useState<TqehRadius>(600);
   const [caseView, setCaseView] = useState<CaseView>('hazard');
   const [workedView, setWorkedView] = useState<WorkedView>('costs');
+  const [tolSel, setTolSel] = useState<number | null>(null);
   const [caseOpacity, setCaseOpacity] = useState<Partial<Record<CaseLayer, number>>>({});
   const [checkedLayers, setCheckedLayers] = useState<Set<string>>(
     () => new Set<string>(),
@@ -8545,10 +8667,12 @@ export default function App() {
   // panel; closing it goes back to whichever was open underneath.
   // An open case study shows its report on the right; a building opened
   // from that report sits on top of it.
-  const rightPanelMode: 'probe' | 'blueprint' | 'building' | 'layer' | 'case' | null = probeMode && probePoint
+  const rightPanelMode: 'probe' | 'blueprint' | 'building' | 'layer' | 'case' | 'tolerance' | null = probeMode && probePoint
     ? 'probe'
     : selectedBuildingKey
     ? 'building'
+    : panelTab === 'tolerance'
+    ? 'tolerance'
     : panelTab === 'cases' && caseId
       ? 'case'
       : activeBlueprint
@@ -8762,14 +8886,14 @@ export default function App() {
 
       <section
         data-tour="left-panel"
-        className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[440px]' : 'w-80'}`}
+        className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[400px]' : 'w-80'}`}
       >
         <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <h1 className="min-w-0 truncate text-[20px] font-semibold leading-tight text-ink">{meta.title}</h1>
+          <h1 className="min-w-0 truncate text-[20px] font-bold leading-tight text-ink">{meta.title}</h1>
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none text-ink-3 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-ink-3 transition-colors hover:text-accent hover:text-accent"
             aria-label="Take the guide"
             title="Take the guide"
           >
@@ -8780,15 +8904,15 @@ export default function App() {
         <div className="border-b border-line px-2.5 py-2">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2 rounded-none border border-[#BEC5CA] bg-white px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent"
+            className="flex w-full items-center gap-2 rounded-[10px] border border-line bg-white px-3 py-2 text-left text-base text-ink-3 transition-colors hover:border-accent"
           >
             <IconSearch size={14} className="shrink-0" />
             <span className="flex-1">Search suburbs, layers, buildings</span>
-            <span className="num rounded-none border border-line bg-white px-1.5 text-2xs">/</span>
+            <span className="num rounded-[8px] border border-line bg-white px-1.5 text-2xs">/</span>
           </button>
         </div>
 
-        <div className="thin-scroll flex-1 overflow-y-auto bg-surface-2">
+        <div className="thin-scroll flex-1 overflow-y-auto bg-white">
           {panelTab === 'layers' && (
             <LayersTab
               checkedLayers={checkedLayers}
@@ -8842,8 +8966,8 @@ export default function App() {
             />
           )}
           {panelTab === 'tolerance' && (
-            <div className="px-3 py-3">
-              <WorkedExampleTab view={workedView} setView={setWorkedView} />
+            <div className="px-4 py-4">
+              <WorkedExampleTab selected={tolSel} setSelected={setTolSel} />
             </div>
           )}
           {panelTab === 'help' && <HelpTab />}
@@ -8955,6 +9079,9 @@ export default function App() {
             />
           </div>
         </RightPanelShell>
+      )}
+      {rightPanelMode === 'tolerance' && (
+        <WorkedDetailPanel selected={tolSel} setSelected={setTolSel} view={workedView} setView={setWorkedView} />
       )}
       {rightPanelMode === 'blueprint' && activeBlueprint && (
         <BlueprintPanel

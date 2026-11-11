@@ -1,18 +1,14 @@
 # CoCS Climate Risk Tolerance Tool: style
 
-One style for the whole tool. It follows the editorial cartography
-tradition (newspaper and research data graphics) rather than app or
-dashboard templates: type does the work, colour encodes data, and nothing
-is decorative.
+One style for the whole tool, taken from the reference map dashboard the
+project agreed on (a zone-management GIS dashboard): white panels, bold
+small titles, rounded controls, chips for values, the map as the main show.
 
 ## Type
 
-- **Barlow** for text, labels and numbers: an open DIN-style grotesque,
-  the road-sign and map-label lineage. It reads as engineered rather than
-  editorial.
-- **Barlow Semi Condensed** for headings (panel titles, widget titles,
-  group labels), via `h1` or `.head`.
-- Weights 400, 500, 600. Headings 20px at most.
+- **Plus Jakarta Sans** for everything. Weights 400 text, 500 labels,
+  600 values, 700 titles.
+- Panel titles 20px bold; section titles 14px bold.
 - Numbers use tabular figures (`.num`) so columns line up.
 - Sentence case everywhere. No all-caps labels, no letter-spaced text.
 
@@ -20,58 +16,38 @@ is decorative.
 
 | Role | Value | Use |
 |---|---|---|
-| Page grey | `#F3F4F5` | Page behind widgets, secondary surfaces |
-| White | `#FFFFFF` | Panels and map cards |
-| Ink | `#1F2328` | Headings and primary text |
+| White | `#FFFFFF` | Panels and map cards (no grey page behind) |
+| Ink | `#16191D` | Titles, primary text, map tool buttons |
 | Ink 2 | `#3E454B` | Body text, values |
 | Ink 3 | `#596066` | Notes and units only |
-| Rule | `#D3D8DC` | Dividers; `#BEC5CA` for map card borders |
-| Rail | `#0B3D3B` | The navigation rail, the one block of solid colour in the frame |
-| Accent | `#0E6E6A` | Interactive elements only (links, selected states, checkboxes) |
+| Chip | `#F1F3F5` | Value chips, tab tracks |
+| Rule | `#E6E8EB` | Lines between sections and rows |
+| Rail | `#0B3D3B` | Navigation rail |
+| Accent | `#0E6E6A` | Interactive elements, selected states |
 
-Hazard colours encode data and are used the same way everywhere:
-flood blue `#1D4ED8`, heat red `#DC2626`, water `#0284C7`,
-social vulnerability amber `#B45309`, assets slate `#374151`.
-Risk ratings: Low `#15803D`, Moderate `#CA8A04`, High `#EA580C`,
-Extreme `#B91C1C`.
-
-Colour has three jobs and no others:
-
-1. **Frame:** the rail is solid council teal, so navigation reads apart
-   from content.
-2. **Data:** each theme keeps its map colour wherever it appears (icon,
-   "on" count, map symbol, chart). A filled chip in that colour means
-   "something of this theme is on the map now".
-3. **Action:** accent teal marks what can be clicked or is selected.
-
-No pale or translucent text, no frosted glass, no tinted backgrounds
-behind text, no coloured edge bars, no gradients.
+Colour has three jobs: the rail frames the app; each theme keeps its map
+colour wherever it appears (icons, "on" chips, map symbols, charts); accent
+teal marks what can be clicked. Risk ratings: Low `#15803D`, Moderate
+`#CA8A04`, High `#EA580C`, Extreme `#B91C1C`.
 
 ## Structure
 
-Modelled on ArcGIS Dashboards, the tool council GIS teams already use
-(Esri, "Author effective dashboards"): one theme, few custom colours,
-modular widgets, most important first, figures shown against a reference.
-
-- **Widgets:** each section is a white panel on the grey page, with a thin
-  title bar (12.5px semibold) and its content below. Related widgets sit
-  together; the most important comes first.
-- **Group labels:** outside widgets, a small semibold ink-2 label.
-- **Lists:** one line per row: icon on the left, name, then value, count
-  or chevron on the right. No second line of description under a row;
-  explanations go in a tooltip. Rows are separated by space, not rules,
-  and highlight grey on hover.
-- **Figures:** a label above a value, always with a reference (target,
-  total, or comparison) where one exists.
-- **Tabs:** a segmented control; the selected tab is white with a border.
-- **Chips:** risk ratings as solid colour chips with white text.
-- **Registers:** risk information as a register table (one row per risk),
-  each rating shown on the same Low to Extreme scale with the target
-  marked, a short status, and detail on demand (AS ISO 31000 council
-  practice).
-- **Controls:** checkboxes for anything on or off; one solid button per
-  view for the main action; everything else as text links.
-- **Corners:** square. Only checkboxes (1px) and round map symbols are rounded.
+- **Panels:** white. Sections are open blocks split by one thin
+  full-width line, each with a 14px bold title and an optional control on
+  the right. No boxed widgets.
+- **Rows:** one line: icon, name, then a value chip, count chip or chevron.
+  No second line of description; explanations go in tooltips.
+- **Chips:** values sit in small grey rounded chips (6px). Ratings and
+  "on" counts are solid colour chips with white text.
+- **Tabs:** a grey track with the selected tab as a white pill.
+- **Buttons:** small outlined buttons (6px) for actions in rows; one solid
+  accent button per view for the main action.
+- **Map cards:** white, 12px corners, a soft shadow, no border. Map tool
+  buttons (locate, zoom) are dark rounded squares. The locator has a dark
+  3px frame.
+- **Charts:** compact, with a dot legend underneath (Figure 10 radar on
+  the Tolerance tab).
+- **Corners:** 12px cards, 8–10px controls, 6px chips, 4px checkboxes.
 
 ## Punctuation and marks
 
@@ -79,9 +55,7 @@ modular widgets, most important first, figures shown against a reference.
   a new line. Breadcrumbs use a slash: "Assets / Whole LGA".
 - Ranges of numbers take an en dash ($0–180k, 0–14 days); ranges of words
   are written out ("Moderate to High").
-- No decorative dots or squares beside labels. Colour sits in the data mark
-  itself (map symbol, chart, legend swatch).
-- No drop shadows and no hover tints; hover changes the text colour.
+- Shadows only on floating map cards and the selected tab pill.
 
 ## Writing
 
