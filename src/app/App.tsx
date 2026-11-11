@@ -1200,7 +1200,7 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
       </button>
       <div className="min-w-0">
         <div className="text-xs text-ink-3">{parent}</div>
-        <div className="truncate text-[16px] font-bold leading-tight text-ink">{title}</div>
+        <div className="truncate text-[14px] font-semibold leading-tight text-ink">{title}</div>
       </div>
     </div>
   );
@@ -4029,7 +4029,7 @@ function RightPanelShell({
       <header className="flex items-start gap-2 border-b border-line px-4 py-3">
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-ink-3">{eyebrow}</div>
-          <div className="mt-0.5 text-[19px] font-bold leading-tight text-ink">{title}</div>
+          <div className="mt-0.5 text-[16px] font-semibold leading-tight text-ink">{title}</div>
         </div>
         {onClose && (
           <button
@@ -5071,11 +5071,11 @@ type WorkedView = 'area' | 'costs' | 'wider' | 'tolerance';
 function StepHeading({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
     <div className="mb-2.5 flex items-start gap-2.5">
-      <span className="w-4 shrink-0 text-[16px] font-bold leading-tight text-ink">
+      <span className="w-4 shrink-0 text-[14px] font-semibold leading-tight text-ink-3">
         {n}
       </span>
       <span className="min-w-0">
-        <span className="block text-[16px] font-bold leading-tight text-ink">{title}</span>
+        <span className="block text-[14px] font-semibold leading-tight text-ink">{title}</span>
         {hint && <span className="mt-0.5 block text-sm text-ink-3">{hint}</span>}
       </span>
     </div>
@@ -5476,131 +5476,6 @@ function RatingTag({ range }: { range: [string, string] }) {
 
 const SHORT_CAT = ['Financial', 'Core service', 'Legislative', 'Reputation', 'Our People', 'Environment', 'Community'];
 
-/** Report Figure 10, interactive: the assessed range per category (band)
- *  against Council's target (line), on Low to Extreme rings. Draws itself
- *  in on mount; hovering or selecting a category highlights its axis. */
-function ToleranceChart({
-  active,
-  onHover,
-  onSelect,
-}: {
-  active: number | null;
-  onHover: (i: number | null) => void;
-  onSelect: (i: number) => void;
-}) {
-  const cats = WORKED.categories;
-  const n = cats.length;
-  const size = 320;
-  const c = size / 2;
-  const R = 104;
-  const ang = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
-  const pt = (i: number, level: number): [number, number] => [c + (Math.cos(ang(i)) * R * level) / 4, c + (Math.sin(ang(i)) * R * level) / 4];
-  const path = (vals: number[]) =>
-    vals.map((v, i) => pt(i, v)).map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ') + ' Z';
-  const hi = cats.map((k) => levelOf(k.assessed[1]));
-  const lo = cats.map((k) => levelOf(k.assessed[0]));
-  const target = cats.map((k) => levelOf(k.target));
-  const grow: React.CSSProperties = { transformOrigin: `${c}px ${c}px`, transformBox: 'view-box' };
-
-  return (
-    <svg viewBox={`0 0 ${size} ${size}`} className="w-full" role="img" aria-label="Assessed risk range against Council target by category">
-      {[1, 2, 3, 4].map((l) => (
-        <path
-          key={l}
-          d={path(Array(n).fill(l))}
-          fill={l === 4 ? '#FAFBFB' : 'none'}
-          stroke="#DFE3E6"
-          strokeWidth={0.8}
-          className="tol-fade"
-          style={{ animationDelay: `${l * 60}ms` }}
-        />
-      ))}
-      {cats.map((_, i) => {
-        const [x, y] = pt(i, 4);
-        const on = active === i;
-        return (
-          <line
-            key={i}
-            x1={c}
-            y1={c}
-            x2={x}
-            y2={y}
-            stroke={on ? '#1F2328' : '#E6E9EB'}
-            strokeWidth={on ? 1.4 : 0.8}
-            style={{ transition: 'stroke 160ms, stroke-width 160ms' }}
-          />
-        );
-      })}
-      {RISK_LEVELS.map((l, k) => (
-        <text key={l} x={c + 3} y={c - (R * (k + 1)) / 4 + 9} fontSize="7.5" fill="#8A9197" className="tol-fade" style={{ animationDelay: '200ms' }}>
-          {l}
-        </text>
-      ))}
-      {/* Assessed range: grows out from the centre. */}
-      <g className="tol-grow" style={{ ...grow, animationDelay: '250ms' }}>
-        <path d={`${path(hi)} ${path(lo)}`} fill="#EA580C" fillOpacity={0.18} fillRule="evenodd" />
-        <path d={path(hi)} fill="none" stroke="#EA580C" strokeWidth={1.3} strokeDasharray="3 2" />
-        <path d={path(lo)} fill="none" stroke="#EA580C" strokeWidth={1} strokeDasharray="1.5 2" />
-      </g>
-      {/* Council target: draws itself round. */}
-      <path d={path(target)} fill="none" stroke="#1F2328" strokeWidth={2} pathLength={1} className="tol-draw" style={{ animationDelay: '650ms' }} />
-      {target.map((v, i) => {
-        const [x, y] = pt(i, v);
-        return (
-          <circle
-            key={i}
-            cx={x}
-            cy={y}
-            r={active === i ? 4.2 : 3}
-            fill="#1F2328"
-            stroke="#fff"
-            strokeWidth={1.2}
-            className="tol-pop"
-            style={{ animationDelay: `${1150 + i * 60}ms`, transition: 'r 160ms', ...{ transformOrigin: `${x}px ${y}px`, transformBox: 'view-box' } }}
-          />
-        );
-      })}
-      {SHORT_CAT.map((s, i) => {
-        const [x, y] = pt(i, 4.7);
-        const on = active === i;
-        const st = toleranceStatus(cats[i]);
-        return (
-          <g
-            key={s}
-            onMouseEnter={() => onHover(i)}
-            onMouseLeave={() => onHover(null)}
-            onClick={() => onSelect(i)}
-            className="cursor-pointer"
-          >
-            <circle cx={x} cy={y} r={20} fill="transparent" />
-            <text
-              x={x}
-              y={y - 4}
-              fontSize="9"
-              fontWeight={on ? 700 : 500}
-              textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
-              dominantBaseline="middle"
-              fill={on ? '#1F2328' : '#3D444A'}
-            >
-              {s}
-            </text>
-            <text
-              x={x}
-              y={y + 7}
-              fontSize="7.5"
-              textAnchor={Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end'}
-              dominantBaseline="middle"
-              fill={st.color}
-            >
-              {st.label === 'Within target' ? 'within' : st.label === 'Above target' ? 'above' : 'partly above'}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="mt-1 space-y-0.5">
@@ -5674,91 +5549,148 @@ function DamageBars({ rows }: { rows: { id: string; name: string; damage: string
 }
 
 /** The Risk tolerance rail tab: the framework report's Section 4 worked
- *  example, chart first, then the evidence behind it. */
+ *  example as a risk register, one row per consequence category. */
 function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: WorkedView) => void }) {
   const { sel: scenarioSel } = React.useContext(ScenarioContext);
   const r = tqehReading();
-  const [hover, setHover] = useState<number | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const statuses = WORKED.categories.map(toleranceStatus);
   const count = (l: string) => statuses.filter((s) => s.label === l).length;
   const s = WORKED.scenario;
-  const active = hover ?? selected;
-  const sel = selected !== null ? WORKED.categories[selected] : null;
+
+  const n = WORKED.categories.length;
+  const summary: [number, string, string][] = [
+    [count('Above target'), 'Above target', RISK_COLOR.Extreme],
+    [count('Upper range above target'), 'Partly above target', RISK_COLOR.High],
+    [count('Within target'), 'Within target', RISK_COLOR.Low],
+  ];
+  const shortStatus = (l: string) => (l === 'Above target' ? 'Above' : l === 'Within target' ? 'Within' : 'Partly above');
+  const cols = 'grid grid-cols-[minmax(0,1fr)_176px_72px_12px] items-center gap-2';
 
   return (
     <div>
-      <div className="text-xs font-semibold" style={{ color: '#0E6E6A' }}>Risk tolerance: worked example</div>
-      <div className="mt-0.5 text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
-      <div className="mt-0.5 text-sm text-ink-3">
-        {s.event}, likelihood {s.likelihood} (assumed), {s.climate.toLowerCase()}
-      </div>
-      <div className="num mt-2 flex flex-wrap gap-x-3 border-y border-line py-1.5 text-sm">
-        <span style={{ color: '#B91C1C' }}>{count('Above target')} above target</span>
-        <span style={{ color: '#C2410C' }}>{count('Upper range above target')} partly above</span>
-        <span style={{ color: '#15803D' }}>{count('Within target')} within</span>
-        <span className="text-ink-3">of {WORKED.categories.length} categories</span>
-      </div>
+      <p className="text-sm leading-[1.45] text-ink-2">
+        {s.event}, likelihood {s.likelihood} (assumed), {s.climate.toLowerCase()}.
+      </p>
 
-      <section className="mt-4">
-        <ToleranceChart active={active} onHover={setHover} onSelect={(i) => setSelected(selected === i ? null : i)} />
-        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2">
-          <span className="flex items-center gap-1.5">
-            <span className="h-[8px] w-[14px]" style={{ background: 'rgba(234,88,12,0.25)', borderTop: '1px dashed #EA580C' }} />
-            Assessed range
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-[2px] w-[14px] bg-ink" />
-            Council target
-          </span>
-          <span className="text-ink-3">Click a category for its detail</span>
-        </div>
-      </section>
+      <div className="mt-3">
+        <Section title="Summary">
+          <div className="grid grid-cols-3 divide-x divide-line">
+            {summary.map(([v, l], k) => (
+              <div key={l} className={k ? 'pl-3' : ''}>
+                <div className="num text-[20px] font-semibold leading-none text-ink">{v}</div>
+                <div className="mt-1 text-xs text-ink-3">{l}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 flex h-[6px]">
+            {summary.map(([v, l, c], k) =>
+              v ? (
+                <span
+                  key={l}
+                  className="tol-bar border-r border-white last:border-r-0"
+                  style={{ width: `${(v / n) * 100}%`, background: c, animationDelay: `${k * 120}ms` }}
+                />
+              ) : null,
+            )}
+          </div>
+          <p className="mt-1.5 text-xs text-ink-3">Assessed rating against Council's target, {n} consequence categories</p>
+        </Section>
 
-      {/* Categories: click to open the evidence behind each rating. */}
-      <section className="mt-4 divide-y divide-line border-y border-line">
-        {WORKED.categories.map((c, i) => {
-          const st = statuses[i];
-          const open = selected === i;
-          return (
-            <div key={c.name} className="tol-rise" style={{ animationDelay: `${300 + i * 55}ms` }}>
-              <button
-                onMouseEnter={() => setHover(i)}
-                onMouseLeave={() => setHover(null)}
-                onClick={() => setSelected(open ? null : i)}
-                aria-expanded={open}
-                className={`flex w-full items-center gap-3 px-1 py-2 text-left transition-colors ${active === i ? 'bg-surface-2' : ''}`}
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-base font-medium text-ink">{c.name}</span>
-                  <span className="block text-sm text-ink-3">
-                    Target {c.target}, {c.basis === 'quantitative' ? 'quantified' : 'indicative'}
-                  </span>
-                </span>
-                <span className="shrink-0 text-right">
-                  <RatingTag range={c.assessed} />
-                  <span className="block text-xs font-medium" style={{ color: st.color }}>
-                    {st.label}
-                  </span>
-                </span>
-                <IconChevron size={12} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-              </button>
-              {open && sel && (
-                <div className="fade-up px-1 pb-3 pl-4">
-                  <div className="text-sm font-semibold text-ink-2">Evidence</div>
-                  <Bullets items={sel.evidence} />
-                  <div className="mt-2 border-l-2 border-[#9BC48A] bg-[#E3F2DC] px-2.5 py-2 text-sm leading-[1.45] text-[#26401F]">
-                    <span className="font-semibold">Council tolerance: </span>
-                    {sel.tolerance}
-                  </div>
-                </div>
-              )}
+        <Section title="Consequence categories" right={<span className="text-xs text-ink-3">Section 4</span>}>
+          <div role="table">
+            <div role="row" className={`${cols} border-b border-line pb-1 text-2xs text-ink-3`}>
+              <span>Category</span>
+              <span className="grid grid-cols-4 text-center">
+                {RISK_LEVELS.map((l) => (
+                  <span key={l}>{l}</span>
+                ))}
+              </span>
+              <span>Status</span>
+              <span />
             </div>
-          );
-        })}
-      </section>
+            {WORKED.categories.map((c, i) => {
+              const st = statuses[i];
+              const open = selected === i;
+              const lo = levelOf(c.assessed[0]);
+              const hi = levelOf(c.assessed[1]);
+              const t = levelOf(c.target);
+              return (
+                <div key={c.name} role="row" className="border-b border-line last:border-b-0">
+                  <button
+                    onClick={() => setSelected(open ? null : i)}
+                    aria-expanded={open}
+                    className={`${cols} group w-full py-2 text-left`}
+                  >
+                    <span className={`truncate text-base text-ink group-hover:text-accent ${open ? 'font-semibold' : ''}`}>{SHORT_CAT[i]}</span>
+                    <span className="relative block h-[14px]" aria-label={`Assessed ${c.assessed[0]} to ${c.assessed[1]}, target ${c.target}`}>
+                      <span className="absolute inset-0 grid grid-cols-4">
+                        {RISK_LEVELS.map((l) => (
+                          <span key={l} className="border-r border-white bg-[#EEF0F1] last:border-r-0" />
+                        ))}
+                      </span>
+                      <span
+                        className="tol-bar absolute inset-y-0 flex"
+                        style={{ left: `${(lo - 1) * 25}%`, width: `${(hi - lo + 1) * 25}%`, animationDelay: `${200 + i * 60}ms` }}
+                      >
+                        {RISK_LEVELS.slice(lo - 1, hi).map((l) => (
+                          <span key={l} className="flex-1 border-r border-white last:border-r-0" style={{ background: RISK_COLOR[l] }} />
+                        ))}
+                      </span>
+                      <span
+                        className="tol-fade absolute -bottom-[3px] -top-[3px] w-[2px] bg-ink"
+                        style={{ left: `calc(${t * 25}% - 1px)`, animationDelay: `${700 + i * 60}ms` }}
+                      />
+                    </span>
+                    <span className="text-sm text-ink-2">{shortStatus(st.label)}</span>
+                    <IconChevron size={12} className={`text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+                  </button>
+                  {open && (
+                    <div className="fade-up pb-3">
+                      <div className="text-sm font-semibold text-ink">{c.name}</div>
+                      <dl className="mt-1.5 grid grid-cols-[72px_1fr] gap-y-0.5 text-sm">
+                        <dt className="text-ink-3">Appetite</dt>
+                        <dd className="text-ink">{c.appetite}</dd>
+                        <dt className="text-ink-3">Target</dt>
+                        <dd className="text-ink">{c.target}</dd>
+                        <dt className="text-ink-3">Assessed</dt>
+                        <dd className="text-ink">
+                          {c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`}
+                        </dd>
+                        <dt className="text-ink-3">Status</dt>
+                        <dd className="text-ink">{st.label}</dd>
+                        <dt className="text-ink-3">Basis</dt>
+                        <dd className="text-ink">{c.basis === 'quantitative' ? 'Quantitative' : 'Proxy'}</dd>
+                      </dl>
+                      <div className="mt-2 text-sm font-semibold text-ink-2">Evidence</div>
+                      <Bullets items={c.evidence} />
+                      <div className="mt-2 border-l-2 border-[#9BC48A] bg-[#E3F2DC] px-2.5 py-2 text-sm leading-[1.45] text-[#26401F]">
+                        <span className="font-semibold">Council tolerance: </span>
+                        {c.tolerance}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-2 text-xs text-ink-3">
+            <span className="flex items-center gap-1.5">
+              <span className="flex h-[8px] w-[16px]">
+                <span className="flex-1" style={{ background: RISK_COLOR.Moderate }} />
+                <span className="flex-1" style={{ background: RISK_COLOR.High }} />
+              </span>
+              Assessed range
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-[12px] w-[2px] bg-ink" />
+              Council target
+            </span>
+          </div>
+        </Section>
+      </div>
 
-      <div className="mt-6">
+      <div className="mt-5">
         <TabStrip
           value={view}
           onChange={setView}
@@ -8974,7 +8906,7 @@ export default function App() {
       >
         <header className="flex items-start justify-between gap-2 border-b border-line px-2.5 py-2">
           <div className="min-w-0">
-            <div className="text-[20px] font-bold leading-tight text-ink">{meta.title}</div>
+            <div className="text-[16px] font-semibold leading-tight text-ink">{meta.title}</div>
             <div className="mt-[2px] text-sm leading-tight text-ink-3">{meta.subtitle}</div>
           </div>
           <button
@@ -9053,7 +8985,7 @@ export default function App() {
             />
           )}
           {panelTab === 'tolerance' && (
-            <div className="px-3 py-4">
+            <div className="px-3 py-3">
               <WorkedExampleTab view={workedView} setView={setWorkedView} />
             </div>
           )}

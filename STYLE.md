@@ -9,7 +9,8 @@ is decorative.
 
 - **Libre Franklin** (the open-source Franklin Gothic) for everything:
   headings, text, labels and numbers. No second family.
-- Weights: 400 text, 500 labels, 700 headings and key figures.
+- Weights: 400 text, 500 labels, 600 headings and key figures. No bold
+  (700) display type; headings stay at 16px or below.
 - Numbers use tabular figures (`.num`) so columns line up.
 - Sentence case everywhere. No all-caps labels, no letter-spaced text.
 
@@ -50,6 +51,10 @@ modular widgets, most important first, figures shown against a reference.
   total, or comparison) where one exists.
 - **Tabs:** a segmented control; the selected tab is white with a border.
 - **Chips:** risk ratings as solid colour chips with white text.
+- **Registers:** risk information as a register table (one row per risk),
+  each rating shown on the same Low to Extreme scale with the target
+  marked, a short status, and detail on demand (AS ISO 31000 council
+  practice).
 - **Controls:** checkboxes for anything on or off; one solid button per
   view for the main action; everything else as text links.
 - **Corners:** 4px (3px on checkboxes, 8px on the map locator frame).
