@@ -2926,7 +2926,6 @@ function LayersTab({
   // under the first at the same weight. withViewTransition gives the
   // step an actual crossfade, the same pattern Assets' own drill-downs
   // already use, rather than two sections just appearing at once.
-  const [activeTab, setActiveTab] = useState<LayersSection | null>(null);
   const [displayOpen, setDisplayOpen] = useState(false);
   const CATEGORY_ICON: Record<LayerGroup, (p: IconProps) => React.ReactElement> = {
     hazard: IconHazard,
@@ -2935,7 +2934,6 @@ function LayersTab({
     infrastructure: IconAssets,
     planning: IconBounds,
   };
-  const selectTab = (v: LayersSection | null) => withViewTransition(() => setActiveTab(v));
 
   const allCategories: { value: LayersSection; label: string; color: string; on: number; total: number }[] = [
     {
@@ -2981,49 +2979,28 @@ function LayersTab({
   const categories = allCategories.filter((c) => c.total > 0);
 
   const renderLayerList = (g: LayerGroup) => {
-    // A heading here, not just the category card above, so which group
-    // is showing stays clear once you've scrolled past the card grid.
-    const heading = (
-      <div className="px-3 pt-2">
-        <PanelHeading>{GROUP_LABEL[g]}</PanelHeading>
-      </div>
-    );
     if (g === 'planning') {
       return (
-        <div className="pb-1.5">
-          {heading}
-          <div className="mx-3 overflow-hidden rounded-[8px] border border-dashed border-line">
-            <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <span className="h-[12px] w-[12px] shrink-0 rounded-[8px] bg-[#A7D9C2] opacity-60" />
-              <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
-              <span className="text-xs text-ink-3">Not supplied yet</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5 rounded-[8px] border border-dashed border-line px-3 py-2.5">
+          <span className="h-[12px] w-[12px] shrink-0 rounded-[4px] bg-[#A7D9C2]" />
+          <span className="flex-1 truncate text-base text-ink-2">Development Zones</span>
+          <span className="text-xs text-ink-3">Not supplied yet</span>
         </div>
       );
     }
     const layers = visibleLayers.filter((l) => l.group === g);
     return (
-      <div className="pb-1.5">
-        {heading}
-        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[8px] border border-line">
+      <div className="divide-y divide-line border-y border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
           return (
-            <div
-              key={l.id}
-              className="bg-white px-3 py-2.5"
-            >
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => toggleLayer(l.id)}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
-                  aria-pressed={checked}
-                >
+            <div key={l.id}>
+              <div className="flex items-center gap-2.5 px-1 py-2">
+                <button onClick={() => toggleLayer(l.id)} className="flex min-w-0 flex-1 items-center gap-2.5 text-left hover:text-accent" aria-pressed={checked}>
                   <LayerGlyph l={l} />
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-lg ${checked ? 'font-medium text-ink' : 'text-ink-2'}`}>{l.name}</span>
+                    <span className={`block truncate text-base ${checked ? 'font-medium text-ink' : 'text-ink-2'}`}>{l.name}</span>
                     {l.id === 'stormwater-pipes' && (
                       <span className="mt-1 block">
                         <PipeKey compact />
@@ -3036,15 +3013,13 @@ function LayersTab({
                     <IconInfo size={14} />
                   </span>
                 </Tip>
-                <button
-                  onClick={() => toggleLayer(l.id)}
-                  aria-label={`${checked ? 'Turn off' : 'Turn on'} ${l.name}`}
-                >
+                <button onClick={() => toggleLayer(l.id)} aria-label={`${checked ? 'Turn off' : 'Turn on'} ${l.name}`}>
                   <Switch on={checked} />
                 </button>
               </div>
               {checked && (
-                <div className="fade-up mt-2 flex items-center gap-2.5 pl-[24px]">
+                <label className="fade-up flex items-center gap-2.5 px-1 pb-2">
+                  <span className="w-[18px] shrink-0" />
                   <span className="text-xs text-ink-3">Opacity</span>
                   <input
                     type="range"
@@ -3052,108 +3027,77 @@ function LayersTab({
                     max={100}
                     value={Math.round(op * 100)}
                     onChange={(e) => setLayerOpacity(l.id, Number(e.target.value) / 100)}
-                    className="h-3 flex-1"
+                    aria-label={`${l.name} opacity`}
+                    className="min-w-0 flex-1"
                   />
-                  <span className="num w-[32px] text-right text-xs text-ink-3">{Math.round(op * 100)}%</span>
-                </div>
+                  <span className="num w-9 shrink-0 text-right text-xs text-ink-3">{Math.round(op * 100)}%</span>
+                </label>
               )}
             </div>
           );
         })}
-        </div>
       </div>
     );
   };
 
   return (
     <div className="flex min-h-full flex-col">
-      {/* Two sections, one divider between them. Inside each, hierarchy
-          comes from structure rather than lines: Blueprints are rows you
-          apply, categories are tiles you open, and an open category shows
-          its layers as a tray of switch rows. */}
-
-      <div className="pt-4">
-        <div className="px-3">
-          <PanelHeading>Blueprints</PanelHeading>
-        </div>
-        <div className="space-y-0.5 px-1.5">
-          {BLUEPRINTS.map((b) => {
-            const on = activeBlueprint === b.id;
-            const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
-            return (
-              <button
-                key={b.id}
-                onClick={() => applyBlueprint(b.id)}
-                aria-pressed={on}
-                title={`${b.layers.length} layers`}
-                className={`group flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
-              >
-                <span className="flex w-5 shrink-0 justify-center" style={{ color: b.accent }}>
-                  <Icon size={16} />
-                </span>
-                <span className={`min-w-0 flex-1 truncate text-lg text-ink ${on ? 'font-semibold' : ''}`}>{b.title}</span>
-                <span
-                  className={`shrink-0 rounded-[6px] border px-2.5 py-[3px] text-sm font-semibold ${on ? 'border-transparent text-white' : 'border-line text-ink group-hover:border-accent group-hover:text-accent'}`}
-                  style={on ? { background: b.accent } : undefined}
+      <div className="flex-1 px-3 py-4">
+        <Section title="Blueprints" meta={BLUEPRINTS.length}>
+          <div className="-mx-1.5 space-y-0.5">
+            {BLUEPRINTS.map((b) => {
+              const on = activeBlueprint === b.id;
+              const Icon = b.id === 'heat' ? IconHeat : b.id === 'flood' ? IconFlood : IconTransport;
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => applyBlueprint(b.id)}
+                  aria-pressed={on}
+                  title={`${b.layers.length} layers`}
+                  className={`group flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 >
-                  {on ? 'Applied' : 'Apply'}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex-1 pb-4 pt-5" style={{ viewTransitionName: 'layers-category-step' } as React.CSSProperties}>
-        {activeTab === null ? (
-          <>
-            <div className="px-3">
-              <PanelHeading>Browse layers</PanelHeading>
-            </div>
-            <div className="space-y-px px-1.5">
-              {categories.map((c) => {
-                const Icon = CATEGORY_ICON[c.value];
-                const pending = c.value === 'planning';
-                return (
-                  <button
-                    key={c.value}
-                    onClick={() => selectTab(c.value)}
-                    className="flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-[7px] text-left hover:bg-surface-2"
+                  <span className="flex w-5 shrink-0 justify-center" style={{ color: b.accent }}>
+                    <Icon size={16} />
+                  </span>
+                  <span className={`min-w-0 flex-1 truncate text-base text-ink ${on ? 'font-semibold' : ''}`}>{b.title}</span>
+                  <span
+                    className={`shrink-0 rounded-[6px] border px-2.5 py-[3px] text-sm font-semibold ${on ? 'border-transparent text-white' : 'border-line text-ink group-hover:border-accent group-hover:text-accent'}`}
+                    style={on ? { background: b.accent } : undefined}
                   >
-                    <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
-                      <Icon size={16} />
-                    </span>
-                    <span className={`min-w-0 flex-1 truncate text-lg ${pending ? 'text-ink-3' : 'text-ink'}`}>{c.label}</span>
-                    {pending ? (
-                      <span className="shrink-0 text-sm text-ink-3">Not supplied</span>
-                    ) : c.on > 0 ? (
-                      <span className="num shrink-0 rounded-[6px] px-2 py-[2px] text-sm font-semibold text-white" style={{ background: c.color }}>
-                        {c.on} of {c.total} on
-                      </span>
-                    ) : (
-                      <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-sm text-ink-2">{c.total}</span>
-                    )}
-                    <IconChevron size={12} className="shrink-0 text-ink-2" />
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          <div>
-            <div className="mb-2.5 flex items-center gap-2 px-3">
-              <button
-                onClick={() => selectTab(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-[8px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
-                aria-label="Back to all layer categories"
-              >
-                <IconChevron size={14} className="rotate-180" />
-              </button>
-              <span className="text-sm text-ink-3">Browse layers</span>
-            </div>
-            {renderLayerList(activeTab)}
+                    {on ? 'Applied' : 'Apply'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </Section>
+
+        {categories.map((c) => {
+          const Icon = CATEGORY_ICON[c.value];
+          return (
+            <Section
+              key={c.value}
+              title={c.label}
+              icon={
+                <span className="shrink-0" style={{ color: c.color }}>
+                  <Icon size={15} />
+                </span>
+              }
+              meta={
+                c.value === 'planning' ? 'not supplied' : c.on > 0 ? (
+                  <span className="font-semibold" style={{ color: c.color }}>
+                    {c.on} of {c.total} on
+                  </span>
+                ) : (
+                  c.total
+                )
+              }
+              defaultOpen={c.on > 0}
+            >
+              {renderLayerList(c.value)}
+            </Section>
+          );
+        })}
       </div>
 
       {/* What's on and how strongly it shows, together, docked at the
@@ -3796,7 +3740,8 @@ function PlaceTab({
         <Figure label="Insured value" value={formatMoney(insured)} />
       </FigureStrip>
 
-      <Section title="Indexes" right={<span className="text-sm text-ink-3">Rank of 8 suburbs</span>}>
+      <div className="mt-3" />
+      <Section title="Indexes" meta="rank of 8">
         <dl className="divide-y divide-line">
           {INDEXES.map((def) => {
             const row = rankSuburbs(def, scenario).find((r) => r.s.id === s.id)!;
@@ -3815,13 +3760,12 @@ function PlaceTab({
         </dl>
       </Section>
 
-      <section className="mt-6">
-        <PanelHeading>Buildings</PanelHeading>
+      <Section title="Buildings" meta={buildings.length}>
         {buildings.length === 0 ? (
           <p className="text-base text-ink-3">No register buildings are mapped inside this SA2.</p>
         ) : (
           <>
-            <div className="flex gap-4 border-b border-line" role="tablist">
+            <div className="flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1" role="tablist">
               {PLACE_FILTERS.map((f) => {
                 const on = active === f.id;
                 const n = counts[f.id];
@@ -3835,7 +3779,7 @@ function PlaceTab({
                       setFilter(f.id);
                       setShowAll(false);
                     }}
-                    className={`-mb-px whitespace-nowrap border-b-2 pb-2 text-base transition-colors disabled:cursor-default disabled:opacity-40 ${on ? 'border-accent font-semibold text-ink' : 'border-transparent text-ink-3 hover:text-ink'}`}
+                    className={`flex-1 whitespace-nowrap rounded-[8px] px-2 py-1.5 text-base transition-colors disabled:cursor-default disabled:text-ink-3 ${on ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(16,24,40,0.12)]' : 'text-ink-2 hover:text-ink'}`}
                   >
                     {f.label} <span className="num font-normal text-ink-3">{n}</span>
                   </button>
@@ -3871,7 +3815,7 @@ function PlaceTab({
             )}
           </>
         )}
-      </section>
+      </Section>
     </div>
   );
 }
@@ -5076,7 +5020,7 @@ function CaseControls({
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
   const setCount = WORKED.categories.filter((c) => sheet[c.name]?.notes?.trim()).length;
   const group = (ids: CaseLayer[], color?: string) => (
-    <div>
+    <div className="divide-y divide-line border-y border-line">
       {ids.map((id) => (
         <CaseSwitchRow
           key={id}
@@ -5098,7 +5042,6 @@ function CaseControls({
     </div>
   );
   const linkBtn = 'flex-1 rounded-[8px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-accent hover:text-accent';
-  const countOn = (ids: CaseLayer[]) => ids.filter((id) => show.has(id)).length;
   const onCount = [...show].filter((id) => id !== 'focus').length;
 
   return (
@@ -5144,23 +5087,17 @@ function CaseControls({
         </Section>
 
         <Section title="On the map" meta={`${onCount} on`} tour="case-layers">
-          <div className="space-y-1.5">
-            <SubGroup title="Worked example sites" on={countOn(['sitesB', 'sitesS'])} total={2} defaultOpen>
-              {group(['sitesB', 'sitesS'])}
-            </SubGroup>
-            <SubGroup title="Flood" on={countOn(['flood100', 'flood20', 'flood5'])} total={3} color={HAZARD_COLOR.flood}>
-              {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
-            </SubGroup>
-            <SubGroup title="Heat" on={countOn(['heat4', 'heat3', 'heat2'])} total={3} color={HAZARD_COLOR.heat}>
-              {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
-            </SubGroup>
-            <SubGroup title="Assets and infrastructure" on={countOn(['roads', 'pipes', 'buildings'])} total={3} color={HAZARD_COLOR.assets}>
-              {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
-            </SubGroup>
-            <SubGroup title="Measurements" on={countOn(['lines'])} total={1}>
-              {group(['lines'])}
-            </SubGroup>
-          </div>
+          <div className="mb-1 text-sm font-semibold text-ink-2">Worked example sites</div>
+          {group(['sitesB', 'sitesS'])}
+          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Hazards</div>
+          {groupLabel('Flood', HAZARD_COLOR.flood, true)}
+          {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
+          {groupLabel('Heat', HAZARD_COLOR.heat)}
+          {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
+          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
+          {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
+          <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
+          {group(['lines'])}
         </Section>
 
         <Section title="Report" tour="case-report-steps">
@@ -5799,7 +5736,7 @@ function TqehTab({
       <p className="text-base text-ink-2">
         Woodville South{r.suburb ? `, ${r.suburb.name} SA2` : ''}, State hospital (non-council asset)
       </p>
-      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
+      <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-2">
         <Glance
           color={HAZARD_COLOR.flood}
           label="Flood"
@@ -5858,7 +5795,7 @@ function TqehTab({
 
 function Glance({ label, value, sub, color }: { label: string; value: string; sub: string; color?: string }) {
   return (
-    <div className="bg-white px-1 py-2.5">
+    <div className="rounded-[10px] bg-[#F6F7F9] px-3 py-2.5">
       <div className="text-sm font-medium" style={{ color: color ?? '#7F868C' }}>
         {label}
       </div>
@@ -7375,7 +7312,7 @@ function FactRow({ label, value }: { label: string; value: React.ReactNode }) {
 /** One headline figure in a two-up strip. */
 function Figure({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
-    <div className="min-w-0 px-3">
+    <div className="min-w-0 rounded-[10px] bg-[#F6F7F9] px-3 py-2.5">
       <div className="text-sm text-ink-3">{label}</div>
       <div className="num mt-1 truncate text-stat font-semibold leading-none text-ink">{value}</div>
       {sub && <div className="num mt-1 text-sm text-ink-3">{sub}</div>}
@@ -7384,7 +7321,7 @@ function Figure({ label, value, sub }: { label: string; value: React.ReactNode; 
 }
 
 function FigureStrip({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">{children}</div>;
+  return <div className="mb-1 grid grid-cols-2 gap-2">{children}</div>;
 }
 
 /** A labelled count with a bar against the largest count in its group. */
@@ -7415,7 +7352,9 @@ function Section({
   meta,
   defaultOpen = true,
   tour,
+  icon,
 }: {
+  icon?: React.ReactNode;
   title: string;
   right?: React.ReactNode;
   children: React.ReactNode;
@@ -7436,6 +7375,7 @@ function Section({
       <div className="flex items-center gap-2">
         <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="group flex min-w-0 flex-1 items-center gap-2 py-0.5 text-left">
           <IconChevron size={11} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+          {icon}
           <span className="truncate text-[13.5px] font-bold text-ink group-hover:text-accent">{title}</span>
           {meta !== undefined && <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-xs font-medium text-ink-2">{meta}</span>}
         </button>
@@ -7446,27 +7386,6 @@ function Section({
   );
 }
 
-/** A folded group inside a section (e.g. Flood within "On the map"): its
- *  name and how many of its items are on. Opens by itself when any are. */
-function SubGroup({ title, on, total, color, defaultOpen = false, children }: { title: string; on: number; total: number; color?: string; defaultOpen?: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen || on > 0);
-  return (
-    <div className="rounded-[8px] bg-[#F8F9FA] px-2.5">
-      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center gap-2 py-2 text-left">
-        <span className="min-w-0 flex-1 truncate text-base font-semibold text-ink">{title}</span>
-        {on > 0 ? (
-          <span className="num shrink-0 rounded-[6px] px-1.5 py-[1px] text-xs font-semibold text-white" style={{ background: color ?? ACCENT }}>
-            {on} on
-          </span>
-        ) : (
-          <span className="num shrink-0 text-xs text-ink-3">{total}</span>
-        )}
-        <IconChevron size={11} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
-      </button>
-      {open && <div className="fade-up pb-1.5">{children}</div>}
-    </div>
-  );
-}
 
 /** One building as one line: name, type and place, insured value, and
  *  the flood and heat bands it sits in. Opens the full profile on the
@@ -7943,8 +7862,9 @@ function RealBuildingsRegister({
       {/* Home: one Overview section (scope picker + its headline), then
           one Explore section of tiles. Sub-views replace both and lead
           with their own back bar. */}
-      <div className="mb-6">
-        <PanelHeading
+      <div>
+        <Section
+          title="Overview"
           right={
             <select
               value={ward ?? ''}
@@ -7964,9 +7884,7 @@ function RealBuildingsRegister({
             </select>
           }
         >
-          Overview
-        </PanelHeading>
-        <div className="grid grid-cols-2 divide-x divide-line rounded-[8px] border border-line py-3">
+        <div className="grid grid-cols-2 gap-2 [&>div]:rounded-[10px] [&>div]:bg-[#F6F7F9] [&>div]:py-2.5">
           <div className="px-3">
             <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
@@ -7982,17 +7900,17 @@ function RealBuildingsRegister({
             </div>
           </div>
         </div>
-      </div>
+        </Section>
 
-            <PanelHeading
+            <Section
+              title="Explore the register"
+              meta={4}
               right={
                 <Tip label="How this reads" body={BUILDINGS_REGISTER_EXPLAINER} side="left">
                   <span className="cursor-help text-sm text-ink-3 underline decoration-dotted">how read</span>
                 </Tip>
               }
             >
-              Explore the register
-            </PanelHeading>
             <div className="-mx-1.5 space-y-px">
               {(
                 [
@@ -8050,6 +7968,8 @@ function RealBuildingsRegister({
                 );
               })}
             </div>
+            </Section>
+      </div>
           </>
         )}
 

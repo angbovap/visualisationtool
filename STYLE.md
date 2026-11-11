@@ -42,9 +42,12 @@ teal marks what can be clicked. Risk ratings: Low `#15803D`, Moderate
   alphabet, time, category, hierarchy). Layers and case layers are grouped
   by category; suburbs are ranked by the chosen measure, with no second
   alphabetical copy of the same list.
-- **Sub-groups** (e.g. Flood within "On the map") are folded light-grey
-  blocks showing how many of their items are on; they open by themselves
-  when any are.
+- **Inside a section,** related rows are listed under small labels (e.g.
+  Hazards, then Flood and Heat in their hazard colours), all visible.
+- **Layer categories** are sections with their category icon and colour;
+  the chip shows the layer count, or "2 of 6 on" in the category colour.
+- **Figures** (counts, values, headline readings) are grey tiles, two or
+  three to a row.
 
 ## Structure
 
