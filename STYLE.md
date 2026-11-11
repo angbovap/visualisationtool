@@ -30,6 +30,22 @@ colour wherever it appears (icons, "on" chips, map symbols, charts); accent
 teal marks what can be clicked. Risk ratings: Low `#15803D`, Moderate
 `#CA8A04`, High `#EA580C`, Extreme `#B91C1C`.
 
+## Organising information
+
+- **Overview first, details on demand** (Shneiderman). Every panel opens
+  on its summary; detail is a click away, never all on screen at once.
+- **Progressive disclosure** (Nielsen Norman Group). Each panel is a stack
+  of collapsible sections: chevron, bold title, a count or value chip.
+  Overview sections start open, secondary ones (notes, sources, context)
+  start folded.
+- **One organising principle per list** (Wurman, LATCH: location,
+  alphabet, time, category, hierarchy). Layers and case layers are grouped
+  by category; suburbs are ranked by the chosen measure, with no second
+  alphabetical copy of the same list.
+- **Sub-groups** (e.g. Flood within "On the map") are folded light-grey
+  blocks showing how many of their items are on; they open by themselves
+  when any are.
+
 ## Structure
 
 - **Panels:** white. Sections are open blocks split by one thin

@@ -3726,7 +3726,7 @@ function PlaceTab({
   if (!selectedId || !SUBURB_BY_ID[selectedId]) {
     return (
       <div className="px-3 py-4">
-        <Section title="Compare suburbs">
+        <Section title="Suburbs" meta="ranked">
           <IndexPicker value={indexId} onChange={setIndexId} />
           {scenario.scenario !== 'today' && (
             <p className="mt-2 text-sm font-medium text-[#92400E]">
@@ -3757,32 +3757,12 @@ function PlaceTab({
                 <span className="num w-10 shrink-0 text-right text-base font-medium text-ink">
                   {r.v === null ? 'n/a' : def.format(r.v)}
                 </span>
+                <IconChevron size={11} className="shrink-0 text-ink-3" />
               </button>
             ));
           })()}
         </Section>
 
-        <section className="mt-6">
-        <PanelHeading>Suburbs</PanelHeading>
-        <div className="divide-y divide-line border-y border-line">
-          {SUBURBS.map((s) => {
-            const bs = REAL_BUILDINGS_BY_SUBURB[s.id] ?? [];
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSelectedId(s.id)}
-                className="flex w-full items-center gap-3 px-1 py-2 text-left hover:text-accent"
-              >
-                <span className="min-w-0 flex-1 truncate text-base font-medium text-ink">{s.name}</span>
-                <span className="num shrink-0 text-right text-xs text-ink-3">
-                  {bs.length} buildings, {bs.filter(inFlood).length} in flood
-                </span>
-                <IconChevron size={12} className="shrink-0 text-ink-3" />
-              </button>
-            );
-          })}
-        </div>
-        </section>
       </div>
     );
   }
@@ -4253,7 +4233,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
             ) : null}
           </Section>
         )}
-        <Section title="Catchments in this layer">
+        <Section title="Catchments in this layer" defaultOpen={false}>
           <p className="text-base leading-[1.55] text-ink-2">{floodCatchments(layer.id).join(', ')}</p>
         </Section>
       </>
@@ -4310,7 +4290,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
     const bCounts = cats.map((c) => MAPPED_BUILDINGS.filter((b) => profiles.get(b.id)!.density?.category === c).length);
     return (
       <>
-        <Section title="SA1s by density">
+        <Section title="SA1s by density" defaultOpen={false}>
           {cats.map((c, i) => (
             <BarRow key={c} label={c} n={sa1Counts[i]} max={Math.max(...sa1Counts)} color={DWELLING_DENSITY_COLOR[c]} />
           ))}
@@ -4334,7 +4314,7 @@ function LayerFindings({ layer, onOpenBuilding }: { layer: LayerDef; onOpenBuild
     const rows = FLOOD_LAYER_IDS.map((id) => ({ id, km: inFlood[FLOOD_RETURN_PERIOD_BY_LAYER[id]] }));
     return (
       <>
-        <Section title="What the colours mean">
+        <Section title="What the colours mean" defaultOpen={false}>
           <PipeKey />
           <p className="mt-1.5 text-sm text-ink-3">Where a pipe is in more than one extent, it shows the most frequent.</p>
         </Section>
@@ -5096,9 +5076,7 @@ function CaseControls({
   const sheet = typeof window === 'undefined' ? {} : loadTolerance();
   const setCount = WORKED.categories.filter((c) => sheet[c.name]?.notes?.trim()).length;
   const group = (ids: CaseLayer[], color?: string) => (
-    <div
-      className="divide-y divide-line border-y border-line"
-    >
+    <div>
       {ids.map((id) => (
         <CaseSwitchRow
           key={id}
@@ -5119,7 +5097,9 @@ function CaseControls({
       {text}
     </div>
   );
-  const linkBtn = 'flex-1 rounded-[8px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
+  const linkBtn = 'flex-1 rounded-[8px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-accent hover:text-accent';
+  const countOn = (ids: CaseLayer[]) => ids.filter((id) => show.has(id)).length;
+  const onCount = [...show].filter((id) => id !== 'focus').length;
 
   return (
     <div className="px-3 py-4">
@@ -5138,90 +5118,84 @@ function CaseControls({
         </Tip>
       </div>
 
-      <section className="mt-6" data-tour="case-area">
-        <StepHeading n={1} title="Set the area" />
-        <div className="flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1">
-          {TQEH_AREA_OPTIONS.map((m) => (
-            <button
-              key={m}
-              onClick={() => setRadius(m)}
-              aria-pressed={radius === m}
-              className={`num flex-1 rounded-[8px] px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(16,24,40,0.12)]' : 'text-ink-2 hover:text-ink'}`}
-            >
-              {m < 1000 ? `${m} m` : `${m / 1000} km`}
+      <div className="mt-4">
+        <Section title="Area" meta={radius < 1000 ? `${radius} m` : `${radius / 1000} km`} tour="case-area">
+          <div className="flex gap-1 rounded-[10px] bg-[#F1F3F5] p-1">
+            {TQEH_AREA_OPTIONS.map((m) => (
+              <button
+                key={m}
+                onClick={() => setRadius(m)}
+                aria-pressed={radius === m}
+                className={`num flex-1 rounded-[8px] px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-white font-semibold text-ink shadow-[0_1px_3px_rgba(16,24,40,0.12)]' : 'text-ink-2 hover:text-ink'}`}
+              >
+                {m < 1000 ? `${m} m` : `${m / 1000} km`}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => toggle('focus')}
+            aria-pressed={show.has('focus')}
+            className="mt-1.5 flex w-full items-center gap-2.5 px-1 py-1.5 text-left hover:text-accent"
+          >
+            <IconFocus size={16} className="shrink-0 text-ink-2" />
+            <span className={`min-w-0 flex-1 text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
+            <Switch on={show.has('focus')} />
+          </button>
+        </Section>
+
+        <Section title="On the map" meta={`${onCount} on`} tour="case-layers">
+          <div className="space-y-1.5">
+            <SubGroup title="Worked example sites" on={countOn(['sitesB', 'sitesS'])} total={2} defaultOpen>
+              {group(['sitesB', 'sitesS'])}
+            </SubGroup>
+            <SubGroup title="Flood" on={countOn(['flood100', 'flood20', 'flood5'])} total={3} color={HAZARD_COLOR.flood}>
+              {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
+            </SubGroup>
+            <SubGroup title="Heat" on={countOn(['heat4', 'heat3', 'heat2'])} total={3} color={HAZARD_COLOR.heat}>
+              {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
+            </SubGroup>
+            <SubGroup title="Assets and infrastructure" on={countOn(['roads', 'pipes', 'buildings'])} total={3} color={HAZARD_COLOR.assets}>
+              {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
+            </SubGroup>
+            <SubGroup title="Measurements" on={countOn(['lines'])} total={1}>
+              {group(['lines'])}
+            </SubGroup>
+          </div>
+        </Section>
+
+        <Section title="Report" tour="case-report-steps">
+          <div className="flex gap-1.5">
+            <button onClick={() => setView('hazard')} className={linkBtn}>
+              Hazard
             </button>
-          ))}
-        </div>
-        <button
-          onClick={() => toggle('focus')}
-          aria-pressed={show.has('focus')}
-          className="mt-1 flex w-full items-center gap-2.5 border-b border-line px-1 py-2 text-left hover:text-accent"
-        >
-          <IconFocus size={16} className="shrink-0 text-ink-2" />
-          <span className="min-w-0 flex-1">
-            <span className={`block text-base ${show.has('focus') ? 'font-medium text-ink' : 'text-ink-2'}`}>Focus on this area</span>
-          </span>
-          <Switch on={show.has('focus')} />
-        </button>
-      </section>
-
-      <section className="mt-6" data-tour="case-layers">
-        <StepHeading n={2} title="Choose what's on the map" />
-        <div className="mb-1 text-sm font-semibold text-ink-2">Worked example sites</div>
-        {group(['sitesB', 'sitesS'])}
-        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Hazards</div>
-        {groupLabel('Flood', HAZARD_COLOR.flood, true)}
-        {group(['flood100', 'flood20', 'flood5'], HAZARD_COLOR.flood)}
-        {groupLabel('Heat', HAZARD_COLOR.heat)}
-        {group(['heat4', 'heat3', 'heat2'], HAZARD_COLOR.heat)}
-        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Assets and infrastructure</div>
-        {group(['roads', 'pipes', 'buildings'], HAZARD_COLOR.assets)}
-        <div className="mb-1 mt-3 text-sm font-semibold text-ink-2">Measurements</div>
-        {group(['lines'])}
-      </section>
-
-      <section className="mt-6" data-tour="case-report-steps">
-        <StepHeading n={3} title="Read the report" />
-        <div className="flex gap-1.5">
-          <button onClick={() => setView('hazard')} className={linkBtn}>
-            Hazard
+            <button onClick={() => setView('assets')} className={linkBtn}>
+              Assets
+            </button>
+          </div>
+          <button onClick={onOpenWorked} className={`${linkBtn} mt-1.5 flex w-full items-center justify-between gap-2 text-left`}>
+            Risk tolerance worked example
+            <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-xs text-ink-2">
+              notes {setCount}/{WORKED.categories.length}
+            </span>
           </button>
-          <button onClick={() => setView('assets')} className={linkBtn}>
-            Assets
+          <button
+            onClick={() => downloadTqehReport(r, scenarioSel)}
+            className="mt-1.5 w-full rounded-[8px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
+          >
+            Download report
           </button>
-        </div>
-      </section>
+        </Section>
 
-      <section className="mt-6">
-        <StepHeading n={4} title="Risk tolerance" hint={`Notes on ${setCount} of ${WORKED.categories.length} categories`} />
-        <button onClick={onOpenWorked} className={`${linkBtn} w-full`}>
-          Open the worked example
-        </button>
-      </section>
-
-      <section className="mt-6">
-        <StepHeading n={5} title="Download" />
-        <button
-          onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="w-full rounded-[8px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
-        >
-          Download report
-        </button>
-      </section>
-
-      <details className="group mt-6 border-t border-line pt-3">
-        <summary className="flex cursor-pointer list-none items-center justify-between text-base font-medium text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
-          About the site
-          <IconChevron size={13} className="transition-transform group-open:rotate-90" />
-        </summary>
-        <dl className="mt-1 divide-y divide-line">
-          <FactRow label="Address" value="Woodville Road, Woodville South" />
-          {r.suburb && <FactRow label="SA2" value={r.suburb.name} />}
-          <FactRow label="Grounds" value={`${siteHectares().toFixed(1)} ha`} />
-          <FactRow label="Operator" value="State health service, not a council asset" />
-          <FactRow label="Outline" value="OpenStreetMap (amenity=hospital)" />
-        </dl>
-      </details>
+        <Section title="About the site" defaultOpen={false}>
+          <dl className="divide-y divide-line">
+            <FactRow label="Address" value="Woodville Road, Woodville South" />
+            {r.suburb && <FactRow label="SA2" value={r.suburb.name} />}
+            <FactRow label="Grounds" value={`${siteHectares().toFixed(1)} ha`} />
+            <FactRow label="Operator" value="State health service, not a council asset" />
+            <FactRow label="Outline" value="OpenStreetMap (amenity=hospital)" />
+          </dl>
+        </Section>
+      </div>
     </div>
   );
 }
@@ -5277,14 +5251,14 @@ const CASE_TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="case-area"]',
     placement: 'right',
-    title: '1. Set the area',
+    title: 'Area',
     body: 'Pick how far around the hospital to look: 400 m, 600 m or 1 km. The map fits to it, and Focus fades everything outside.',
   },
   {
     selector: '[data-tour="case-layers"]',
     placement: 'right',
-    title: "2. Choose what's on the map",
-    body: 'Hazards first: flood extents and UHI categories 4, 3 and 2. Then assets and infrastructure (roads, pipes, council buildings), then the distance lines.',
+    title: 'On the map',
+    body: 'Grouped by theme: worked example sites, flood, heat, assets and infrastructure, measurements. Each group shows how many of its layers are on; open it to switch them.',
   },
   {
     selector: '[data-tour="map"]',
@@ -5541,7 +5515,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
       </p>
 
       <div className="mt-4">
-        <Section title="Summary" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">{n} categories</span>}>
+        <Section title="Summary" meta={`${n} categories`}>
           <div className="grid grid-cols-3 gap-2">
             {summary.map(([v, l, c]) => (
               <div key={l} className="rounded-[10px] bg-[#F6F7F9] px-3 py-2.5">
@@ -5554,7 +5528,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
           </div>
         </Section>
 
-        <Section title="Assessed against target" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">Figure 10</span>}>
+        <Section title="Assessed against target" meta="Figure 10">
           <ToleranceChart active={active} onHover={setHover} onSelect={pick} />
           <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-ink-2">
             <span className="flex items-center gap-1.5">
@@ -5573,7 +5547,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
           <p className="mt-1.5 text-center text-xs text-ink-3">Rings run from Low at the centre to Extreme at the edge.</p>
         </Section>
 
-        <Section title="Consequence categories" right={<span className="rounded-[6px] bg-[#F1F3F5] px-2 py-[2px] text-xs text-ink-2">Section 4</span>}>
+        <Section title="Consequence categories" meta="Section 4">
           <div role="table">
             <div role="row" className={`${cols} pb-1.5 text-2xs font-medium text-ink-3`}>
               <span>Category</span>
@@ -5942,7 +5916,7 @@ function TqehHazard({
         </dl>
       </Section>
 
-      <Section title="Water" color={HAZARD_COLOR.water}>
+      <Section title="Water" color={HAZARD_COLOR.water} defaultOpen={false}>
         <dl className="divide-y divide-line">
           <FactRow label="Nearest" value={`${formatMetres(r.waterM)} to a ${r.waterKind}`} />
         </dl>
@@ -6006,7 +5980,7 @@ function TqehAssets({
   const dist = (m: number) => <span className="num shrink-0 pt-[1px] text-base font-medium text-ink">{formatMetres(m)}</span>;
   return (
     <>
-      <Section title="Access" color={HAZARD_COLOR.assets}>
+      <Section title="Access" color={HAZARD_COLOR.assets} defaultOpen={false}>
         <dl className="divide-y divide-line">
           <FactRow label="Train station" value={formatMetres(r.stationM)} />
           <FactRow label="Railway" value={formatMetres(r.railM)} />
@@ -6020,7 +5994,7 @@ function TqehAssets({
         </dl>
       </Section>
 
-      <Section title="Stormwater" color={HAZARD_COLOR.assets}>
+      <Section title="Stormwater" color={HAZARD_COLOR.assets} defaultOpen={false}>
         <dl className="divide-y divide-line">
           <FactRow label="In the grounds" value={`${Math.round(r.pipeInSiteM)} m of pipe`} />
           <FactRow label="In flood extent" value={`${Math.round(r.pipeInSiteFloodM)} m in the 1 in 100 extent`} />
@@ -6029,7 +6003,7 @@ function TqehAssets({
         <p className="mt-1.5 text-sm text-ink-3">Pipe diameter and capacity not supplied.</p>
       </Section>
 
-      <Section title="Waiting on council">
+      <Section title="Waiting on council" defaultOpen={false}>
         <dl className="divide-y divide-line">
           <FactRow label="Local streets" value={<span className="text-ink-2">Council's full road register</span>} />
           <FactRow label="Stormwater" value={<span className="text-ink-2">Pipe sizes, pits and hydraulics</span>} />
@@ -6408,14 +6382,14 @@ function ProbePanel({
           <p className="mt-1.5 text-sm text-ink-3">Flood extents are long-term runs.</p>
         </Section>
 
-        <Section title="The place">
+        <Section title="The place" defaultOpen={false}>
           <dl className="divide-y divide-line">
             <FactRow label="Suburb (SA2)" value={r.suburb ? r.suburb.name : 'None'} />
             <FactRow label="Dwelling density" value={r.density ? `${r.density.category} (Density 21: ${r.density.value})` : 'No value'} />
           </dl>
         </Section>
 
-        <Section title="Nearest assets" color={HAZARD_COLOR.assets}>
+        <Section title="Nearest assets" color={HAZARD_COLOR.assets} defaultOpen={false}>
           <dl className="divide-y divide-line">
             {r.road && (
               <FactRow label="Major road" value={`${r.road.name}, ${formatMetres(r.road.m)}${r.road.roles.length ? ` (${r.road.roles[0].toLowerCase()})` : ''}`} />
@@ -7438,24 +7412,59 @@ function Section({
   right,
   children,
   color,
+  meta,
+  defaultOpen = true,
+  tour,
 }: {
   title: string;
   right?: React.ReactNode;
   children: React.ReactNode;
   color?: string;
+  /** A count or value shown as a chip beside the title. */
+  meta?: React.ReactNode;
+  /** Overview sections start open; secondary ones start folded. */
+  defaultOpen?: boolean;
+  tour?: string;
 }) {
-  // A dashboard widget (as in ArcGIS Dashboards): white panel on the grey
-  // page, its own title bar, content below. `color` is kept for callers
-  // but not drawn: colour belongs in the data marks.
+  // The one grouping unit in every panel (overview first, details on
+  // demand): a line above, a chevron, the title, a chip. `color` is kept
+  // for callers but not drawn: colour belongs in the data marks.
   void color;
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <section className="mt-4 border-t border-line pt-4 first:mt-0 first:border-t-0 first:pt-0">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="text-[14px] font-bold text-ink">{title}</span>
+    <section data-tour={tour} className="mt-3 border-t border-line pt-3 first:mt-0 first:border-t-0 first:pt-0">
+      <div className="flex items-center gap-2">
+        <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="group flex min-w-0 flex-1 items-center gap-2 py-0.5 text-left">
+          <IconChevron size={11} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+          <span className="truncate text-[13.5px] font-bold text-ink group-hover:text-accent">{title}</span>
+          {meta !== undefined && <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-xs font-medium text-ink-2">{meta}</span>}
+        </button>
         {right}
       </div>
-      {children}
+      {open && <div className="fade-up mt-2.5">{children}</div>}
     </section>
+  );
+}
+
+/** A folded group inside a section (e.g. Flood within "On the map"): its
+ *  name and how many of its items are on. Opens by itself when any are. */
+function SubGroup({ title, on, total, color, defaultOpen = false, children }: { title: string; on: number; total: number; color?: string; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen || on > 0);
+  return (
+    <div className="rounded-[8px] bg-[#F8F9FA] px-2.5">
+      <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full items-center gap-2 py-2 text-left">
+        <span className="min-w-0 flex-1 truncate text-base font-semibold text-ink">{title}</span>
+        {on > 0 ? (
+          <span className="num shrink-0 rounded-[6px] px-1.5 py-[1px] text-xs font-semibold text-white" style={{ background: color ?? ACCENT }}>
+            {on} on
+          </span>
+        ) : (
+          <span className="num shrink-0 text-xs text-ink-3">{total}</span>
+        )}
+        <IconChevron size={11} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && <div className="fade-up pb-1.5">{children}</div>}
+    </div>
   );
 }
 
@@ -8916,7 +8925,7 @@ export default function App() {
         className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[400px]' : 'w-80'}`}
       >
         <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <h1 className="min-w-0 truncate text-[20px] font-bold leading-tight text-ink">{meta.title}</h1>
+          <h1 className="min-w-0 truncate text-[18px] font-bold leading-tight text-ink">{meta.title}</h1>
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
