@@ -5330,7 +5330,7 @@ const damageHi = (d: string) => {
 function DamageBars({ rows }: { rows: { id: string; name: string; damage: string; time: string; depth: string }[] }) {
   const max = Math.max(...rows.map((r) => damageHi(r.damage)));
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-3">
       {rows.map((r, i) => (
         <div key={r.id} className="tol-rise" style={{ animationDelay: `${i * 50}ms` }}>
           <div className="flex items-baseline justify-between gap-3">
@@ -5340,13 +5340,13 @@ function DamageBars({ rows }: { rows: { id: string; name: string; damage: string
             </span>
             <span className="num shrink-0 text-base font-semibold text-ink">{r.damage}</span>
           </div>
-          <div className="mt-1.5 h-[10px] overflow-hidden rounded-full bg-[#EEF0F2]">
+          <div className="mt-1 h-[6px] overflow-hidden rounded-full bg-[#EEF0F2]">
             <div
               className="tol-bar h-full rounded-full"
               style={{ width: `${max ? (damageHi(r.damage) / max) * 100 : 0}%`, background: HAZARD_COLOR.flood, animationDelay: `${150 + i * 50}ms` }}
             />
           </div>
-          <div className="num mt-0.5 text-xs text-ink-3">
+          <div className="num mt-1 text-2xs text-ink-3">
             Depth {r.depth}, back in {r.time}
           </div>
         </div>
@@ -5447,8 +5447,8 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
   return (
     <div>
       <div>
-        <Section title="Summary" meta={`${n} categories`}>
-          <div className="flex h-[18px] gap-[3px]">
+        <Section title="Summary" meta={`${n} categories`} flush>
+          <div className="flex h-[16px] gap-[3px]">
             {summary.map(([v, l, c], k) =>
               v ? (
                 <span
@@ -5465,13 +5465,13 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
             {summary.map(([v, l, c]) => (
               <span key={l} className="flex items-center gap-1.5 text-xs text-ink-2">
                 <span className="h-[8px] w-[8px] rounded-full" style={{ background: c }} />
-                {l} <span className="num font-semibold text-ink">{v}</span>
+                {l}
               </span>
             ))}
           </div>
         </Section>
 
-        <Section title="Assessed against target" meta="Figure 10">
+        <Section title="Assessed against target" meta="Figure 10" flush>
           <ToleranceChart active={active} onHover={setHover} onSelect={pick} />
           <div className="mt-1 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-ink-2">
             <span className="flex items-center gap-1.5">
@@ -5490,7 +5490,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
           <p className="mt-1.5 text-center text-xs text-ink-3">Rings run from Low at the centre to Extreme at the edge.</p>
         </Section>
 
-        <Section title="Consequence categories" meta="Section 4">
+        <Section title="Consequence categories" meta="Section 4" flush>
           <div role="table">
             <div role="row" className={`${cols} pb-1.5 text-2xs font-medium text-ink-3`}>
               <span>Category</span>
@@ -5534,7 +5534,8 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
                     />
                   </span>
                   <span className="text-right">
-                    <span className="inline-block whitespace-nowrap rounded-[6px] px-2 py-[2px] text-xs font-semibold text-white" style={{ background: st.color }}>
+                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium text-ink-2">
+                      <span className="h-[7px] w-[7px] rounded-full" style={{ background: st.color }} />
                       {st.label === 'Above target' ? 'Above' : st.label === 'Within target' ? 'Within' : 'Partly above'}
                     </span>
                   </span>
@@ -5591,8 +5592,9 @@ function WorkedDetailPanel({
   return (
     <RightPanelShell accent={ACCENT} eyebrow="Worked example, Section 4" title="The Queen Elizabeth Hospital" width="w-[360px]">
       <div className="px-4 py-4">
+        {c && st ? (
         <Section
-          title={c ? c.name : 'Category'}
+          title={c.name}
           right={
             c ? (
               <button onClick={() => setSelected(null)} className="shrink-0 rounded-[6px] border border-line px-2 py-[2px] text-xs font-semibold text-ink-2 hover:border-accent hover:text-accent">
@@ -5601,7 +5603,7 @@ function WorkedDetailPanel({
             ) : undefined
           }
         >
-          {c && st ? (
+          {(
             <div key={c.name} className="fade-up">
               <span className="inline-block rounded-[6px] px-2 py-[2px] text-xs font-semibold text-white" style={{ background: st.color }}>
                 {st.label}
@@ -5621,12 +5623,13 @@ function WorkedDetailPanel({
                 {c.tolerance}
               </div>
             </div>
-          ) : (
-            <p className="text-base leading-[1.5] text-ink-2">Choose a category on the chart or in the list to see its evidence and Council's tolerance statement.</p>
           )}
         </Section>
+        ) : (
+          <p className="text-xs leading-[1.5] text-ink-3">Pick a category on the chart or in the list for its evidence and Council's tolerance statement.</p>
+        )}
 
-        <div className="mt-5">
+        <div className="mt-4">
           <TabStrip
             value={view}
             onChange={setView}
@@ -5786,14 +5789,14 @@ function TqehTab({
         <TqehAssets r={r} showLayers={showLayers} onOpenBuilding={onOpenBuilding} onOpenBuildings={onOpenBuildings} />
       )}
 
-      <div data-tour="case-download" className="mt-8 flex items-center justify-between gap-3 border-t border-line pt-3">
-        <span className="text-sm text-ink-3">Site readings and worked example</span>
+      <div data-tour="case-download" className="mt-6">
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-[8px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="w-full rounded-[8px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
         >
           Download report
         </button>
+        <p className="mt-1.5 text-center text-2xs text-ink-3">Site readings and the worked example</p>
       </div>
     </div>
   );
@@ -7359,7 +7362,10 @@ function Section({
   defaultOpen = true,
   tour,
   icon,
+  flush = false,
 }: {
+  /** Charts and tables use the full width instead of sitting indented. */
+  flush?: boolean;
   icon?: React.ReactNode;
   title: string;
   right?: React.ReactNode;
@@ -7387,7 +7393,7 @@ function Section({
         </button>
         {right}
       </div>
-      {open && <div className="fade-up mt-2.5">{children}</div>}
+      {open && <div className={`fade-up mt-2.5 ${flush ? '' : 'pl-[19px]'}`}>{children}</div>}
     </section>
   );
 }
@@ -8068,35 +8074,35 @@ function RealBuildingsRegister({
 
             <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
               {listScope === null && (
-                <div className="space-y-1">
+                <div className="-mx-1.5">
                   <button
                     onClick={() => selectListScope('all')}
-                    className="flex w-full items-center justify-between rounded-[8px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                    className="flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
                   >
-                    <span className="text-sm font-medium text-ink">
-                      All {scoped.length} buildings
-                    </span>
-                    <span className="num text-2xs text-ink-3">
-                      ${(totalInsured / 1e6).toFixed(1)}M
-                    </span>
+                    <span className="min-w-0 flex-1 truncate text-base font-semibold text-ink">All buildings</span>
+                    <span className="num shrink-0 text-sm text-ink-2">{scoped.length}</span>
+                    <span className="num shrink-0 rounded-[6px] bg-[#F1F3F5] px-1.5 py-[1px] text-2xs text-ink-3">${(totalInsured / 1e6).toFixed(1)}M</span>
+                    <IconChevron size={11} className="shrink-0 text-ink-3" />
                   </button>
-                  <div className="flex flex-wrap gap-1 pt-0.5">
-                    {scopedTree.map((use) => {
-                      const isUnclassified = use.key === UNCLASSIFIED;
-                      return (
-                        <button
-                          key={use.key}
-                          onClick={() => selectListScope(use.key)}
-                          className="flex items-center gap-1 rounded-[8px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
-                        >
-                          <span className="text-sm font-medium text-ink">
-                            {isUnclassified ? 'Not yet classified' : use.label}
-                          </span>
-                          <span className="num text-2xs text-ink-3">{use.count}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <div className="mb-1 mt-3 px-1.5 text-xs font-semibold text-ink-3">By use</div>
+                  {scopedTree.map((use) => {
+                    const isUnclassified = use.key === UNCLASSIFIED;
+                    const most = Math.max(...scopedTree.map((u) => u.count));
+                    return (
+                      <button
+                        key={use.key}
+                        onClick={() => selectListScope(use.key)}
+                        className="flex w-full items-center gap-2.5 rounded-[8px] px-1.5 py-1.5 text-left transition-colors hover:bg-surface-2"
+                      >
+                        <span className="w-[148px] shrink-0 truncate text-base text-ink">{isUnclassified ? 'Not yet classified' : use.label}</span>
+                        <span className="h-[6px] min-w-0 flex-1 overflow-hidden rounded-full bg-[#EEF0F2]">
+                          <span className="block h-full rounded-full bg-accent" style={{ width: `${(use.count / most) * 100}%` }} />
+                        </span>
+                        <span className="num w-8 shrink-0 text-right text-sm text-ink-2">{use.count}</span>
+                        <IconChevron size={11} className="shrink-0 text-ink-3" />
+                      </button>
+                    );
+                  })}
                 </div>
               )}
 
