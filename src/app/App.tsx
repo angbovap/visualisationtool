@@ -1360,7 +1360,6 @@ function MapView(props: MapViewProps) {
   // The map controls card can fold down to one button when it's in the way.
   const [controlsOpen, setControlsOpen] = useState(true);
   // Which hazard the scenario dock is set to.
-  const [dockHazard, setDockHazard] = useState<'flood' | 'heat'>('flood');
   const { sel: scenario, set: setScenario } = React.useContext(ScenarioContext);
   const { w: priorityW } = React.useContext(PriorityContext);
   const { by: roadBy } = React.useContext(RoadColourContext);
@@ -2390,110 +2389,11 @@ function MapView(props: MapViewProps) {
       </div>
       )}
 
-      {/* Scenario dock: a flood or heat scenario to play out, what it
-          reaches, and the speculative climate scenario when one is on. */}
-      {/* In a case study the left panel picks the hazards, so only the
-          speculative scenario row shows here; with neither, no dock. */}
-      {(!hideHazards || scenario.scenario !== 'today') && (
-      <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
+      {/* The speculative climate scenario, when one is picked in Map settings. */}
+      {scenario.scenario !== 'today' && (
+      <div className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
         <div className="rounded-[4px] bg-white border border-[#CDD2D6]">
-          {!hideHazards && (
-          <>
-          <div className="flex items-center gap-3 px-3 py-2">
-            {/* Which hazard to play out. */}
-            <div className="flex shrink-0 gap-3 border-r border-line pr-3" role="tablist" aria-label="Hazard">
-              {(
-                [
-                  ['flood', 'Flood'],
-                  ['heat', 'Heat'],
-                ] as const
-              ).map(([id, label]) => {
-                const on = dockHazard === id;
-                return (
-                  <button
-                    key={id}
-                    role="tab"
-                    aria-selected={on}
-                    onClick={() => setDockHazard(id)}
-                    className={`-mb-px border-b-2 pb-0.5 text-sm transition-colors ${on ? 'font-semibold' : 'border-transparent text-ink-3 hover:text-ink'}`}
-                    style={on ? { borderColor: HAZARD_COLOR[id], color: HAZARD_COLOR[id] } : undefined}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex flex-1 gap-1" role="radiogroup" aria-label={dockHazard === 'flood' ? 'Flood event' : 'Heat category'}>
-              {(dockHazard === 'flood'
-                ? ([{ id: 'none', label: 'Off' }, ...FLOOD_EVENTS] as { id: string; label: string }[])
-                : ([{ id: 'none', label: 'Off' }, ...HEAT_EVENTS] as { id: string; label: string }[])
-              ).map((o) => {
-                const on = dockHazard === 'flood' ? floodEvent === o.id : heatEvent === o.id;
-                return (
-                  <button
-                    key={o.id}
-                    role="radio"
-                    aria-checked={on}
-                    onClick={() => {
-                      // One hazard scenario on the map at a time.
-                      if (dockHazard === 'flood') {
-                        setFloodEvent(o.id as FloodEvent);
-                        if (o.id !== 'none') setHeatEvent('none');
-                      } else {
-                        setHeatEvent(o.id as HeatEvent);
-                        if (o.id !== 'none') setFloodEvent('none');
-                      }
-                    }}
-                    className={`num flex-1 whitespace-nowrap rounded-[4px] border px-1.5 py-1 text-sm transition-colors ${on ? 'font-semibold text-white' : 'border-line text-ink-2 hover:border-ink-3'}`}
-                    style={on ? (o.id === 'none' ? { background: '#1F2328', borderColor: '#1F2328' } : { background: HAZARD_COLOR[dockHazard], borderColor: HAZARD_COLOR[dockHazard] }) : undefined}
-                  >
-                    {o.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {(() => {
-            let cells: [string, string, string][] | null = null;
-            let note = '';
-            if (floodEvent !== 'none') {
-              const v = eventView(floodEvent);
-              cells = [
-                ['Buildings', String(v.buildings.length), formatMoney(v.insured)],
-                ['Major roads', `${v.roadKm.toFixed(1)} km`, 'inside'],
-                ['Pipes', `${Math.round(v.pipeKm)} km`, 'inside'],
-                ['Council area', pct(v.areaShare), 'covered'],
-              ];
-              note = `Flood ${FLOOD_EVENTS.find((x) => x.id === floodEvent)!.label}. ${EVENT_COVERAGE[floodEvent]}`;
-            } else if (heatEvent !== 'none') {
-              const v = heatView(heatEvent);
-              cells = [
-                ['Buildings', String(v.buildings.length), formatMoney(v.insured)],
-                ['Area', `${v.areaKm2.toFixed(2)} km²`, `${v.cells.length} cells`],
-                ['Average SVI', v.sviAvg.toFixed(2), 'of these cells'],
-                ['Of heat grid', pct(v.gridKm2 ? v.areaKm2 / v.gridKm2 : 0), 'by area'],
-              ];
-              note = `UHI category ${heatEvent}. The heat grid covers about ${v.gridKm2.toFixed(1)} km² of the council's ${LGA_BOUNDARY.areaSqKm.toFixed(0)} km², so areas outside it read as no data, not as cool.`;
-            }
-            if (!cells) return null;
-            return (
-              <>
-                <div className="grid grid-cols-4 divide-x divide-line border-t border-line">
-                  {cells.map(([k, val, sub]) => (
-                    <div key={k} className="px-3 py-1.5">
-                      <div className="text-xs text-ink-3">{k}</div>
-                      <div className="num text-lg font-semibold leading-tight text-ink">{val}</div>
-                      <div className="num text-xs text-ink-3">{sub}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="border-t border-line px-3 py-1 text-xs leading-[1.45] text-ink-3">{note}</div>
-              </>
-            );
-          })()}
-          </>
-          )}
-          {scenario.scenario !== 'today' && (
+          {(
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold text-[#92400E]">Speculative scenario: {scenarioName(scenario)}</span>
@@ -8189,12 +8089,6 @@ const TOUR_STEPS: TourStep[] = [
     placement: 'top',
     title: 'Explore the map',
     body: 'Click a suburb for its buildings, or a building dot for its profile. The legend in the bottom left explains whatever is on.',
-  },
-  {
-    selector: '[data-tour="flood-dock"]',
-    placement: 'top',
-    title: 'Try a flood event',
-    body: 'Pick 1 in 100, 1 in 20 or 1 in 5 to see that flood and what it reaches: council buildings, roads, pipes and the share of the council area.',
   },
   {
     selector: '[data-tour="map-settings"]',
