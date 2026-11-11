@@ -36,16 +36,23 @@ coloured edge bars, no gradients.
 
 ## Structure
 
-- **Section headings:** a short ink rule above a bold heading (as a
-  newspaper section), not boxes or bands.
+Modelled on ArcGIS Dashboards, the tool council GIS teams already use
+(Esri, "Author effective dashboards"): one theme, few custom colours,
+modular widgets, most important first, figures shown against a reference.
+
+- **Widgets:** each section is a white panel on the grey page, with a thin
+  title bar (12.5px semibold) and its content below. Related widgets sit
+  together; the most important comes first.
+- **Group labels:** outside widgets, a small semibold ink-2 label.
 - **Lists:** rows divided by thin rules. Icon (if any) on the left, label,
-  then value or chevron on the right. No cards, no icon-on-top tiles.
-- **Figures:** a label above a value; values in Franklin bold, tabular.
-- **Controls:** checkboxes for anything on or off (as in desktop GIS
-  layer lists); one solid ink button per view for the main action;
-  everything else as text links.
-- **Corners:** square (2px at most on controls). **Shadows:** none, except
-  a faint one where a card floats over the map.
+  then value or chevron on the right. No icon-on-top tiles.
+- **Figures:** a label above a value, always with a reference (target,
+  total, or comparison) where one exists.
+- **Tabs:** a segmented control; the selected tab is white with a border.
+- **Chips:** risk ratings as solid colour chips with white text.
+- **Controls:** checkboxes for anything on or off; one solid button per
+  view for the main action; everything else as text links.
+- **Corners:** 4px (3px on checkboxes, 8px on the map locator frame).
 
 ## Punctuation and marks
 
