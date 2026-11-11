@@ -5434,7 +5434,6 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
   const [hover, setHover] = useState<number | null>(null);
   const statuses = WORKED.categories.map(toleranceStatus);
   const count = (l: string) => statuses.filter((x) => x.label === l).length;
-  const s = WORKED.scenario;
   const n = WORKED.categories.length;
   const active = hover ?? selected;
   const pick = (i: number) => setSelected(selected === i ? null : i);
@@ -5447,11 +5446,7 @@ function WorkedExampleTab({ selected, setSelected }: { selected: number | null; 
 
   return (
     <div>
-      <p className="text-sm leading-[1.5] text-ink-2">
-        {s.event}, likelihood {s.likelihood} (assumed), {s.climate.toLowerCase()}.
-      </p>
-
-      <div className="mt-4">
+      <div>
         <Section title="Summary" meta={`${n} categories`}>
           <div className="grid grid-cols-3 gap-2">
             {summary.map(([v, l, c]) => (
