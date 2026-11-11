@@ -1002,7 +1002,7 @@ function Tip({
           <span
             ref={tipRef}
             role="tooltip"
-            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[2px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3] shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[2px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3]"
             style={{ left: xy?.x ?? 0, top: xy?.y ?? 0, visibility: xy ? 'visible' : 'hidden' }}
           >
             <span className="mb-1 block text-base font-semibold text-white">{label}</span>
@@ -1040,7 +1040,7 @@ function Accordion({
     <div className="border-b border-line last:border-b-0">
       <button
         onClick={onToggle}
-        className="flex w-full items-center gap-1.5 px-2.5 py-2 text-left transition-colors hover:bg-surface-2"
+        className="flex w-full items-center gap-1.5 px-2.5 py-2 text-left transition-colors hover:text-accent"
       >
         <IconChevron
           size={14}
@@ -1226,7 +1226,6 @@ function PanelHeading({
   return (
     <div className="mb-2 flex items-end justify-between border-t-2 border-ink pt-1.5">
       <span className="flex items-center gap-2 text-[13.5px] font-bold text-ink">
-        {color && <span className="h-[8px] w-[8px] shrink-0" style={{ background: color }} />}
         {children}
       </span>
       {right}
@@ -1519,7 +1518,7 @@ function MapView(props: MapViewProps) {
           push(L.polyline(runs[c.id], { color: '#fff', weight: 6, opacity: alpha * 0.9, interactive: false }));
           push(
             L.polyline(runs[c.id], { color: c.color, weight: 3.6, opacity: alpha }).bindTooltip(
-              `Major road · ${PIPE_CLASS_MEANING[c.id]}`,
+              `Major road ${PIPE_CLASS_MEANING[c.id]}`,
               { sticky: true, direction: 'top', offset: [0, -4] },
             ),
           );
@@ -1531,7 +1530,7 @@ function MapView(props: MapViewProps) {
             push(L.polyline(r.line, { color: '#fff', weight: style.weight + 2.4, opacity: alpha * 0.9, interactive: false }));
             push(
               L.polyline(r.line, { color: style.color, weight: style.weight, opacity: alpha }).bindTooltip(
-                `${roadName(r.name)} · ${roadRoles(r.name).join(', ') || style.label}`,
+                `${roadName(r.name)}, ${roadRoles(r.name).join(', ') || style.label}`,
                 { sticky: true, direction: 'top', offset: [0, -4] },
               ),
             );
@@ -1547,7 +1546,7 @@ function MapView(props: MapViewProps) {
         const sc = scores.get(a.id);
         if (!sc || sc.score === null) continue;
         const missing = sc.missing.length
-          ? ` · no ${sc.missing.map((m) => PRIORITY_INPUTS.find((i) => i.id === m)!.label.toLowerCase()).join(' or ')} data`
+          ? `, no ${sc.missing.map((m) => PRIORITY_INPUTS.find((i) => i.id === m)!.label.toLowerCase()).join(' or ')} data`
           : '';
         push(
           L.polygon(a.path, {
@@ -1570,7 +1569,7 @@ function MapView(props: MapViewProps) {
             color: c.color,
             weight: c.id === '0' ? 1.1 : 2,
             opacity: vecAlpha('stormwater-pipes') * (c.id === '0' ? 0.75 : 1),
-          }).bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] }),
+          }).bindTooltip(`Stormwater pipe ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] }),
         );
       }
     }
@@ -1642,7 +1641,7 @@ function MapView(props: MapViewProps) {
             fillOpacity: alpha * 0.6,
             interactive: true,
           }).bindTooltip(
-            `UHI category ${cell.uhiCat} · SVI ${cell.svi.toFixed(2)}`,
+            `UHI category ${cell.uhiCat}, SVI ${cell.svi.toFixed(2)}`,
             { direction: 'top', offset: [0, -3] },
           ),
         );
@@ -1831,7 +1830,7 @@ function MapView(props: MapViewProps) {
         const radius = (siteLevel ? 5 : 4) + (count > 1 ? Math.min(9, Math.log2(count) * 3) : 0);
         const label =
           count === 1
-            ? `${names[0]}${siteLevel ? '' : ' — street-level estimate, not the building'}`
+            ? `${names[0]}${siteLevel ? '' : ', street-level estimate, not the building'}`
             : `${count} buildings here${siteLevel ? '' : ', street-level estimate'}: ${names.slice(0, 4).join(', ')}${count > 4 ? `, +${count - 4} more` : ''}`;
         const isSelected = key === selectedBuildingKey;
         // A click opens the same real register detail on the right that
@@ -1924,7 +1923,7 @@ function MapView(props: MapViewProps) {
         const loc = BUILDING_LOCATION[b.id];
         push(
           L.circleMarker([loc.lat, loc.lng], { radius: 4.5, color: '#fff', weight: 1.3, fillColor: '#7F1D1D', fillOpacity: 1 })
-            .bindTooltip(`${b.name} · inside the ${ev.label} extent`, { direction: 'top', offset: [0, -4] }),
+            .bindTooltip(`${b.name}, inside the ${ev.label} extent`, { direction: 'top', offset: [0, -4] }),
         );
       }
     }
@@ -1936,7 +1935,7 @@ function MapView(props: MapViewProps) {
       for (const c of view.cells) {
         push(
           L.polygon(c.rings, { color: '#7F1D1D', weight: 0.4, opacity: 0.5, fillColor: fill, fillOpacity: 0.75 }).bindTooltip(
-            `UHI category ${c.uhiCat} · SVI ${c.svi.toFixed(2)}`,
+            `UHI category ${c.uhiCat}, SVI ${c.svi.toFixed(2)}`,
             { direction: 'top', offset: [0, -3] },
           ),
         );
@@ -1945,7 +1944,7 @@ function MapView(props: MapViewProps) {
         const loc = BUILDING_LOCATION[b.id];
         push(
           L.circleMarker([loc.lat, loc.lng], { radius: 4.5, color: '#fff', weight: 1.3, fillColor: '#7F1D1D', fillOpacity: 1 })
-            .bindTooltip(`${b.name} · UHI category ${heatEvent}`, { direction: 'top', offset: [0, -4] }),
+            .bindTooltip(`${b.name}, UHI category ${heatEvent}`, { direction: 'top', offset: [0, -4] }),
         );
       }
     }
@@ -2033,7 +2032,7 @@ function MapView(props: MapViewProps) {
               fillColor: lerpHex(def.lo!, def.hi!, (h.cat - 2) / 2),
               fillOpacity: 0.6 * op(heatKey(h.cat)),
               interactive: true, pane: 'caseContent' })
-              .bindTooltip(`UHI category ${h.cat} · SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
+              .bindTooltip(`UHI category ${h.cat}, SVI ${h.svi.toFixed(2)}`, { direction: 'top', offset: [0, -3] })
               .addTo(map),
           );
         }
@@ -2057,7 +2056,7 @@ function MapView(props: MapViewProps) {
             added.push(
               L.polyline(rd.line, { color: '#fff', weight: style.weight + 2.4, opacity: 0.95 * op('roads'), interactive: false, pane: 'caseContent' }).addTo(map),
               L.polyline(rd.line, { color: style.color, weight: style.weight, opacity: op('roads'), pane: 'caseContent' })
-                .bindTooltip(`${roadName(rd.name)} · ${roadRoles(rd.name).join(', ') || style.label}`, { sticky: true, direction: 'top', offset: [0, -4] })
+                .bindTooltip(`${roadName(rd.name)}, ${roadRoles(rd.name).join(', ') || style.label}`, { sticky: true, direction: 'top', offset: [0, -4] })
                 .addTo(map),
             );
           }
@@ -2071,7 +2070,7 @@ function MapView(props: MapViewProps) {
               weight: c.id === '0' ? 1.4 : 2.2,
               opacity: 0.95 * op('pipes'),
               pane: 'caseContent' })
-              .bindTooltip(`Stormwater pipe · ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] })
+              .bindTooltip(`Stormwater pipe ${PIPE_CLASS_MEANING[c.id]}`, { sticky: true, direction: 'top', offset: [0, -4] })
               .addTo(map),
           );
         }
@@ -2087,7 +2086,7 @@ function MapView(props: MapViewProps) {
             iconAnchor: [12, 8],
           }),
           opacity: op(id.startsWith('B') ? 'sitesB' : 'sitesS'),
-        }).bindTooltip(`${id} · ${name}`, { direction: 'top', offset: [0, -8] });
+        }).bindTooltip(`${id} ${name}`, { direction: 'top', offset: [0, -8] });
       if (show.has('sitesB')) {
         for (const b of WORKED.councilBuildings) {
           if (b.loc) added.push(siteMarker(b.id, b.name, b.loc, '#0E5A63').addTo(map));
@@ -2271,16 +2270,16 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[2px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] hover:bg-surface-2"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[2px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#C9C4B9] hover:text-accent"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
-          {(probeMode || scenario.scenario !== 'today') && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-label="Some settings are on" />}
+          {(probeMode || scenario.scenario !== 'today') && <span className="text-xs font-normal text-accent">(on)</span>}
           <IconChevron size={12} className="rotate-90 text-ink-3" />
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[2px] bg-white p-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[214px] rounded-[2px] bg-white p-1 border border-[#C9C4B9]">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2288,7 +2287,7 @@ function MapView(props: MapViewProps) {
           }}
           aria-label="Minimise map settings"
           title="Minimise"
-          className="flex w-full items-center justify-between rounded-[2px] px-2 py-1 text-ink-3 hover:bg-surface-2 hover:text-ink"
+          className="flex w-full items-center justify-between rounded-[2px] px-2 py-1 text-ink-3 hover:text-accent hover:text-ink"
         >
           <span className="text-xs font-semibold">Map settings</span>
           <IconChevron size={12} className="-rotate-90" />
@@ -2350,7 +2349,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={13} className={`shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[2px] bg-white p-1.5 border border-[#C9C4B9] shadow-[0_2px_6px_rgba(28,27,25,0.1)]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[2px] bg-white p-1.5 border border-[#C9C4B9]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2363,10 +2362,9 @@ function MapView(props: MapViewProps) {
                           c.onChange(o.value);
                           setOpenControl(null);
                         }}
-                        className={`flex w-full items-center justify-between rounded-[2px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:bg-surface-2'}`}
+                        className={`flex w-full items-center justify-between rounded-[2px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:text-accent'}`}
                       >
                         {o.label}
-                        {on && <span className="h-[6px] w-[6px] rounded-full bg-accent" />}
                       </button>
                     );
                   })}
@@ -2378,7 +2376,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:text-accent"
         >
           <span className="flex h-7 w-7 shrink-0 items-center justify-center text-ink-2">
             <IconFocus size={16} />
@@ -2392,7 +2390,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setProbeMode(!probeMode)}
           aria-pressed={probeMode}
-          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-[2px] px-2 py-1.5 text-left transition-colors hover:text-accent"
         >
           <span className={`flex h-7 w-7 shrink-0 items-center justify-center ${probeMode ? 'text-accent' : 'text-ink-2'}`}>
             <IconLocate size={16} />
@@ -2412,7 +2410,7 @@ function MapView(props: MapViewProps) {
           speculative scenario row shows here; with neither, no dock. */}
       {(!hideHazards || scenario.scenario !== 'today') && (
       <div data-tour="flood-dock" className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-[2px] bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
+        <div className="rounded-[2px] bg-white border border-[#C9C4B9]">
           {!hideHazards && (
           <>
           <div className="flex items-center gap-3 px-3 py-2">
@@ -2512,7 +2510,7 @@ function MapView(props: MapViewProps) {
           {scenario.scenario !== 'today' && (
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-sm font-semibold text-[#92400E]">Speculative scenario · {scenarioName(scenario)}</span>
+                <span className="text-sm font-semibold text-[#92400E]">Speculative scenario: {scenarioName(scenario)}</span>
                 <button onClick={() => setScenario(TODAY)} className="text-sm font-medium text-[#92400E] underline hover:text-[#78350F]">
                   Back to today
                 </button>
@@ -2534,10 +2532,9 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-[2px] border bg-white px-2.5 py-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]"
+            className="fade-up flex items-center gap-1.5 rounded-[2px] border bg-white px-2.5 py-1 border border-[#C9C4B9]"
             style={{ borderColor: rightPanelAccent }}
           >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ background: rightPanelAccent }} />
             <span className="text-xl font-semibold text-ink">{selected.name}</span>
             <span className="num text-base text-ink-3">{selected.sa2}</span>
           </div>
@@ -2546,7 +2543,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[2px] border border-line bg-white/96 p-2 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] backdrop-blur">
+          <div className="fade-up rounded-[2px] border border-line bg-white/96 p-2 border border-[#C9C4B9] backdrop-blur">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2577,16 +2574,16 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-white text-ink-2 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-[2px] bg-white text-ink-2 border border-[#C9C4B9] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[2px] bg-white py-1 border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
+        <div className="flex w-9 flex-col items-center rounded-[2px] bg-white py-1 border border-[#C9C4B9]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:text-accent hover:text-accent"
             aria-label="Zoom in"
           >
             <IconPlus size={16} />
@@ -2594,13 +2591,13 @@ function MapView(props: MapViewProps) {
           {/* Where the current zoom sits between fully out and fully in. */}
           <div className="relative my-1 h-[52px] w-[3px] rounded-full bg-line">
             <span
-              className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white bg-accent shadow-[0_0_0_1px_rgba(0,110,120,0.35)] transition-all duration-200"
+              className="absolute left-1/2 h-[9px] w-[9px] -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white bg-accent transition-all duration-200"
               style={{ bottom: `${(Math.min(Math.max(zoomLevel - 10, 0), 9) / 9) * 100}%` }}
             />
           </div>
           <button
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-[2px] text-ink-2 transition-colors hover:text-accent hover:text-accent"
             aria-label="Zoom out"
           >
             <IconMinus size={16} />
@@ -2656,7 +2653,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
+    <div className="w-[208px] overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2967,7 +2964,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9] shadow-[0_1px_2px_rgba(28,27,25,0.06)]">
+    <div className="fade-in overflow-hidden rounded-[2px] border border-line bg-white border border-[#C9C4B9]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -3175,7 +3172,7 @@ function LayersTab({
                 key={b.id}
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
-                className="group flex w-full items-center gap-3 rounded-[2px] px-1.5 py-2 text-left transition-colors hover:bg-surface-2"
+                className="group flex w-full items-center gap-3 rounded-[2px] px-1.5 py-2 text-left transition-colors hover:text-accent"
                 style={on ? { boxShadow: `inset 3px 0 0 ${b.accent}` } : undefined}
               >
                 <span className="shrink-0" style={{ color: b.accent }}>
@@ -3216,7 +3213,7 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
                       <Icon size={16} />
@@ -3290,7 +3287,7 @@ function LayersTab({
         <button
           onClick={() => setDisplayOpen((v) => !v)}
           aria-expanded={displayOpen}
-          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:text-accent"
         >
           <span
             className={`flex h-7 w-7 items-center justify-center rounded-[2px] ${checkedLayers.size > 0 ? 'bg-accent text-white' : 'bg-surface-2 text-ink-3'}`}
@@ -3490,10 +3487,10 @@ const ScenarioContext = React.createContext<{ sel: ScenarioSel; set: (v: Scenari
 });
 const SCENARIO_OPTIONS: { value: string; label: string; sel: ScenarioSel }[] = [
   { value: 'today', label: 'Today', sel: TODAY },
-  { value: 'ssp245-2050', label: 'SSP2-4.5 · 2050', sel: { scenario: 'ssp245', year: 2050 } },
-  { value: 'ssp245-2090', label: 'SSP2-4.5 · 2090', sel: { scenario: 'ssp245', year: 2090 } },
-  { value: 'ssp585-2050', label: 'SSP5-8.5 · 2050', sel: { scenario: 'ssp585', year: 2050 } },
-  { value: 'ssp585-2090', label: 'SSP5-8.5 · 2090', sel: { scenario: 'ssp585', year: 2090 } },
+  { value: 'ssp245-2050', label: 'SSP2-4.5, 2050', sel: { scenario: 'ssp245', year: 2050 } },
+  { value: 'ssp245-2090', label: 'SSP2-4.5, 2090', sel: { scenario: 'ssp245', year: 2090 } },
+  { value: 'ssp585-2050', label: 'SSP5-8.5, 2050', sel: { scenario: 'ssp585', year: 2050 } },
+  { value: 'ssp585-2090', label: 'SSP5-8.5, 2090', sel: { scenario: 'ssp585', year: 2090 } },
 ];
 const scenarioKey = (sel: ScenarioSel) => (sel.scenario === 'today' ? 'today' : `${sel.scenario}-${sel.year}`);
 const scenarioName = (sel: ScenarioSel) => `${SCENARIO_LABEL[sel.scenario]}, ${sel.year}`;
@@ -3794,7 +3791,7 @@ function BuildingGroupRow({
       <span className="min-w-0 flex-1">
         <span className="block truncate text-lg font-medium text-ink">{name}</span>
         <span className="num mt-0.5 block truncate text-sm text-ink-3">
-          {items.length} buildings · {types.length === 1 ? types[0] : `${types.length} types`}
+          {items.length} buildings, {types.length === 1 ? types[0] : `${types.length} types`}
         </span>
       </span>
       {right ?? (value > 0 && <span className="num shrink-0 pt-[1px] text-base text-ink-2">{formatMoney(value)}</span>)}
@@ -3878,11 +3875,11 @@ function PlaceTab({
               <button
                 key={s.id}
                 onClick={() => setSelectedId(s.id)}
-                className="flex w-full items-center gap-3 px-1 py-2 text-left hover:bg-surface-2"
+                className="flex w-full items-center gap-3 px-1 py-2 text-left hover:text-accent"
               >
                 <span className="min-w-0 flex-1 truncate text-base font-medium text-ink">{s.name}</span>
                 <span className="num shrink-0 text-right text-xs text-ink-3">
-                  {bs.length} buildings · {bs.filter(inFlood).length} in flood
+                  {bs.length} buildings, {bs.filter(inFlood).length} in flood
                 </span>
                 <IconChevron size={12} className="shrink-0 text-ink-3" />
               </button>
@@ -3917,7 +3914,7 @@ function PlaceTab({
 
   return (
     <div className="px-3 py-4">
-      <BackBar onBack={() => setSelectedId(null)} parent={`Suburbs · SA2 ${s.sa2}`} title={s.name} />
+      <BackBar onBack={() => setSelectedId(null)} parent={`Suburbs / SA2 ${s.sa2}`} title={s.name} />
       <FigureStrip>
         <Figure label="Buildings" value={buildings.length} />
         <Figure label="Insured value" value={formatMoney(insured)} />
@@ -4037,7 +4034,7 @@ function RightPanelShell({
         {onClose && (
           <button
             onClick={onClose}
-            className="-mr-1 mt-[1px] shrink-0 rounded-[2px] p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+            className="-mr-1 mt-[1px] shrink-0 rounded-[2px] p-1 text-ink-3 transition-colors hover:text-accent hover:text-ink"
             aria-label="Close"
           >
             <IconClose />
@@ -4227,7 +4224,7 @@ function BlueprintPanel({
                     <button
                       key={s.id}
                       onClick={() => setSaSel(s.id)}
-                      className="flex w-full items-center justify-between gap-3 px-2.5 py-2.5 text-left transition-colors hover:bg-surface-2"
+                      className="flex w-full items-center justify-between gap-3 px-2.5 py-2.5 text-left transition-colors hover:text-accent"
                     >
                       <span>
                         <span className="block text-lg font-medium text-ink">{s.name}</span>
@@ -4608,17 +4605,17 @@ function tqehLinks(): CaseLink[] {
   const { lat, lng } = TQEH;
   const out: CaseLink[] = [];
   const st = nearestPointOn(lat, lng, PROXIMITY_SHAPES['train-stations']());
-  if (st) out.push({ to: st.at, label: `Train station · ${formatMetres(st.m)}` });
+  if (st) out.push({ to: st.at, label: `Train station, ${formatMetres(st.m)}` });
   const wc = nearestPointOn(lat, lng, PROXIMITY_SHAPES['watercourses']());
   const wb = nearestPointOn(lat, lng, PROXIMITY_SHAPES['waterbodies']());
   const w = wc && (!wb || wc.m <= wb.m) ? { ...wc, kind: 'Watercourse' } : wb ? { ...wb, kind: 'Waterbody' } : null;
-  if (w) out.push({ to: w.at, label: `${w.kind} · ${formatMetres(w.m)}` });
+  if (w) out.push({ to: w.at, label: `${w.kind}, ${formatMetres(w.m)}` });
   let heat: { m: number; at: LatLngTuple; cat: number } | null = null;
   for (const { cell, rings } of HEAT_CELLS_WITH_BBOX) {
     const h = nearestPointOn(lat, lng, rings.map(({ ring }) => toShape(ring, true)));
     if (h && (!heat || h.m < heat.m)) heat = { ...h, cat: cell.uhiCat };
   }
-  if (heat && heat.m > 0) out.push({ to: heat.at, label: `Heat cell, category ${heat.cat} · ${formatMetres(heat.m)}` });
+  if (heat && heat.m > 0) out.push({ to: heat.at, label: `Heat cell (category ${heat.cat}), ${formatMetres(heat.m)}` });
   tqehLinkCache = out;
   return out;
 }
@@ -4882,7 +4879,7 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
       .join('')}</tbody></table>`;
   const sheet = loadTolerance();
   const s = WORKED.scenario;
-  const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]}–${c.assessed[1]}`);
+  const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
 <style>body{font:13px/1.5 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;color:#1C1B19;max-width:860px;margin:40px auto;padding:0 20px}
 h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DED9CF;padding-bottom:4px}
@@ -4890,7 +4887,7 @@ h1{font:600 24px/1.2 'Libre Franklin','Franklin Gothic Book',Arial,sans-serif;ma
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EFECE6}th{font-weight:600;color:#3F3C37;border-bottom:1px solid #D3CEC4}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
 <h1>The Queen Elizabeth Hospital, Woodville: worked example</h1>
-<p class="sub">CoCS Climate Risk Tolerance Tool · ${esc(s.event)} · likelihood ${esc(s.likelihood)} (assumed) · ${esc(s.climate)} · generated ${new Date().toLocaleDateString('en-AU')}</p>
+<p class="sub">CoCS Climate Risk Tolerance Tool, ${esc(s.event)}, likelihood ${esc(s.likelihood)} (assumed), ${esc(s.climate)}, generated ${new Date().toLocaleDateString('en-AU')}</p>
 <p class="note">${esc(WORKED.disclaimer)}</p>
 <h2>4.1 Area and exposure</h2>
 ${table(['', 'Council building'], WORKED.councilBuildings.map((b) => [b.id, b.name]))}
@@ -4931,7 +4928,7 @@ const CASE_STUDIES = [
   {
     id: 'tqeh',
     name: 'The Queen Elizabeth Hospital',
-    where: 'Woodville South · state hospital',
+    where: 'Woodville South, state hospital',
     point: TQEH,
     // Layers turned on when the case opens (and off when it closes).
     // None: the case draws its own local flood extent instead.
@@ -4977,13 +4974,13 @@ function CasesTab({
             <button
               key={x.id}
               onClick={() => setCaseId(x.id)}
-              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-surface-2"
+              className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:text-accent"
             >
               <span className="min-w-0">
                 <span className="block text-lg font-medium text-ink">{x.name}</span>
                 <span className="mt-0.5 block text-sm text-ink-3">
                   {x.where}
-                  {inside ? ` · ${pct(inside.share)} of grounds in the ${FLOOD_SHORT[inside.id]} flood extent` : ''}
+                  {inside ? `, ${pct(inside.share)} of grounds in the ${FLOOD_SHORT[inside.id]} flood extent` : ''}
                 </span>
               </span>
               <IconChevron size={13} className="shrink-0 text-ink-3" />
@@ -5106,7 +5103,7 @@ function CaseSwitchRow({
 }) {
   return (
     <div>
-      <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2">
+      <button onClick={onToggle} aria-pressed={on} className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent">
         <CaseGlyph id={id} />
         <span className="min-w-0 flex-1">
           <span className={`block truncate text-base ${on ? 'font-medium text-ink' : 'text-ink-2'}`}>{label}</span>
@@ -5171,9 +5168,9 @@ function CaseControls({
     return n ? `${n} cells within ${radius} m${nearest}` : `None within ${radius} m`;
   };
   const detail: Record<CaseLayer, string> = {
-    flood100: `${pct(share('flood-1in100-real'))} of the grounds · long-term run`,
-    flood20: `${pct(share('flood-1in20-real'))} of the grounds · long-term run`,
-    flood5: `${pct(share('flood-1in5-real'))} of the grounds · long-term run`,
+    flood100: `${pct(share('flood-1in100-real'))} of the grounds, long-term run`,
+    flood20: `${pct(share('flood-1in20-real'))} of the grounds, long-term run`,
+    flood5: `${pct(share('flood-1in5-real'))} of the grounds, long-term run`,
     heat4: heatDetail(4),
     heat3: heatDetail(3),
     heat2: heatDetail(2),
@@ -5223,7 +5220,6 @@ function CaseControls({
   );
   const groupLabel = (text: string, color: string, first = false) => (
     <div className={`mb-1 ${first ? '' : 'mt-2.5'} flex items-center gap-1.5 text-sm font-semibold`} style={{ color }}>
-      <span className="h-[7px] w-[7px]" style={{ background: color }} />
       {text}
     </div>
   );
@@ -5239,7 +5235,7 @@ function CaseControls({
           <button
             onClick={onGuide}
             aria-label="How this works"
-            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 hover:bg-surface-2 hover:text-accent"
+            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 hover:text-accent hover:text-accent"
           >
             <IconHelp size={17} />
           </button>
@@ -5254,7 +5250,7 @@ function CaseControls({
               key={m}
               onClick={() => setRadius(m)}
               aria-pressed={radius === m}
-              className={`num flex-1 px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-ink font-semibold text-white' : 'text-ink-2 hover:bg-surface-2'}`}
+              className={`num flex-1 px-2 py-1.5 text-base transition-colors ${radius === m ? 'bg-ink font-semibold text-white' : 'text-ink-2 hover:text-accent'}`}
             >
               {m < 1000 ? `${m} m` : `${m / 1000} km`}
             </button>
@@ -5263,7 +5259,7 @@ function CaseControls({
         <button
           onClick={() => toggle('focus')}
           aria-pressed={show.has('focus')}
-          className="mt-1 flex w-full items-center gap-2.5 border-b border-line px-1 py-2 text-left hover:bg-surface-2"
+          className="mt-1 flex w-full items-center gap-2.5 border-b border-line px-1 py-2 text-left hover:text-accent"
         >
           <IconFocus size={16} className="shrink-0 text-ink-2" />
           <span className="min-w-0 flex-1">
@@ -5356,7 +5352,7 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
     <div
       role="dialog"
       aria-label="Case study guide"
-      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[2px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)]"
+      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[2px] border border-line bg-white p-3"
     >
       <div className="text-base font-semibold text-ink">Would you like a quick guide?</div>
       <p className="mt-0.5 text-sm leading-[1.45] text-ink-2">Six short steps on how this case study works.</p>
@@ -5474,7 +5470,7 @@ function RatingTag({ range }: { range: [string, string] }) {
         <span className="flex-1" style={{ background: RISK_COLOR[range[0]] }} />
         <span className="flex-1" style={{ background: RISK_COLOR[range[1]] }} />
       </span>
-      {range[0] === range[1] ? range[0] : `${range[0]}–${range[1]}`}
+      {range[0] === range[1] ? range[0] : `${range[0]} to ${range[1]}`}
     </span>
   );
 }
@@ -5610,8 +5606,7 @@ function Bullets({ items }: { items: string[] }) {
   return (
     <ul className="mt-1 space-y-0.5">
       {items.map((t) => (
-        <li key={t} className="flex gap-1.5 text-sm leading-[1.45] text-ink-2">
-          <span className="mt-[7px] h-[3px] w-[3px] shrink-0 rounded-full bg-ink-3" />
+        <li key={t} className="border-l border-line pl-2 text-sm leading-[1.45] text-ink-2">
           {t}
         </li>
       ))}
@@ -5671,7 +5666,7 @@ function DamageBars({ rows }: { rows: { id: string; name: string; damage: string
             />
           </div>
           <div className="num mt-0.5 text-xs text-ink-3">
-            Depth {r.depth} · back in {r.time}
+            Depth {r.depth}, back in {r.time}
           </div>
         </div>
       ))}
@@ -5694,10 +5689,10 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
 
   return (
     <div>
-      <div className="text-xs font-semibold" style={{ color: '#0E6E6A' }}>Risk tolerance · worked example</div>
+      <div className="text-xs font-semibold" style={{ color: '#0E6E6A' }}>Risk tolerance: worked example</div>
       <div className="mt-0.5 text-[17px] font-semibold leading-tight text-ink">The Queen Elizabeth Hospital, Woodville</div>
       <div className="mt-0.5 text-sm text-ink-3">
-        {s.event} · likelihood {s.likelihood} (assumed) · {s.climate.toLowerCase()}
+        {s.event}, likelihood {s.likelihood} (assumed), {s.climate.toLowerCase()}
       </div>
       <div className="num mt-2 flex flex-wrap gap-x-3 border-y border-line py-1.5 text-sm">
         <span style={{ color: '#B91C1C' }}>{count('Above target')} above target</span>
@@ -5738,7 +5733,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-base font-medium text-ink">{c.name}</span>
                   <span className="block text-sm text-ink-3">
-                    Target {c.target} · {c.basis === 'quantitative' ? 'quantified' : 'indicative'}
+                    Target {c.target}, {c.basis === 'quantitative' ? 'quantified' : 'indicative'}
                   </span>
                 </span>
                 <span className="shrink-0 text-right">
@@ -5823,7 +5818,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
             <Section title="Community facilities and critical infrastructure" color={HAZARD_COLOR.people}>
               <div className="divide-y divide-line">
                 {WORKED.facilities.map((f) => (
-                  <IdRow key={f.id} id={f.id} title={f.name} sub={[f.owner, Array.isArray(f.loc) || f.loc === 'tqeh' ? null : 'Location not mapped'].filter(Boolean).join(' · ') || undefined} />
+                  <IdRow key={f.id} id={f.id} title={f.name} sub={[f.owner, Array.isArray(f.loc) || f.loc === 'tqeh' ? null : 'Location not mapped'].filter(Boolean).join(', ') || undefined} />
                 ))}
               </div>
             </Section>
@@ -5880,7 +5875,7 @@ function TqehTab({
   return (
     <div>
       <p className="text-base text-ink-2">
-        Woodville South{r.suburb ? ` · ${r.suburb.name} SA2` : ''} · State hospital (non-council asset)
+        Woodville South{r.suburb ? `, ${r.suburb.name} SA2` : ''}, State hospital (non-council asset)
       </p>
       <div data-tour="case-glance" className="mt-3 grid grid-cols-2 gap-x-4 gap-y-px border-y border-line bg-white [&>*]:border-b [&>*]:border-line [&>*:nth-last-child(-n+2)]:border-b-0">
         <Glance
@@ -6144,7 +6139,7 @@ function TqehTolerance() {
       <Section title="Council's climate risk tolerance statements">
         <div className="border border-[#9BC48A] bg-[#E3F2DC]">
           <div className="border-b border-[#9BC48A] px-3 py-1.5 text-xs italic text-[#2F5D2A]">
-            Box 1 · example statements, assumed likelihood "Likely"
+            Box 1: example statements, assumed likelihood "Likely"
           </div>
           {WORKED.categories.map((c) => {
             const isOpen = open === c.name;
@@ -6175,7 +6170,7 @@ function TqehTolerance() {
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="num text-sm text-ink-3">
             Notes on {noted} of {WORKED.categories.length}
-            {dirty ? ' · unsaved changes' : savedAt ? ` · saved ${savedAt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ''}
+            {dirty ? ', unsaved changes' : savedAt ? `, saved ${savedAt.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })}` : ''}
           </span>
           <div className="flex items-center gap-2">
             {dirty && (
@@ -6437,7 +6432,7 @@ function ProbePanel({
       <div className="px-4 py-4">
         <p className="num text-sm text-ink-3">
           {r.lat.toFixed(5)}, {r.lng.toFixed(5)}
-          {r.sa1 ? ` · SA1 ${r.sa1}` : ''}
+          {r.sa1 ? `, SA1 ${r.sa1}` : ''}
         </p>
         {/* Each hazard on an equal footing, then the place, then what's near. */}
         <Section title="Hazards here">
@@ -6760,7 +6755,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+          className="flex h-11 w-[56px] items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:text-accent hover:text-ink"
           aria-label="Home"
         >
           <IconHome size={21} />
@@ -6779,7 +6774,7 @@ function IconRail({
               <button
                 data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-[2px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:bg-surface-2 hover:text-ink'}`}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-[2px] py-1.5 transition-colors ${on ? 'bg-surface-2 text-accent' : 'text-ink-3 hover:text-accent hover:text-ink'}`}
                 style={on ? { boxShadow: `inset 3px 0 0 ${ACCENT}` } : undefined}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
@@ -7548,7 +7543,7 @@ function BuildingRow({
         <span className="num mt-0.5 block truncate text-sm text-ink-3">
           {[b.buildingType ?? 'Not yet classified', !hideSuburb && b.suburb, ...tags, !p && 'not mapped']
             .filter(Boolean)
-            .join(' · ')}
+            .join(', ')}
         </span>
       </span>
       <span className="shrink-0 pt-[1px] text-right">
@@ -7864,7 +7859,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
                       key={t.key}
                       onClick={() => toggleType(t.key)}
                       aria-pressed={on}
-                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left last:rounded-b-[3px] hover:bg-surface-2"
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left last:rounded-b-[3px] hover:text-accent"
                     >
                       <span className={`min-w-0 truncate text-base ${on ? 'text-ink' : 'text-ink-3'}`}>
                         {t.label === UNCLASSIFIED ? 'Not yet classified' : t.label}
@@ -8082,7 +8077,7 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 px-1 py-2 text-left hover:text-accent"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
                       <Icon size={16} />
@@ -8101,7 +8096,7 @@ function RealBuildingsRegister({
 
         {view === 'condition' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <div className="rounded-[2px] border border-line p-3">
               <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
               <div className="space-y-2.5">
@@ -8125,7 +8120,7 @@ function RealBuildingsRegister({
 
         {view === 'about' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <p className="mb-4 text-sm leading-[1.5] text-ink-2">
               Council's asset register (<span className="num">CCS_Buildings.xlsx</span>), one row per building, not per
               fitout or meter.
@@ -8177,14 +8172,14 @@ function RealBuildingsRegister({
 
         {view === 'types' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
             <AssetTypeToggles offTypes={offTypes} setOffTypes={setOffTypes} />
           </div>
         )}
 
         {view === 'list' && (
           <div>
-            <BackBar onBack={() => selectView(null)} parent={`Assets · ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
+            <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
 
             <div style={{ viewTransitionName: 'buildings-list-scope' } as React.CSSProperties}>
               {listScope === null && (
@@ -8380,7 +8375,7 @@ function searchAll(query: string): SearchHit[] {
       kind: 'building',
       id: b.id,
       label: b.name,
-      meta: [b.buildingType, b.address, SUBURB_BY_ID[BUILDING_SUBURB_ID[b.id]]?.name].filter(Boolean).join(' · '),
+      meta: [b.buildingType, b.address, SUBURB_BY_ID[BUILDING_SUBURB_ID[b.id]]?.name].filter(Boolean).join(', '),
     }));
   return [...suburbs, ...layers, ...buildings];
 }
@@ -8408,7 +8403,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
       onClick={onClose}
     >
       <div
-        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[2px] border border-line bg-white shadow-[0_4px_14px_rgba(20,32,31,0.28)]"
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[2px] border border-line bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -8620,7 +8615,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       )}
       <div
         ref={cardRef}
-        className="fixed rounded-[2px] border border-line bg-white p-3 shadow-[0_2px_8px_rgba(20,32,31,0.25)] transition-all duration-200"
+        className="fixed rounded-[2px] border border-line bg-white p-3 transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
         <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {steps.length}</div>
@@ -8981,7 +8976,7 @@ export default function App() {
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:bg-surface-2 hover:text-accent"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[2px] text-ink-3 transition-colors hover:text-accent hover:text-accent"
             aria-label="Take the guide"
             title="Take the guide"
           >

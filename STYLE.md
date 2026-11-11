@@ -47,6 +47,16 @@ coloured edge bars, no gradients.
 - **Corners:** square (2px at most on controls). **Shadows:** none, except
   a faint one where a card floats over the map.
 
+## Punctuation and marks
+
+- No middle-dot separators (·) and no em dashes. Use a comma, a colon, or
+  a new line. Breadcrumbs use a slash: "Assets / Whole LGA".
+- Ranges of numbers take an en dash ($0–180k, 0–14 days); ranges of words
+  are written out ("Moderate to High").
+- No decorative dots or squares beside labels. Colour sits in the data mark
+  itself (map symbol, chart, legend swatch).
+- No drop shadows and no hover tints; hover changes the text colour.
+
 ## Writing
 
 - Titles are names, not descriptions. Notes are short and factual.
