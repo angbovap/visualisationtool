@@ -7,10 +7,12 @@ is decorative.
 
 ## Type
 
-- **Franklin Gothic**, the installed Windows and Office faces: Book for
-  text, Medium for labels, Demi for headings. Libre Franklin (the
-  open-source version) only where those are missing.
-- Headings Demi, 17px at most. No bold display type.
+- **Barlow** for text, labels and numbers: an open DIN-style grotesque,
+  the road-sign and map-label lineage. It reads as engineered rather than
+  editorial.
+- **Barlow Semi Condensed** for headings (panel titles, widget titles,
+  group labels), via `h1` or `.head`.
+- Weights 400, 500, 600. Headings 20px at most.
 - Numbers use tabular figures (`.num`) so columns line up.
 - Sentence case everywhere. No all-caps labels, no letter-spaced text.
 
@@ -23,7 +25,7 @@ is decorative.
 | Ink | `#1F2328` | Headings and primary text |
 | Ink 2 | `#3E454B` | Body text, values |
 | Ink 3 | `#596066` | Notes and units only |
-| Rule | `#DADEE1` | Dividers and borders |
+| Rule | `#D3D8DC` | Dividers; `#BEC5CA` for map card borders |
 | Rail | `#0B3D3B` | The navigation rail, the one block of solid colour in the frame |
 | Accent | `#0E6E6A` | Interactive elements only (links, selected states, checkboxes) |
 
@@ -69,7 +71,7 @@ modular widgets, most important first, figures shown against a reference.
   practice).
 - **Controls:** checkboxes for anything on or off; one solid button per
   view for the main action; everything else as text links.
-- **Corners:** 4px (3px on checkboxes, 8px on the map locator frame).
+- **Corners:** square. Only checkboxes (1px) and round map symbols are rounded.
 
 ## Punctuation and marks
 

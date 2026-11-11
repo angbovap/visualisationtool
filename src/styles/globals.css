@@ -3,7 +3,8 @@
 @import 'leaflet/dist/leaflet.css';
 
 @theme {
-  --font-sans: 'Franklin', 'Libre Franklin', Arial, sans-serif;
+  --font-sans: 'Barlow', 'Segoe UI', Arial, sans-serif;
+  --font-head: 'Barlow Semi Condensed', 'Barlow', 'Segoe UI', Arial, sans-serif;
 
   --color-accent: #0E6E6A;
   --color-accent-soft: #E5F0EF;
@@ -11,7 +12,7 @@
   --color-ink: #1F2328;
   --color-ink-2: #3E454B;
   --color-ink-3: #596066;
-  --color-line: #DADEE1;
+  --color-line: #D3D8DC;
   --color-surface: #FFFFFF;
   --color-surface-2: #F3F4F5;
 
@@ -92,6 +93,9 @@ body {
 .leaflet-control-attribution { font-size: 8px !important; background: rgba(255,255,255,0.72) !important; }
 .leaflet-interactive:focus { outline: none; }
 
+/* Headings: the semi-condensed cut. */
+h1, h2, h3, .head { font-family: var(--font-head); }
+
 /* Permanent building-name labels on a focused SA2: small and dense like
    the rest of this UI, not Leaflet's default tooltip size. */
 .leaflet-tooltip.building-label {
@@ -101,7 +105,7 @@ body {
   color: var(--color-ink);
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid var(--color-accent-line);
-  border-radius: 4px;
+  border-radius: 0;
   box-shadow: none;
 }
 .leaflet-tooltip.building-label::before { display: none; }

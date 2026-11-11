@@ -1002,7 +1002,7 @@ function Tip({
           <span
             ref={tipRef}
             role="tooltip"
-            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-[4px] border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3]"
+            className="fade-up pointer-events-none fixed z-[3000] block w-[260px] max-w-[calc(100vw-16px)] rounded-none border border-[#233634] bg-[#10201F] px-2.5 py-2 text-base leading-[1.45] text-[#D8E4E3]"
             style={{ left: xy?.x ?? 0, top: xy?.y ?? 0, visibility: xy ? 'visible' : 'hidden' }}
           >
             <span className="mb-1 block text-base font-semibold text-white">{label}</span>
@@ -1065,7 +1065,7 @@ function Accordion({
 function Switch({ on, color = ACCENT }: { on: boolean; color?: string }) {
   return (
     <span
-      className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[3px] border transition-colors"
+      className="flex h-[15px] w-[15px] shrink-0 items-center justify-center rounded-[1px] border transition-colors"
       style={on ? { background: color, borderColor: color } : { background: '#fff', borderColor: '#8A9197' }}
       aria-hidden
     >
@@ -1158,7 +1158,7 @@ function Segmented<T extends string | number>({
   dense?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-[2px] rounded-[4px] border border-line bg-surface-2 p-[2px]">
+    <div className="inline-flex items-center gap-[2px] rounded-none border border-line bg-surface-2 p-[2px]">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -1166,7 +1166,7 @@ function Segmented<T extends string | number>({
             key={String(o.value)}
             disabled={o.disabled}
             onClick={() => onChange(o.value)}
-            className={`num rounded-[3.5px] ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
+            className={`num rounded-none ${dense ? 'px-1.5 py-[2px]' : 'px-2 py-[3px]'} text-base font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-35`}
             style={
               on
                 ? { background: accent, color: '#fff' }
@@ -1193,7 +1193,7 @@ function BackBar({ onBack, parent, title }: { onBack: () => void; parent: string
     <div className="mb-3 flex items-center gap-2.5">
       <button
         onClick={onBack}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
         aria-label={`Back to ${parent}`}
       >
         <IconChevron size={14} className="rotate-180" />
@@ -1225,7 +1225,7 @@ function PanelHeading({
 }) {
   return (
     <div className="mb-2 flex items-end justify-between">
-      <span className="flex items-center gap-2 text-[13.5px] font-semibold text-ink">
+      <span className="head flex items-center gap-2 text-[15px] font-semibold text-ink">
         {children}
       </span>
       {right}
@@ -2080,7 +2080,7 @@ function MapView(props: MapViewProps) {
           pane: 'caseContent',
           icon: L.divIcon({
             className: '',
-            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
+            html: `<div style="background:${color};color:#fff;font:700 10px/1 'Barlow','Segoe UI',Arial,sans-serif;padding:3px 4px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3);white-space:nowrap">${id}</div>`,
             iconSize: [24, 16],
             iconAnchor: [12, 8],
           }),
@@ -2269,7 +2269,7 @@ function MapView(props: MapViewProps) {
           data-tour="map-settings"
           onClick={() => setControlsOpen(true)}
           aria-expanded={false}
-          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-[4px] bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#CDD2D6] hover:text-accent"
+          className="absolute right-3 top-3 z-[999] flex items-center gap-2 rounded-none bg-white px-2.5 py-1.5 text-sm font-semibold text-ink border border-[#BEC5CA] hover:text-accent"
         >
           <IconMap size={15} className="text-ink-2" />
           Map settings
@@ -2278,7 +2278,7 @@ function MapView(props: MapViewProps) {
         </button>
       )}
       {controlsOpen && (
-      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[236px] rounded-[4px] border border-[#C3C9CD] bg-white p-1">
+      <div data-tour="map-settings" className="absolute right-3 top-3 z-[999] w-[236px] rounded-none border border-[#BEC5CA] bg-white p-1">
         <button
           onClick={() => {
             setControlsOpen(false);
@@ -2286,9 +2286,9 @@ function MapView(props: MapViewProps) {
           }}
           aria-label="Minimise map settings"
           title="Minimise"
-          className="flex w-full items-center justify-between rounded-[4px] px-2 py-1.5 text-ink hover:text-accent"
+          className="flex w-full items-center justify-between rounded-none px-2 py-1.5 text-ink hover:text-accent"
         >
-          <span className="text-base font-semibold">Map settings</span>
+          <span className="head text-[14px] font-semibold">Map settings</span>
           <IconChevron size={12} className="-rotate-90" />
         </button>
         {(
@@ -2333,7 +2333,7 @@ function MapView(props: MapViewProps) {
             <div key={c.id} className="relative">
               <button
                 onClick={() => setOpenControl(open ? null : c.id)}
-                className={`flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors ${open ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
                 aria-expanded={open}
               >
                 <Icon size={15} className={`shrink-0 ${open ? 'text-accent' : 'text-ink-2'}`} />
@@ -2342,7 +2342,7 @@ function MapView(props: MapViewProps) {
                 <IconChevron size={12} className={`shrink-0 text-ink-2 transition-transform ${open ? 'rotate-180' : ''}`} />
               </button>
               {open && (
-                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-[4px] bg-white p-1.5 border border-[#CDD2D6]`}>
+                <div className={`fade-up absolute right-[calc(100%+10px)] top-0 ${c.id === 'scenario' ? 'w-[230px]' : 'w-[170px]'} rounded-none bg-white p-1.5 border border-[#BEC5CA]`}>
                   <div className="px-1.5 pb-1 pt-0.5 text-2xs font-semibold text-ink-3">
                     {c.label}
                   </div>
@@ -2355,7 +2355,7 @@ function MapView(props: MapViewProps) {
                           c.onChange(o.value);
                           setOpenControl(null);
                         }}
-                        className={`flex w-full items-center justify-between rounded-[4px] px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:text-accent'}`}
+                        className={`flex w-full items-center justify-between rounded-none px-2 py-1.5 text-left text-base transition-colors ${on ? 'font-semibold text-accent' : 'text-ink-2 hover:text-accent'}`}
                       >
                         {o.label}
                       </button>
@@ -2369,7 +2369,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setDimOutside((v) => !v)}
           aria-pressed={dimOutside}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
           <IconFocus size={15} className="shrink-0 text-ink-2" />
           <span className="min-w-0 flex-1 text-base text-ink" title="Dims the area outside the council boundary">Focus on council</span>
@@ -2378,7 +2378,7 @@ function MapView(props: MapViewProps) {
         <button
           onClick={() => setProbeMode(!probeMode)}
           aria-pressed={probeMode}
-          className="flex w-full items-center gap-2.5 rounded-[4px] px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
+          className="flex w-full items-center gap-2.5 rounded-none px-2 py-[7px] text-left transition-colors hover:bg-surface-2"
         >
           <IconLocate size={15} className={`shrink-0 ${probeMode ? 'text-accent' : 'text-ink-2'}`} />
           <span className="min-w-0 flex-1 text-base text-ink" title="Click any spot on the map to read every layer there">
@@ -2392,7 +2392,7 @@ function MapView(props: MapViewProps) {
       {/* The speculative climate scenario, when one is picked in Map settings. */}
       {scenario.scenario !== 'today' && (
       <div className="absolute bottom-4 left-1/2 z-[999] w-[min(540px,calc(100%-500px))] min-w-[320px] -translate-x-1/2">
-        <div className="rounded-[4px] bg-white border border-[#CDD2D6]">
+        <div className="rounded-none bg-white border border-[#BEC5CA]">
           {(
             <div className="border-t border-line px-3 py-2" style={{ boxShadow: 'inset 4px 0 0 #B45309' }}>
               <div className="flex items-center justify-between gap-3">
@@ -2418,7 +2418,7 @@ function MapView(props: MapViewProps) {
       {selected && (
         <div className="pointer-events-none absolute left-1/2 top-3 z-[999] -translate-x-1/2">
           <div
-            className="fade-up flex items-center gap-1.5 rounded-[4px] border bg-white px-2.5 py-1 border border-[#CDD2D6]"
+            className="fade-up flex items-center gap-1.5 rounded-none border bg-white px-2.5 py-1 border border-[#BEC5CA]"
             style={{ borderColor: rightPanelAccent }}
           >
             <span className="text-xl font-semibold text-ink">{selected.name}</span>
@@ -2429,7 +2429,7 @@ function MapView(props: MapViewProps) {
 
       {hovered && (
         <div className="pointer-events-none absolute left-3 top-3 z-[999] w-[240px]">
-          <div className="fade-up rounded-[4px] border border-line bg-white p-2 border-[#C3C9CD]">
+          <div className="fade-up rounded-none border border-line bg-white p-2 border-[#BEC5CA]">
             <div className="flex items-baseline justify-between">
               <span className="text-xl font-semibold text-ink">{hovered.name}</span>
               <span className="num text-sm text-ink-3">{hovered.sa2}</span>
@@ -2460,16 +2460,16 @@ function MapView(props: MapViewProps) {
             const L = LRef.current;
             if (L) mapRef.current?.flyToBounds(L.latLngBounds(LGA_BOUNDARY.ring), { padding: [24, 24], duration: 0.8 });
           }}
-          className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-white text-ink-2 border border-[#CDD2D6] transition-colors hover:text-accent"
+          className="flex h-9 w-9 items-center justify-center rounded-none bg-white text-ink-2 border border-[#BEC5CA] transition-colors hover:text-accent"
           aria-label="Back to the whole council area"
           title="Back to the whole council area"
         >
           <IconLocate size={18} />
         </button>
-        <div className="flex w-9 flex-col items-center rounded-[4px] bg-white py-1 border border-[#CDD2D6]">
+        <div className="flex w-9 flex-col items-center rounded-none bg-white py-1 border border-[#BEC5CA]">
           <button
             onClick={() => mapRef.current?.zoomIn()}
-            className="flex h-7 w-7 items-center justify-center rounded-[4px] text-ink-2 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-none text-ink-2 transition-colors hover:text-accent hover:text-accent"
             aria-label="Zoom in"
           >
             <IconPlus size={16} />
@@ -2483,7 +2483,7 @@ function MapView(props: MapViewProps) {
           </div>
           <button
             onClick={() => mapRef.current?.zoomOut()}
-            className="flex h-7 w-7 items-center justify-center rounded-[4px] text-ink-2 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 items-center justify-center rounded-none text-ink-2 transition-colors hover:text-accent hover:text-accent"
             aria-label="Zoom out"
           >
             <IconMinus size={16} />
@@ -2539,7 +2539,7 @@ function MapLegend({
   const [open, setOpen] = useState(true);
   const layers = LAYERS.filter((l) => checkedLayers.has(l.id));
   return (
-    <div className="w-[208px] overflow-hidden rounded-[4px] border border-line bg-white border border-[#CDD2D6]">
+    <div className="w-[208px] overflow-hidden rounded-none border border-line bg-white border border-[#BEC5CA]">
       <button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
@@ -2850,7 +2850,7 @@ function LocatorMap({
 
   if (!open) return null;
   return (
-    <div className="fade-in overflow-hidden rounded-[8px] border-2 border-white bg-white outline outline-1 outline-[#CDD2D6]">
+    <div className="fade-in overflow-hidden rounded-none border-2 border-white bg-white outline outline-1 outline-[#BEC5CA]">
       <div ref={ref} className="h-[150px] w-[188px] cursor-pointer" title="Click to move the map here" />
     </div>
   );
@@ -2965,9 +2965,9 @@ function LayersTab({
       return (
         <div className="pb-1.5">
           {heading}
-          <div className="mx-3 overflow-hidden rounded-[4px] border border-dashed border-line">
+          <div className="mx-3 overflow-hidden rounded-none border border-dashed border-line">
             <div className="flex items-center gap-2.5 px-3 py-2.5">
-              <span className="h-[12px] w-[12px] shrink-0 rounded-[4px] bg-[#A7D9C2] opacity-60" />
+              <span className="h-[12px] w-[12px] shrink-0 rounded-none bg-[#A7D9C2] opacity-60" />
               <span className="flex-1 truncate text-lg text-ink-3">Development Zones</span>
               <span className="text-xs text-ink-3">Not supplied yet</span>
             </div>
@@ -2979,7 +2979,7 @@ function LayersTab({
     return (
       <div className="pb-1.5">
         {heading}
-        <div className="mx-3 divide-y divide-line overflow-hidden rounded-[4px] border border-line">
+        <div className="mx-3 divide-y divide-line overflow-hidden rounded-none border border-line">
         {layers.map((l) => {
           const checked = checkedLayers.has(l.id);
           const op = layerOpacity[l.id] ?? 1;
@@ -3059,14 +3059,14 @@ function LayersTab({
                 onClick={() => applyBlueprint(b.id)}
                 aria-pressed={on}
                 title={`${b.layers.length} layers`}
-                className={`group flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
+                className={`group flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left transition-colors ${on ? 'bg-surface-2' : 'hover:bg-surface-2'}`}
               >
                 <span className="flex w-5 shrink-0 justify-center" style={{ color: b.accent }}>
                   <Icon size={16} />
                 </span>
                 <span className={`min-w-0 flex-1 truncate text-lg text-ink ${on ? 'font-semibold' : ''}`}>{b.title}</span>
                 <span
-                  className={`shrink-0 rounded-[3px] px-1.5 py-[1px] text-sm font-medium ${on ? 'text-white' : 'text-accent group-hover:underline'}`}
+                  className={`shrink-0 rounded-[1px] px-1.5 py-[1px] text-sm font-medium ${on ? 'text-white' : 'text-accent group-hover:underline'}`}
                   style={on ? { background: b.accent } : undefined}
                 >
                   {on ? 'Applied' : 'Apply'}
@@ -3091,7 +3091,7 @@ function LayersTab({
                   <button
                     key={c.value}
                     onClick={() => selectTab(c.value)}
-                    className="flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: c.color }}>
                       <Icon size={16} />
@@ -3100,7 +3100,7 @@ function LayersTab({
                     {pending ? (
                       <span className="shrink-0 text-sm text-ink-3">Not supplied</span>
                     ) : c.on > 0 ? (
-                      <span className="num shrink-0 rounded-[3px] px-1.5 py-[1px] text-sm font-medium text-white" style={{ background: c.color }}>
+                      <span className="num shrink-0 rounded-[1px] px-1.5 py-[1px] text-sm font-medium text-white" style={{ background: c.color }}>
                         {c.on} of {c.total} on
                       </span>
                     ) : (
@@ -3117,7 +3117,7 @@ function LayersTab({
             <div className="mb-2.5 flex items-center gap-2 px-3">
               <button
                 onClick={() => selectTab(null)}
-                className="flex h-7 w-7 items-center justify-center rounded-[4px] border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
+                className="flex h-7 w-7 items-center justify-center rounded-none border border-line text-ink-2 transition-colors hover:border-ink-3 hover:text-ink"
                 aria-label="Back to all layer categories"
               >
                 <IconChevron size={14} className="rotate-180" />
@@ -3155,7 +3155,7 @@ function LayersTab({
                 setDisplayOpen(false);
               }}
               disabled={checkedLayers.size === 0}
-              className="w-full rounded-[4px] border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
+              className="w-full rounded-none border border-line px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:border-ink-3 hover:text-ink disabled:opacity-40"
             >
               Turn all layers off
             </button>
@@ -3404,7 +3404,7 @@ function IndexPicker({ value, onChange }: { value: IndexId; onChange: (v: IndexI
       value={value}
       onChange={(e) => onChange(e.target.value as IndexId)}
       aria-label="Index"
-      className="w-full rounded-[4px] border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
+      className="w-full rounded-none border border-line bg-white px-2 py-1.5 text-base text-ink hover:border-ink-3"
     >
       {groups.map((g) => (
         <optgroup key={g} label={g}>
@@ -3518,7 +3518,7 @@ function RoadFindings() {
               key={id}
               onClick={() => set(id)}
               aria-pressed={by === id}
-              className={`flex-1 rounded-[4px] border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
+              className={`flex-1 rounded-none border px-2 py-1.5 text-base transition-colors ${by === id ? 'border-accent font-semibold text-ink' : 'border-line text-ink-2 hover:border-ink-3'}`}
             >
               {label}
             </button>
@@ -3903,7 +3903,7 @@ function RightPanelShell({
         {onClose && (
           <button
             onClick={onClose}
-            className="-mr-1 mt-[1px] shrink-0 rounded-[4px] p-1 text-ink-3 transition-colors hover:text-accent hover:text-ink"
+            className="-mr-1 mt-[1px] shrink-0 rounded-none p-1 text-ink-3 transition-colors hover:text-accent hover:text-ink"
             aria-label="Close"
           >
             <IconClose />
@@ -4016,7 +4016,7 @@ function BlueprintPanel({
             {exposedToFlood && (
               <>
                 <PanelHeading>Buildings inside this flood extent</PanelHeading>
-                <div className="mb-3 rounded-[4px] border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-none border border-line bg-white px-3 py-2.5">
                   <div className="num text-stat font-semibold leading-none text-ink">
                     {exposedToFlood.length} <span className="text-base font-normal text-ink-3">of {mappedTotal} mapped</span>
                   </div>
@@ -4049,7 +4049,7 @@ function BlueprintPanel({
             {heatData && (
               <>
                 <PanelHeading>Buildings by UHI category</PanelHeading>
-                <div className="mb-3 rounded-[4px] border border-line bg-white px-3 py-2.5">
+                <div className="mb-3 rounded-none border border-line bg-white px-3 py-2.5">
                   <div className="space-y-1.5">
                     {[...heatData.byCategory.keys()]
                       .sort((a, c) => c - a)
@@ -4058,9 +4058,9 @@ function BlueprintPanel({
                         return (
                           <div key={cat} className="flex items-center gap-2">
                             <span className="w-[80px] shrink-0 text-sm text-ink-2">Category {cat}</span>
-                            <span className="h-[6px] flex-1 overflow-hidden rounded-[4px] bg-surface-2">
+                            <span className="h-[6px] flex-1 overflow-hidden rounded-none bg-surface-2">
                               <span
-                                className="block h-full rounded-[4px] bg-accent"
+                                className="block h-full rounded-none bg-accent"
                                 style={{ width: `${(list.length / mappedTotal) * 100}%` }}
                               />
                             </span>
@@ -4143,7 +4143,7 @@ function BlueprintPanel({
         )}
 
         <PanelHeading>Layers this turns on</PanelHeading>
-        <div className="divide-y divide-line rounded-[4px] border border-line">
+        <div className="divide-y divide-line rounded-none border border-line">
           {blueprint.layers.map((id) => {
             const l = LAYER_BY_ID[id];
             return (
@@ -4718,7 +4718,7 @@ function loadTolerance(): ToleranceSheet {
 
 function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="mb-3 flex gap-[2px] rounded-[5px] border border-line bg-[#E9EBED] p-[2px]" role="tablist">
+    <div className="mb-3 flex gap-[2px] rounded-none border border-line bg-[#E9EBED] p-[2px]" role="tablist">
       {tabs.map((t) => {
         const on = t.id === value;
         return (
@@ -4727,7 +4727,7 @@ function TabStrip<T extends string>({ tabs, value, onChange }: { tabs: { id: T; 
             role="tab"
             aria-selected={on}
             onClick={() => onChange(t.id)}
-            className={`flex-1 whitespace-nowrap rounded-[4px] px-2 py-1 text-base transition-colors ${on ? 'border border-line bg-white font-semibold text-ink' : 'border border-transparent text-ink-2 hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-none px-2 py-1 text-base transition-colors ${on ? 'border border-line bg-white font-semibold text-ink' : 'border border-transparent text-ink-2 hover:text-ink'}`}
           >
             {t.label}
           </button>
@@ -4750,8 +4750,8 @@ function downloadTqehReport(r: TqehReading, sel: ScenarioSel) {
   const s = WORKED.scenario;
   const rating = (c: WorkedCategory) => (c.assessed[0] === c.assessed[1] ? c.assessed[0] : `${c.assessed[0]} to ${c.assessed[1]}`);
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>TQEH worked example</title>
-<style>body{font:13px/1.5 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
-h1{font:600 24px/1.2 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Franklin Gothic Book','Libre Franklin',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
+<style>body{font:13px/1.5 'Barlow','Segoe UI',Arial,sans-serif;color:#1F2328;max-width:860px;margin:40px auto;padding:0 20px}
+h1{font:600 24px/1.2 'Barlow','Segoe UI',Arial,sans-serif;margin:0}h2{font:600 17px/1.3 'Barlow','Segoe UI',Arial,sans-serif;margin:28px 0 8px;border-bottom:1px solid #DFE3E6;padding-bottom:4px}
 .sub{color:#5B6268;margin:6px 0 0}.note{color:#7F868C;font-size:11.5px}table{width:100%;border-collapse:collapse;margin:6px 0}
 th,td{text-align:left;vertical-align:top;padding:5px 8px 5px 0;border-bottom:1px solid #EEF0F1}th{font-weight:600;color:#3D444A;border-bottom:1px solid #D5D9DC}
 .box{background:#E3F2DC;border:1px solid #9BC48A}.box td{border-bottom:1px solid #B7D7A8;padding:6px 8px}.box td:first-child{font-weight:600;width:28%}</style></head><body>
@@ -5092,7 +5092,7 @@ function CaseControls({
       {text}
     </div>
   );
-  const linkBtn = 'flex-1 rounded-[4px] border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
+  const linkBtn = 'flex-1 rounded-none border border-line px-2 py-1.5 text-base font-medium text-ink hover:border-ink-3';
 
   return (
     <div className="px-3 py-4">
@@ -5104,7 +5104,7 @@ function CaseControls({
           <button
             onClick={onGuide}
             aria-label="How this works"
-            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-ink-3 hover:text-accent hover:text-accent"
+            className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-none text-ink-3 hover:text-accent hover:text-accent"
           >
             <IconHelp size={17} />
           </button>
@@ -5176,7 +5176,7 @@ function CaseControls({
         <StepHeading n={5} title="Download" />
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="w-full rounded-[4px] bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
+          className="w-full rounded-none bg-accent px-3 py-2 text-base font-semibold text-white hover:bg-[#0A5652]"
         >
           Download report
         </button>
@@ -5221,7 +5221,7 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
     <div
       role="dialog"
       aria-label="Case study guide"
-      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-[4px] border border-line bg-white p-3"
+      className="fade-up fixed left-1/2 top-16 z-[1500] w-[300px] -translate-x-1/2 rounded-none border border-line bg-white p-3"
     >
       <div className="text-base font-semibold text-ink">Would you like a quick guide?</div>
       <p className="mt-0.5 text-sm leading-[1.45] text-ink-2">Six short steps on how this case study works.</p>
@@ -5232,11 +5232,11 @@ function CaseGuideOffer({ onYes, onNo, onNever }: { onYes: () => void; onNo: () 
         <div className="flex gap-1.5">
           <button
             onClick={onNo}
-            className="rounded-[4px] border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
+            className="rounded-none border border-line px-2.5 py-1 text-sm font-medium text-ink-2 hover:border-ink-3 hover:text-ink"
           >
             Not now
           </button>
-          <button onClick={onYes} className="rounded-[4px] bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#0A5652]">
+          <button onClick={onYes} className="rounded-none bg-accent px-2.5 py-1 text-sm font-semibold text-white hover:bg-[#0A5652]">
             Show me
           </button>
         </div>
@@ -5335,7 +5335,7 @@ function toleranceStatus(c: WorkedCategory): { label: string; color: string } {
 function RatingTag({ range }: { range: [string, string] }) {
   return (
     <span
-      className="inline-flex whitespace-nowrap rounded-[4px] px-1.5 py-[1px] text-xs font-semibold text-white"
+      className="inline-flex whitespace-nowrap rounded-none px-1.5 py-[1px] text-xs font-semibold text-white"
       style={{ background: RISK_COLOR[range[1]] }}
     >
       {range[0] === range[1] ? range[0] : `${range[0]} to ${range[1]}`}
@@ -5639,7 +5639,7 @@ function WorkedExampleTab({ view, setView }: { view: WorkedView; setView: (v: Wo
         <span className="text-sm text-ink-3">Worked example and notes</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-[4px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="shrink-0 rounded-none border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
         >
           Download report
         </button>
@@ -5725,7 +5725,7 @@ function TqehTab({
         <span className="text-sm text-ink-3">Site readings and worked example</span>
         <button
           onClick={() => downloadTqehReport(r, scenarioSel)}
-          className="shrink-0 rounded-[4px] border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
+          className="shrink-0 rounded-none border border-line px-2.5 py-1.5 text-base font-medium text-ink hover:border-ink-3"
         >
           Download report
         </button>
@@ -5959,7 +5959,7 @@ function TqehTolerance() {
                       value={note(draft, c.name)}
                       onChange={(e) => update(c.name, e.target.value)}
                       rows={2}
-                      className="mt-1 block w-full resize-y rounded-[4px] border border-[#9BC48A] bg-white px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
+                      className="mt-1 block w-full resize-y rounded-none border border-[#9BC48A] bg-white px-2 py-1.5 text-base text-ink focus:border-accent focus:outline-none"
                     />
                   )}
                 </div>
@@ -5981,7 +5981,7 @@ function TqehTolerance() {
             <button
               onClick={save}
               disabled={!dirty}
-              className="rounded-[4px] bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#0A5652] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
+              className="rounded-none bg-accent px-3 py-1.5 text-base font-semibold text-white hover:bg-[#0A5652] disabled:cursor-default disabled:bg-line disabled:text-ink-3"
             >
               Save
             </button>
@@ -6555,7 +6555,7 @@ function IconRail({
       <Tip label="Home" body="Back to the landing screen" side="right">
         <button
           onClick={onHome}
-          className="flex h-11 w-[56px] items-center justify-center rounded-[4px] text-white transition-colors hover:bg-[#145653]"
+          className="flex h-11 w-[56px] items-center justify-center rounded-none text-white transition-colors hover:bg-[#145653]"
           aria-label="Home"
         >
           <IconHome size={21} />
@@ -6574,7 +6574,7 @@ function IconRail({
               <button
                 data-tour={`rail-${t}`}
                 onClick={() => setTab(t)}
-                className={`flex w-[56px] flex-col items-center gap-1 rounded-[4px] py-1.5 text-white transition-colors ${on ? 'bg-[#1A7470]' : 'hover:bg-[#145653]'}`}
+                className={`flex w-[56px] flex-col items-center gap-1 rounded-none py-1.5 text-white transition-colors ${on ? 'bg-[#1A7470]' : 'hover:bg-[#145653]'}`}
                 aria-label={meta.title}
                 aria-current={on ? 'page' : undefined}
               >
@@ -6587,7 +6587,7 @@ function IconRail({
       })}
       <div className="mt-auto">
         <Tip label="Prepared by" body="Value Advisory Partners" side="right">
-          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 rounded-[4px] bg-white object-contain p-1" />
+          <img src={vapLogo} alt="Value Advisory Partners" className="h-10 w-10 shrink-0 rounded-none bg-white object-contain p-1" />
         </Tip>
       </div>
     </nav>
@@ -7262,7 +7262,7 @@ function Figure({ label, value, sub }: { label: string; value: React.ReactNode; 
 }
 
 function FigureStrip({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 divide-x divide-line rounded-[4px] border border-line py-3">{children}</div>;
+  return <div className="grid grid-cols-2 divide-x divide-line rounded-none border border-line py-3">{children}</div>;
 }
 
 /** A labelled count with a bar against the largest count in its group. */
@@ -7301,9 +7301,9 @@ function Section({
   // but not drawn: colour belongs in the data marks.
   void color;
   return (
-    <section className="mt-3 overflow-hidden rounded-[4px] border border-line bg-white first:mt-0">
+    <section className="mt-3 overflow-hidden rounded-none border border-line bg-white first:mt-0">
       <div className="flex min-h-[34px] items-center justify-between gap-2 border-b border-line px-3 py-1.5">
-        <span className="text-[12.5px] font-semibold text-ink">{title}</span>
+        <span className="head text-[14px] font-semibold text-ink">{title}</span>
         {right}
       </div>
       <div className="px-3 py-2.5">{children}</div>
@@ -7610,14 +7610,14 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           <button
             onClick={() => setOffTypes(() => new Set())}
             disabled={offTypes.size === 0}
-            className="rounded-[4px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Show all
           </button>
           <button
             onClick={() => setOffTypes(() => new Set(ALL_BUILDING_TYPES))}
             disabled={onCount === 0}
-            className="rounded-[4px] border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
+            className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink hover:border-ink-3 disabled:cursor-default disabled:text-ink-3 disabled:hover:border-line"
           >
             Hide all
           </button>
@@ -7629,7 +7629,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
           const isUnclassified = use.key === UNCLASSIFIED;
           const usedOn = use.types.filter((t) => !offTypes.has(t.key)).length;
           return (
-            <div key={use.key} className="rounded-[4px] border border-line">
+            <div key={use.key} className="rounded-none border border-line">
               {/* Category row: its switch turns the whole group on or off. */}
               <button
                 onClick={() => toggleUse(use)}
@@ -7687,7 +7687,7 @@ function AssetTypeToggles({ offTypes, setOffTypes }: AssetTypeTogglesProps) {
         Other registered assets, not buildings ({otherCounts.reduce((n, o) => n + o.count, 0)})
       </button>
       {showOther && (
-        <div className="fade-up mt-1 rounded-[4px] border border-line bg-surface-2 px-2 py-1.5">
+        <div className="fade-up mt-1 rounded-none border border-line bg-surface-2 px-2 py-1.5">
           <p className="mb-1 text-2xs leading-[1.45] text-ink-3">
             In the same export, not classed as buildings, so kept
             out of the toggle list above rather than folded in.
@@ -7796,7 +7796,7 @@ function RealBuildingsRegister({
                 setListScope(null);
               }}
               aria-label="Ward"
-              className="rounded-[4px] border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
+              className="rounded-none border border-line bg-white py-1 pl-2 pr-1 text-sm text-ink hover:border-ink-3"
             >
               <option value="">Whole LGA ({REAL_BUILDINGS.length})</option>
               {REAL_WARDS.map((w) => (
@@ -7809,7 +7809,7 @@ function RealBuildingsRegister({
         >
           Overview
         </PanelHeading>
-        <div className="grid grid-cols-2 divide-x divide-line rounded-[4px] border border-line py-3">
+        <div className="grid grid-cols-2 divide-x divide-line rounded-none border border-line py-3">
           <div className="px-3">
             <div className="text-xs text-ink-3">Buildings</div>
             <div className="num mt-1 text-stat-lg font-semibold leading-none text-ink">{scoped.length}</div>
@@ -7860,7 +7860,7 @@ function RealBuildingsRegister({
                     icon: IconGauge,
                     // The register's own rating mix, in its own colours.
                     sub: (
-                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-[4px] bg-surface-2">
+                      <span className="mt-0.5 flex h-[6px] w-full overflow-hidden rounded-none bg-surface-2">
                         {conditionRows.map((r) => (
                           <span key={r.label} style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }} />
                         ))}
@@ -7881,7 +7881,7 @@ function RealBuildingsRegister({
                   <button
                     key={t.id}
                     onClick={() => selectView(t.id)}
-                    className="flex w-full items-center gap-2.5 rounded-[4px] px-1.5 py-[7px] text-left hover:bg-surface-2"
+                    className="flex w-full items-center gap-2.5 rounded-none px-1.5 py-[7px] text-left hover:bg-surface-2"
                   >
                     <span className="flex w-5 shrink-0 justify-center" style={{ color: t.color }}>
                       <Icon size={16} />
@@ -7899,16 +7899,16 @@ function RealBuildingsRegister({
         {view === 'condition' && (
           <div>
             <BackBar onBack={() => selectView(null)} parent={`Assets / ${ward === null ? 'Whole LGA' : ward === NO_WARD ? 'No ward' : ward}`} title={view ? ASSET_VIEW_TITLE[view] : ''} />
-            <div className="rounded-[4px] border border-line p-3">
+            <div className="rounded-none border border-line p-3">
               <div className="mb-2.5 text-xs text-ink-3">As rated in the register, for {scoped.length} buildings</div>
               <div className="space-y-2.5">
                 {conditionRows.map((r) => (
                   <div key={r.label} className="flex items-center gap-2">
-                    <span className="h-[8px] w-[8px] shrink-0 rounded-[4px]" style={{ background: r.color }} />
+                    <span className="h-[8px] w-[8px] shrink-0 rounded-none" style={{ background: r.color }} />
                     <span className="w-[112px] shrink-0 truncate text-sm text-ink-2">{r.label}</span>
-                    <span className="h-[6px] flex-1 overflow-hidden rounded-[4px] bg-surface-2">
+                    <span className="h-[6px] flex-1 overflow-hidden rounded-none bg-surface-2">
                       <span
-                        className="block h-full rounded-[4px]"
+                        className="block h-full rounded-none"
                         style={{ width: `${(r.n / scoped.length) * 100}%`, background: r.color }}
                       />
                     </span>
@@ -7928,7 +7928,7 @@ function RealBuildingsRegister({
               fitout or meter.
             </p>
             <PanelHeading>Register dates</PanelHeading>
-            <div className="mb-4 space-y-1 rounded-[4px] border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
+            <div className="mb-4 space-y-1 rounded-none border border-line px-3 py-2.5 text-base leading-[1.5] text-ink-2">
               <div>
                 Last modified{' '}
                 <span className="num font-semibold text-ink">{formatRegisterDate(ccsRegisterDates.lastModified)}</span>
@@ -7958,7 +7958,7 @@ function RealBuildingsRegister({
             >
               Map coverage
             </PanelHeading>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[4px] border border-line px-3 py-2.5 text-sm text-ink-3">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-none border border-line px-3 py-2.5 text-sm text-ink-3">
               <span className="flex items-center gap-1.5">
                 <span className="h-[10px] w-[10px] rounded-full border border-white" style={{ background: ACCENT }} />
                 {preciseCount} precise
@@ -7988,7 +7988,7 @@ function RealBuildingsRegister({
                 <div className="space-y-1">
                   <button
                     onClick={() => selectListScope('all')}
-                    className="flex w-full items-center justify-between rounded-[4px] border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
+                    className="flex w-full items-center justify-between rounded-none border border-line bg-white px-2 py-1.5 text-left transition-colors hover:border-accent"
                   >
                     <span className="text-sm font-medium text-ink">
                       All {scoped.length} buildings
@@ -8004,7 +8004,7 @@ function RealBuildingsRegister({
                         <button
                           key={use.key}
                           onClick={() => selectListScope(use.key)}
-                          className="flex items-center gap-1 rounded-[4px] border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
+                          className="flex items-center gap-1 rounded-none border border-line bg-white px-1.5 py-1 text-left transition-colors hover:border-accent"
                         >
                           <span className="text-sm font-medium text-ink">
                             {isUnclassified ? 'Not yet classified' : use.label}
@@ -8199,7 +8199,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
       onClick={onClose}
     >
       <div
-        className="fade-up w-full max-w-[480px] overflow-hidden rounded-[4px] border border-line bg-white"
+        className="fade-up w-full max-w-[480px] overflow-hidden rounded-none border border-line bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -8212,7 +8212,7 @@ function SearchPalette({ onPick, onClose }: { onPick: (hit: SearchHit) => void; 
             placeholder="Search suburbs, layers or buildings"
             className="flex-1 bg-transparent text-lg text-ink outline-none placeholder:text-ink-3"
           />
-          <span className="num rounded-[4px] border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
+          <span className="num rounded-none border border-line px-1.5 py-[1px] text-2xs text-ink-3">Esc</span>
         </div>
 
         <div className="thin-scroll max-h-[360px] overflow-y-auto py-1">
@@ -8298,19 +8298,19 @@ function LandingScreen({ onGuide, onSkip, onCases }: { onGuide: () => void; onSk
         >
           <button
             onClick={onGuide}
-            className="w-full rounded-[4px] bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0A5652]"
+            className="w-full rounded-none bg-accent px-3 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0A5652]"
           >
             Take the guide
           </button>
           <button
             onClick={onSkip}
-            className="w-full rounded-[4px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-none border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View the tool
           </button>
           <button
             onClick={onCases}
-            className="w-full rounded-[4px] border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
+            className="w-full rounded-none border border-line px-3 py-2.5 text-sm font-semibold text-ink-2 transition-colors hover:border-accent hover:text-accent"
           >
             View case studies
           </button>
@@ -8397,7 +8397,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       <div className="fixed inset-0" onClick={(e) => e.stopPropagation()} />
       {rect && (
         <div
-          className="pointer-events-none fixed rounded-[4px] transition-all duration-200"
+          className="pointer-events-none fixed rounded-none transition-all duration-200"
           style={{
             top: rect.top - pad,
             left: rect.left - pad,
@@ -8411,7 +8411,7 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
       )}
       <div
         ref={cardRef}
-        className="fixed rounded-[4px] border border-line bg-white p-3 transition-all duration-200"
+        className="fixed rounded-none border border-line bg-white p-3 transition-all duration-200"
         style={{ width: calloutWidth, ...calloutStyle }}
       >
         <div className="num mb-1 text-xs text-ink-3">Step {step + 1} of {steps.length}</div>
@@ -8425,14 +8425,14 @@ function GuideTour({ onDone, steps = TOUR_STEPS }: { onDone: () => void; steps?:
             {step > 0 && (
               <button
                 onClick={() => setStep((v) => v - 1)}
-                className="rounded-[4px] border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
+                className="rounded-none border border-line px-2 py-1 text-xs font-medium text-ink-2 transition-colors hover:border-accent hover:text-accent"
               >
                 Back
               </button>
             )}
             <button
               onClick={() => (step < steps.length - 1 ? setStep((v) => v + 1) : onDone())}
-              className="rounded-[4px] bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0A5652]"
+              className="rounded-none bg-accent px-2 py-1 text-xs font-semibold text-white transition-colors hover:bg-[#0A5652]"
             >
               {step < steps.length - 1 ? 'Next' : 'Done'}
             </button>
@@ -8765,11 +8765,11 @@ export default function App() {
         className={`relative flex shrink-0 flex-col border-r border-line bg-white transition-[width] duration-300 ease-out ${panelTab === 'tolerance' ? 'w-[440px]' : 'w-80'}`}
       >
         <header className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <h1 className="min-w-0 truncate text-[17px] font-semibold leading-tight text-ink">{meta.title}</h1>
+          <h1 className="min-w-0 truncate text-[20px] font-semibold leading-tight text-ink">{meta.title}</h1>
           <button
             data-tour="info"
             onClick={() => setScreen('tour')}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] text-ink-3 transition-colors hover:text-accent hover:text-accent"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-none text-ink-3 transition-colors hover:text-accent hover:text-accent"
             aria-label="Take the guide"
             title="Take the guide"
           >
@@ -8780,11 +8780,11 @@ export default function App() {
         <div className="border-b border-line px-2.5 py-2">
           <button
             onClick={() => setSearchOpen(true)}
-            className="flex w-full items-center gap-2 rounded-[4px] border border-[#C3C9CD] bg-white px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent"
+            className="flex w-full items-center gap-2 rounded-none border border-[#BEC5CA] bg-white px-2.5 py-1.5 text-left text-base text-ink-3 transition-colors hover:border-accent"
           >
             <IconSearch size={14} className="shrink-0" />
             <span className="flex-1">Search suburbs, layers, buildings</span>
-            <span className="num rounded-[4px] border border-line bg-white px-1.5 text-2xs">/</span>
+            <span className="num rounded-none border border-line bg-white px-1.5 text-2xs">/</span>
           </button>
         </div>
 
